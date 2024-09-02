@@ -624,13 +624,13 @@ def main():
             launch_mode = lc_config["host_options"]["local"]["launch_mode"]
             valid_options = ["serial", "parallel","dask_worker"]
             if launch_mode in valid_options:
-                host_str = (
-                    f"{host}, \n and commands will be launched in {launch_mode} mode \n"
-                    f"every {njobs} jobs. "
-                    f"Serial is safe but it will take longer. "
+                host_str = ( "#####################################################\n"
+                    f"Host is:{host} \ncommands will be launched in {launch_mode} mode every {njobs} jobs.\n"
+                    f"Serial is safe but it will take longer.\n"
                     f"If you launch in parallel be aware that some of the "
                     f"processes might be killed if the limit (usually memory) "
                     f"of the machine is reached. "
+                    "\n#####################################################\n"
                 )
             else:
                 do.die(
@@ -645,11 +645,12 @@ def main():
             + f"SubsesList is read, there are {num_of_true_run} jobs needed to be launched"
             + f'Basedir is: {lc_config["general"]["basedir"]} \n'
             + f'Container is: {container}_{lc_config["container_specific"][container]["version"]} \n'
-            + f"Host is: {host_str} \n"
             + f'analysis folder is: {lc_config["general"]["analysis_name"]} \n'
             + f"##################################################### \n"
         )
-
+        logger.critical(
+            "\n"+f"{host_str} \n"
+        )
         logger.info("Reading the BIDS layout...")
         
         # Prepare file and launch containers
