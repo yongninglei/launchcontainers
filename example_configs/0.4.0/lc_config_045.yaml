@@ -72,6 +72,8 @@ container_specific:
     precontainer_anat: freesurferator_0.2.1_7.4.1
     # Analysis name
     anat_analysis_name: paper_dv-main
+    # desc flag to seperate different DWI acquisitions, default None
+    dwi_desc : None
     # optional
     # if your encoding direction DWI is multishell sequence and they are in seperate files
     separated_shell_files: True
@@ -119,6 +121,8 @@ container_specific:
     # optional
     # if your encoding direction DWI is multishell sequence and they are in seperate files
     separated_shell_files: False
+    # desc flag to seperate different DWI acquisitions, default None
+    dwi_desc : None
     # If reverse phase encoding is applied in the sequence
     # It checks if there is a reverse phase encoding acquisition
     # if not, launchcontainers will create mock files
@@ -169,6 +173,7 @@ host_options:
       manager: sge
       mount_options: ['/bcbl', '/tmp','/scratch']
       envextra: []
+      job_name: votcloc
       # config the cluster
       # Total number of cores per job (it was core for BCBL)
       cores: 8
