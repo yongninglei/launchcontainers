@@ -283,7 +283,7 @@ def rtppreproc(dict_store_cs_configs, analysis_dir, lc_config, sub, ses, layout)
     # container specific:
     precontainer_anat = lc_config['container_specific'][container]['precontainer_anat']
     anat_analysis_name = lc_config['container_specific'][container]['anat_analysis_name']
-
+    dwi_desc = lc_config['container_specific'][container]['dwi_desc']
     rpe = lc_config['container_specific'][container]['rpe']
     separated_shell_files = lc_config['container_specific'][container]['separated_shell_files']
 
@@ -361,17 +361,17 @@ def rtppreproc(dict_store_cs_configs, analysis_dir, lc_config, sub, ses, layout)
         # the bval
         src_path_BVAL = layout.get(
             subject=sub, session=ses, extension='bval',
-            suffix='dwi', direction=PE_direction, return_type='filename',
+            suffix='dwi', direction=PE_direction, desc=dwi_desc, return_type='filename',
         )[0]
         # the bve
         src_path_BVEC = layout.get(
             subject=sub, session=ses, extension='bvec',
-            suffix='dwi', direction=PE_direction, return_type='filename',
+            suffix='dwi', direction=PE_direction, desc=dwi_desc, return_type='filename',
         )[0]
         # the dwi
         src_path_DIFF = layout.get(
             subject=sub, session=ses, extension='nii.gz',
-            suffix='dwi', direction=PE_direction, return_type='filename',
+            suffix='dwi', direction=PE_direction, desc=dwi_desc, return_type='filename',
         )[0]
 
     else:
@@ -387,11 +387,11 @@ def rtppreproc(dict_store_cs_configs, analysis_dir, lc_config, sub, ses, layout)
         src_path_DIFF = target_dwi_concat
         bval_files = layout.get(
             subject=sub, session=ses, extension='bval',
-            suffix='dwi', direction=PE_direction, return_type='filename',
+            suffix='dwi', direction=PE_direction, desc=dwi_desc, return_type='filename',
         )
         bvec_files = layout.get(
             subject=sub, session=ses, extension='bvec',
-            suffix='dwi', direction=PE_direction, return_type='filename',
+            suffix='dwi', direction=PE_direction, desc=dwi_desc, return_type='filename',
         )
         target_bvec = re.sub(r'acq-[^_]+', '', bvec_files[0])
         target_bval = re.sub(r'acq-[^_]+', '', bval_files[0])
