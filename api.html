@@ -48,7 +48,7 @@
     <script>DOCUMENTATION_OPTIONS.pagename = 'api';</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="launchcontainers" href="index.html" />
+    <link rel="prev" title="Changelog" href="changelog.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="0.4.0" />
@@ -98,7 +98,7 @@
   </button>
   
   
-  <div class=" navbar-header-items__start">
+  <div class="col-lg-3 navbar-header-items__start">
     
       <div class="navbar-item">
 
@@ -119,7 +119,7 @@
     
   </div>
   
-  <div class=" navbar-header-items">
+  <div class="col-lg-9 navbar-header-items">
     
     <div class="me-auto navbar-header-items__center">
       
@@ -127,12 +127,78 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
-<li class="nav-item current active">
-  <a class="nav-link nav-internal" href="#">
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="concepts.html">
+    Core Concepts
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="tutorial.html">
+    Tutorial
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="cli_reference.html">
+    CLI Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="extending.html">
+    Extending launchcontainers — Adding a new Prepare pipeline
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="code_structure.html">
+    Code Structure
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="changelog.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="#">
     API Reference
   </a>
 </li>
 
+                </ul>
+            </li>
+            
   </ul>
 </nav></div>
       
@@ -151,6 +217,14 @@
 </button>
         </div>
       
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
       
         <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -214,6 +288,62 @@
 <nav>
   <ul class="bd-navbar-elements navbar-nav">
     
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="concepts.html">
+    Core Concepts
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="tutorial.html">
+    Tutorial
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="cli_reference.html">
+    CLI Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="extending.html">
+    Extending launchcontainers — Adding a new Prepare pipeline
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="code_structure.html">
+    Code Structure
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="changelog.html">
+    Changelog
+  </a>
+</li>
+
+
 <li class="nav-item current active">
   <a class="nav-link nav-internal" href="#">
     API Reference
@@ -229,6 +359,14 @@
     
     
       <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
         
           <div class="navbar-item"><ul class="navbar-icon-links"
     aria-label="Icon Links">
@@ -318,94 +456,50 @@ package docstrings and function docstrings pulled directly from the source.</p>
 <section id="module-launchcontainers.cli">
 <span id="core-cli"></span><h2>Core CLI<a class="headerlink" href="#module-launchcontainers.cli" title="Link to this heading">#</a></h2>
 <dl class="py function">
-<dt class="sig sig-object py" id="launchcontainers.cli.get_parser">
-<span class="sig-name descname"><span class="pre">get_parser</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/cli.py#L40"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.cli.get_parser" title="Link to this definition">#</a></dt>
-<dd><p>Build and execute the top-level <code class="docutils literal notranslate"><span class="pre">lc</span></code> argument parser.</p>
-<p>The parser exposes the main launchcontainers workflows as subcommands:
-<code class="docutils literal notranslate"><span class="pre">prepare</span></code>, <code class="docutils literal notranslate"><span class="pre">run</span></code>, <code class="docutils literal notranslate"><span class="pre">qc</span></code>, <code class="docutils literal notranslate"><span class="pre">create_bids</span></code>, <code class="docutils literal notranslate"><span class="pre">copy_configs</span></code>,
-<code class="docutils literal notranslate"><span class="pre">zip_configs</span></code>, and <code class="docutils literal notranslate"><span class="pre">gen_subses</span></code>. The parsed values are returned both
-as an <code class="docutils literal notranslate"><span class="pre">argparse.Namespace</span></code> and as a plain dictionary for legacy callers.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><em>tuple[argparse.Namespace, dict]</em> – Parsed command-line values as both a namespace and a dictionary.</p>
-</dd>
-</dl>
-</dd></dl>
+<dt class="sig sig-object py" id="launchcontainers.cli.prepare">
+<span class="sig-name descname"><span class="pre">prepare</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lc_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">typer.Option</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sub_ses_list</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">typer.Option</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container_specific_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">typer.Option</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quiet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">typer.Option</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">typer.Option</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">typer.Option</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.cli.prepare" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="launchcontainers.cli.create_analysis_dir">
-<span class="sig-name descname"><span class="pre">create_analysis_dir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parse_namespace</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/cli.py#L255"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.cli.create_analysis_dir" title="Link to this definition">#</a></dt>
-<dd><p>Create the derivative container directory and analysis directory.</p>
-<p>The output location depends on the derivative layout requested in the
-launchcontainers YAML file. For the legacy layout an intermediate
-container-version directory is created and the actual analysis is stored in
-<code class="docutils literal notranslate"><span class="pre">analysis-&lt;analysis_name&gt;</span></code>. For the newer layout the analysis directory
-is the container-version_&lt;analysis_name&gt; directory itself.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>parse_namespace</strong> (<em>argparse.Namespace</em>) – Parsed CLI arguments containing at least <code class="docutils literal notranslate"><span class="pre">lc_config</span></code>.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>str</em> – Absolute path to the prepared analysis directory.</p>
-</dd>
-</dl>
-</dd></dl>
+<dt class="sig sig-object py" id="launchcontainers.cli.run">
+<span class="sig-name descname"><span class="pre">run</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workdir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">typer.Option</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_lc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">typer.Option</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quiet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">typer.Option</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">typer.Option</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">typer.Option</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.cli.run" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="launchcontainers.cli.qc">
+<span class="sig-name descname"><span class="pre">qc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workdir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">typer.Option</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">typer.Option</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">typer.Option</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.cli.qc" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.cli.main">
-<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/cli.py#L329"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.cli.main" title="Link to this definition">#</a></dt>
-<dd><p>Dispatch the requested <code class="docutils literal notranslate"><span class="pre">lc</span></code> subcommand.</p>
-<p>This function configures logging, resolves the active analysis directory,
-and forwards execution to the matching helper module for prepare, run,
-quality-control, or utility workflows.</p>
-</dd></dl>
+<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.cli.main" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
 
 <dl class="py function" id="module-launchcontainers.do_prepare">
-<dt class="sig sig-object py" id="launchcontainers.do_prepare.prepare_analysis_dir">
-<span class="sig-name descname"><span class="pre">prepare_analysis_dir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parse_namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/do_prepare.py#L32"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.do_prepare.prepare_analysis_dir" title="Link to this definition">#</a></dt>
-<dd><p>Initialize a prepared analysis directory from the user input files.</p>
-<p>This step copies the launchcontainers YAML file, the subject/session list,
-and the container-specific JSON file into the analysis directory. When
-Dask-based execution is enabled it also creates the worker log directory
-expected by later launch steps.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>parse_namespace</strong> (<em>argparse.Namespace</em>) – Parsed CLI arguments for prepare mode.</p></li>
-<li><p><strong>analysis_dir</strong> (<em>str</em>) – Target analysis directory created by <a class="reference internal" href="#launchcontainers.cli.create_analysis_dir" title="launchcontainers.cli.create_analysis_dir"><code class="xref py py-func docutils literal notranslate"><span class="pre">launchcontainers.cli.create_analysis_dir()</span></code></a>.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>bool</em> – <code class="docutils literal notranslate"><span class="pre">True</span></code> when the basic analysis directory setup completes.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.do_prepare.main">
-<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parse_namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/do_prepare.py#L109"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.do_prepare.main" title="Link to this definition">#</a></dt>
-<dd><p>Run the full prepare workflow for one analysis directory.</p>
-<p>The workflow loads the BIDS dataset, filters the requested subject/session
-rows, copies the input configuration files into the analysis directory, and
-then delegates to the DWI preparation helpers to generate container-ready
-inputs for each selected session.</p>
+<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parse_namespace</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#launchcontainers.do_prepare.main" title="Link to this definition">#</a></dt>
+<dd><p>Run the full prepare workflow.</p>
+<p>For both DWI and GLM pipelines, creates an analysis directory under
+<code class="docutils literal notranslate"><span class="pre">BIDS/derivatives/fMRI-GLM-{version}/analysis-{analysis_name}</span></code> (legacy)
+or <code class="docutils literal notranslate"><span class="pre">fMRI-GLM-{version}_{analysis_name}</span></code> (new layout), copies configs into
+it, and delegates to the appropriate prepare helpers.</p>
+<p>If the <code class="docutils literal notranslate"><span class="pre">container_specific.&lt;container&gt;</span></code> section is absent for GLM, an
+example config is written and the function returns early.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>parse_namespace</strong> (<em>argparse.Namespace</em>) – Parsed CLI arguments for prepare mode.</p></li>
-<li><p><strong>analysis_dir</strong> (<em>str</em>) – Prepared analysis directory for the current launch configuration.</p></li>
-</ul>
+<dd class="field-odd"><p><strong>parse_namespace</strong> (<em>argparse.Namespace</em>) – Parsed CLI arguments (<code class="docutils literal notranslate"><span class="pre">lc_config</span></code>, <code class="docutils literal notranslate"><span class="pre">sub_ses_list</span></code>,
+<code class="docutils literal notranslate"><span class="pre">container_specific_config</span></code>).</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>bool</em> – <code class="docutils literal notranslate"><span class="pre">True</span></code> if both the analysis-level setup and the container-specific
-preparation complete successfully.</p>
+<dd class="field-even"><p><em>tuple[bool, str | None]</em> – <code class="docutils literal notranslate"><span class="pre">(success,</span> <span class="pre">analysis_dir)</span></code> where <em>analysis_dir</em> is <code class="docutils literal notranslate"><span class="pre">None</span></code> only
+when the GLM config section is missing.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function" id="module-launchcontainers.do_launch">
 <dt class="sig sig-object py" id="launchcontainers.do_launch.write_job_script">
-<span class="sig-name descname"><span class="pre">write_job_script</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job_script</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">script_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_script_fname</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/do_launch.py#L38"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.do_launch.write_job_script" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">write_job_script</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">job_script</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">script_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_script_fname</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.do_launch.write_job_script" title="Link to this definition">#</a></dt>
 <dd><p>Write a generated scheduler script to disk and make it executable.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -423,17 +517,17 @@ preparation complete successfully.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.do_launch.launch_jobs">
-<span class="sig-name descname"><span class="pre">launch_jobs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parse_namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_subses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container_log_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_lc</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/do_launch.py#L72"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.do_launch.launch_jobs" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">launch_jobs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parse_namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_subses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">job_script_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_lc</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.do_launch.launch_jobs" title="Link to this definition">#</a></dt>
 <dd><p>Generate launch commands and either print or submit them.</p>
 <p>Depending on the launchcontainers configuration this function performs a
-dry run, submits an array job through SLURM or SGE, or launches the
-commands through the Dask-based scheduler helper.</p>
+dry run, submits an array job through SLURM or SGE, or runs the commands
+locally in parallel using <code class="docutils literal notranslate"><span class="pre">concurrent.futures</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>parse_namespace</strong> (<em>argparse.Namespace</em>) – Parsed CLI arguments for run mode.</p></li>
 <li><p><strong>df_subses</strong> (<em>pandas.DataFrame</em>) – Filtered subject/session rows to launch.</p></li>
-<li><p><strong>container_log_dir</strong> (<em>str</em>) – Directory used to store generated scripts and batch command files.</p></li>
+<li><p><strong>job_script_dir</strong> (<em>str</em>) – Directory used to store generated scripts and batch command files.</p></li>
 <li><p><strong>run_lc</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, submit jobs for execution. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, only print the
 generated launch information.</p></li>
 </ul>
@@ -443,7 +537,7 @@ generated launch information.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.do_launch.main">
-<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parse_namespace</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/do_launch.py#L231"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.do_launch.main" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workdir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">run_lc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.do_launch.main" title="Link to this definition">#</a></dt>
 <dd><p>Validate a prepared analysis directory and launch the requested jobs.</p>
 <p>The run workflow reloads the prepared configuration files, validates that
 the analysis directory contains the expected inputs, shows an example input
@@ -451,14 +545,17 @@ folder structure to the user, asks for confirmation, and then calls
 <a class="reference internal" href="#launchcontainers.do_launch.launch_jobs" title="launchcontainers.do_launch.launch_jobs"><code class="xref py py-func docutils literal notranslate"><span class="pre">launch_jobs()</span></code></a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>parse_namespace</strong> (<em>argparse.Namespace</em>) – Parsed CLI arguments for run mode.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>workdir</strong> (<em>str</em>) – Working directory for run mode.</p></li>
+<li><p><strong>run_lc</strong> (<em>bool, default=False</em>) – Whether to run launchcontainers.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function" id="module-launchcontainers.do_qc">
 <dt class="sig sig-object py" id="launchcontainers.do_qc.qc">
-<span class="sig-name descname"><span class="pre">qc</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/do_qc.py#L29"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.do_qc.qc" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">qc</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.do_qc.qc" title="Link to this definition">#</a></dt>
 <dd><p>Placeholder QC entrypoint.</p>
 <p>The package currently routes QC work through <a class="reference internal" href="#launchcontainers.do_qc.main" title="launchcontainers.do_qc.main"><code class="xref py py-func docutils literal notranslate"><span class="pre">main()</span></code></a>; this function is
 kept only as a stub for future expansion.</p>
@@ -466,11 +563,15 @@ kept only as a stub for future expansion.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.do_qc.main">
-<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parse_namespace</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/do_qc.py#L39"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.do_qc.main" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workdir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'./logs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.do_qc.main" title="Link to this definition">#</a></dt>
 <dd><p>Run the package-level QC workflow for a prepared analysis directory.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>parse_namespace</strong> (<em>argparse.Namespace</em>) – Parsed CLI arguments for QC mode.</p>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>workdir</strong> (<em>str</em>) – Working directory for QC.</p></li>
+<li><p><strong>log_dir</strong> (<em>str, default=”./logs”</em>) – Directory to write logs.</p></li>
+<li><p><strong>debug</strong> (<em>bool, default=False</em>) – Debug mode.</p></li>
+</ul>
 </dd>
 </dl>
 </dd></dl>
@@ -479,19 +580,32 @@ kept only as a stub for future expansion.</p>
 <section id="module-launchcontainers.utils">
 <span id="utilities"></span><h2>Utilities<a class="headerlink" href="#module-launchcontainers.utils" title="Link to this heading">#</a></h2>
 <dl class="py function">
+<dt class="sig sig-object py" id="launchcontainers.utils.parse_hms">
+<span class="sig-name descname"><span class="pre">parse_hms</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></span><a class="headerlink" href="#launchcontainers.utils.parse_hms" title="Link to this definition">#</a></dt>
+<dd><p>Normalise any time string to zero-padded HH:MM:SS.
+Handles ISO datetime, sub-seconds, single-digit hours.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="launchcontainers.utils.times_match">
+<span class="sig-name descname"><span class="pre">times_match</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t1</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">t2</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_diff_sec</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">30</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span></span><a class="headerlink" href="#launchcontainers.utils.times_match" title="Link to this definition">#</a></dt>
+<dd><p>Return True if |t1 - t2| &lt;= max_diff_sec.</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.utils.die">
-<span class="sig-name descname"><span class="pre">die</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/utils.py#L34"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.utils.die" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">die</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.utils.die" title="Link to this definition">#</a></dt>
 <dd><p>Log an error message and terminate the current process.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>*args</strong> – Positional message parts forwarded to <code class="xref py py-meth docutils literal notranslate"><span class="pre">logger.error()</span></code>.</p>
+<dd class="field-odd"><p><strong>*args</strong> – Positional message parts forwarded to <code class="xref py py-meth docutils literal notranslate"><span class="pre">console.print()</span></code>.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.utils.read_yaml">
-<span class="sig-name descname"><span class="pre">read_yaml</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_to_config_file</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/utils.py#L47"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.utils.read_yaml" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">read_yaml</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_to_config_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.utils.read_yaml" title="Link to this definition">#</a></dt>
 <dd><p>Read a YAML configuration file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -505,7 +619,7 @@ kept only as a stub for future expansion.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.utils.read_df">
-<span class="sig-name descname"><span class="pre">read_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_to_df_file</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/utils.py#L67"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.utils.read_df" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">read_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_to_df_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.utils.read_df" title="Link to this definition">#</a></dt>
 <dd><p>Read a CSV file into a dataframe and count runnable rows.</p>
 <p>This helper is primarily used for <code class="docutils literal notranslate"><span class="pre">subseslist</span></code> files, where the
 <code class="docutils literal notranslate"><span class="pre">RUN</span></code> column marks which rows should be scheduled.</p>
@@ -522,7 +636,7 @@ If the file does not contain a <code class="docutils literal notranslate"><span 
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.utils.copy_file">
-<span class="sig-name descname"><span class="pre">copy_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/utils.py#L97"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.utils.copy_file" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">copy_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.utils.copy_file" title="Link to this definition">#</a></dt>
 <dd><p>Copy a file to a destination path with optional overwrite behavior.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -543,7 +657,7 @@ If the file does not contain a <code class="docutils literal notranslate"><span 
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.utils.copy_configs">
-<span class="sig-name descname"><span class="pre">copy_configs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/utils.py#L159"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.utils.copy_configs" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">copy_configs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.utils.copy_configs" title="Link to this definition">#</a></dt>
 <dd><p>Copy packaged example configuration files into a target directory.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -557,7 +671,7 @@ If the file does not contain a <code class="docutils literal notranslate"><span 
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.utils.force_symlink">
-<span class="sig-name descname"><span class="pre">force_symlink</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/utils.py#L185"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.utils.force_symlink" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">force_symlink</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.utils.force_symlink" title="Link to this definition">#</a></dt>
 <dd><p>Create or refresh a symbolic link and validate the result.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -575,7 +689,7 @@ If the file does not contain a <code class="docutils literal notranslate"><span 
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.utils.check_symlink">
-<span class="sig-name descname"><span class="pre">check_symlink</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/utils.py#L275"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.utils.check_symlink" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">check_symlink</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#launchcontainers.utils.check_symlink" title="Link to this definition">#</a></dt>
 <dd><p>Validate that a path is an existing symbolic link target.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -587,47 +701,137 @@ If the file does not contain a <code class="docutils literal notranslate"><span 
 </dl>
 </dd></dl>
 
-<dl class="py function" id="module-launchcontainers.config_logger">
-<dt class="sig sig-object py" id="launchcontainers.config_logger.setup_logger">
-<span class="sig-name descname"><span class="pre">setup_logger</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quiet</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/config_logger.py#L27"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.config_logger.setup_logger" title="Link to this definition">#</a></dt>
-<dd><p>Configure the main launchcontainers logger.</p>
+<p id="module-launchcontainers.log_setup">Shared Rich console, color-scheme constants, and verbosity control for launchcontainers.</p>
+<p>All modules import <code class="docutils literal notranslate"><span class="pre">console</span></code> from here so that the single instance can be
+redirected to a log file once (in <code class="docutils literal notranslate"><span class="pre">cli.py</span></code>) and every <code class="docutils literal notranslate"><span class="pre">console.print()</span></code>
+call across the package ends up in that file automatically.</p>
+<section id="verbosity-levels">
+<h3>Verbosity levels<a class="headerlink" href="#verbosity-levels" title="Link to this heading">#</a></h3>
+<p>Call <code class="docutils literal notranslate"><span class="pre">setup_verbosity()</span></code> once at CLI startup to configure what gets printed:</p>
+<ul class="simple">
+<li><p><strong>default</strong>  : INFO, WARNING, ERROR, CRITICAL are shown</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--quiet</span></code>  : only ERROR and CRITICAL are shown</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--verbose</span></code>: same as default (INFO and above)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--debug</span></code>  : everything including DEBUG messages</p></li>
+</ul>
+<p>Use the helper functions instead of <code class="docutils literal notranslate"><span class="pre">console.print()</span></code> directly so that the
+verbosity level is respected automatically:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">launchcontainers.log_setup</span><span class="w"> </span><span class="kn">import</span> <span class="n">log_debug</span><span class="p">,</span> <span class="n">log_info</span><span class="p">,</span> <span class="n">log_warning</span><span class="p">,</span> <span class="n">log_error</span><span class="p">,</span> <span class="n">log_critical</span>
+
+<span class="n">log_info</span><span class="p">(</span><span class="s2">&quot;Starting prepare phase&quot;</span><span class="p">)</span>
+<span class="n">log_warning</span><span class="p">(</span><span class="s2">&quot;Config key missing, using default&quot;</span><span class="p">)</span>
+<span class="n">log_error</span><span class="p">(</span><span class="s2">&quot;File not found&quot;</span><span class="p">)</span>
+<span class="n">log_critical</span><span class="p">(</span><span class="s2">&quot;Launching now&quot;</span><span class="p">)</span>
+<span class="n">log_debug</span><span class="p">(</span><span class="s2">&quot;Internal state: x = 42&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="color-scheme-mirrors-color-codes-txt">
+<h3>Color scheme (mirrors color_codes.txt)<a class="headerlink" href="#color-scheme-mirrors-color-codes-txt" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>INFO / DEBUG  <code class="docutils literal notranslate"><span class="pre">&quot;cyan&quot;</span></code>       General information messages</p></li>
+<li><p>WARNING       <code class="docutils literal notranslate"><span class="pre">&quot;yellow&quot;</span></code>     Warning messages</p></li>
+<li><p>ERROR         <code class="docutils literal notranslate"><span class="pre">&quot;red&quot;</span></code>        Error messages</p></li>
+<li><p>CRITICAL      <code class="docutils literal notranslate"><span class="pre">&quot;bold</span> <span class="pre">red&quot;</span></code>   Critical messages and important notifications</p></li>
+<li><p>BLUE_INFO     <code class="docutils literal notranslate"><span class="pre">&quot;blue&quot;</span></code>       Specific info (e.g. container layout)</p></li>
+</ul>
+</section>
+<dl class="py function">
+<dt class="sig sig-object py" id="launchcontainers.log_setup.setup_verbosity">
+<span class="sig-name descname"><span class="pre">setup_verbosity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">quiet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">debug</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#launchcontainers.log_setup.setup_verbosity" title="Link to this definition">#</a></dt>
+<dd><p>Configure the verbosity level for all console output.</p>
+<p>Call this once at the start of each CLI command (<code class="docutils literal notranslate"><span class="pre">prepare</span></code>, <code class="docutils literal notranslate"><span class="pre">run</span></code>,
+<code class="docutils literal notranslate"><span class="pre">qc</span></code>) before any other output is produced.  All subsequent calls to
+<code class="docutils literal notranslate"><span class="pre">log_info</span></code>, <code class="docutils literal notranslate"><span class="pre">log_debug</span></code>, etc. will respect the level set here.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>quiet</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, only critical messages are emitted to the console.</p></li>
-<li><p><strong>verbose</strong> (<em>bool, default=False</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, emit informational messages to the console.</p></li>
-<li><p><strong>debug</strong> (<em>bool, default=False</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, emit debug messages to the console.</p></li>
-<li><p><strong>log_dir</strong> (<em>str, optional</em>) – Directory where <code class="docutils literal notranslate"><span class="pre">.log</span></code> and <code class="docutils literal notranslate"><span class="pre">.err</span></code> files should be written.</p></li>
-<li><p><strong>log_filename</strong> (<em>str, optional</em>) – Basename used for the log files created under <code class="docutils literal notranslate"><span class="pre">log_dir</span></code>.</p></li>
+<li><p><strong>quiet</strong> (<em>bool</em>) – Suppress INFO and WARNING output; only ERROR and CRITICAL are shown.</p></li>
+<li><p><strong>verbose</strong> (<em>bool</em>) – Alias for the default level (INFO and above). Provided for CLI
+symmetry; no additional output is added beyond the default.</p></li>
+<li><p><strong>debug</strong> (<em>bool</em>) – Show DEBUG messages in addition to all other levels.</p></li>
 </ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>logging.Logger</em> – Configured package logger.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="launchcontainers.config_logger.setup_logger_create_bids">
-<span class="sig-name descname"><span class="pre">setup_logger_create_bids</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/config_logger.py#L100"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.config_logger.setup_logger_create_bids" title="Link to this definition">#</a></dt>
-<dd><p>Configure a simplified logger for the fake-BIDS helper workflow.</p>
+<dt class="sig sig-object py" id="launchcontainers.log_setup.set_log_files">
+<span class="sig-name descname"><span class="pre">set_log_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_fpath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">err_fpath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#launchcontainers.log_setup.set_log_files" title="Link to this definition">#</a></dt>
+<dd><p>Attach two FileHandlers to the launchcontainers logger.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>verbose</strong> (<em>bool, default=True</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, emit informational messages to the console.</p></li>
-<li><p><strong>log_dir</strong> (<em>str, optional</em>) – Directory where helper log files should be written.</p></li>
-<li><p><strong>log_filename</strong> (<em>str, optional</em>) – Basename used for the helper log files.</p></li>
+<li><p><strong>log_fpath</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">.log</span></code> file — captures everything (DEBUG and above).</p></li>
+<li><p><strong>err_fpath</strong> (<em>str</em>) – <code class="docutils literal notranslate"><span class="pre">.err</span></code> file — captures WARNING and above only.</p></li>
 </ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>logging.Logger</em> – Configured package logger.</p>
 </dd>
 </dl>
 </dd></dl>
 
-<dl class="py function" id="module-launchcontainers.gen_launch_cmd">
-<dt class="sig sig-object py" id="launchcontainers.gen_launch_cmd.gen_cmd_prefix">
-<span class="sig-name descname"><span class="pre">gen_cmd_prefix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lc_config</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/gen_launch_cmd.py#L29"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.gen_launch_cmd.gen_cmd_prefix" title="Link to this definition">#</a></dt>
+<dl class="py function">
+<dt class="sig sig-object py" id="launchcontainers.log_setup.log_debug">
+<span class="sig-name descname"><span class="pre">log_debug</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#launchcontainers.log_setup.log_debug" title="Link to this definition">#</a></dt>
+<dd><p>Print a debug message (green). Only shown when –debug is set.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="launchcontainers.log_setup.log_info">
+<span class="sig-name descname"><span class="pre">log_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#launchcontainers.log_setup.log_info" title="Link to this definition">#</a></dt>
+<dd><p>Print an info message (cyan). Suppressed in –quiet mode.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="launchcontainers.log_setup.log_warning">
+<span class="sig-name descname"><span class="pre">log_warning</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#launchcontainers.log_setup.log_warning" title="Link to this definition">#</a></dt>
+<dd><p>Print a warning message (yellow). Always logged to file.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="launchcontainers.log_setup.log_error">
+<span class="sig-name descname"><span class="pre">log_error</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#launchcontainers.log_setup.log_error" title="Link to this definition">#</a></dt>
+<dd><p>Print an error message (red). Always shown and logged.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="launchcontainers.log_setup.log_critical">
+<span class="sig-name descname"><span class="pre">log_critical</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">msg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#launchcontainers.log_setup.log_critical" title="Link to this definition">#</a></dt>
+<dd><p>Print a critical message (bold red). Always shown and logged.</p>
+</dd></dl>
+
+</section>
+<section id="module-launchcontainers.gen_jobscript">
+<span id="job-script-generation"></span><h2>Job-script generation<a class="headerlink" href="#module-launchcontainers.gen_jobscript" title="Link to this heading">#</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="launchcontainers.gen_jobscript.gen_launch_cmd">
+<span class="sig-name descname"><span class="pre">gen_launch_cmd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parse_namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_subses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_command_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.gen_jobscript.gen_launch_cmd" title="Link to this definition">#</a></dt>
+<dd><p>Generate one launch command per requested subject/session row.</p>
+<p>Routes to the appropriate command generator based on the job type
+configured in <code class="docutils literal notranslate"><span class="pre">lc_config</span></code>:</p>
+<ul class="simple">
+<li><p>Apptainer/Singularity containers → <a class="reference internal" href="#launchcontainers.gen_jobscript.gen_container_cmd.gen_RTP2_cmd" title="launchcontainers.gen_jobscript.gen_container_cmd.gen_RTP2_cmd"><code class="xref py py-func docutils literal notranslate"><span class="pre">gen_container_cmd.gen_RTP2_cmd()</span></code></a></p></li>
+<li><p>Python scripts → <a class="reference internal" href="#launchcontainers.gen_jobscript.gen_py_cmd.gen_py_cmd" title="launchcontainers.gen_jobscript.gen_py_cmd.gen_py_cmd"><code class="xref py py-func docutils literal notranslate"><span class="pre">gen_py_cmd.gen_py_cmd()</span></code></a></p></li>
+<li><p>MATLAB scripts → <a class="reference internal" href="#launchcontainers.gen_jobscript.gen_matlab_cmd.gen_matlab_cmd" title="launchcontainers.gen_jobscript.gen_matlab_cmd.gen_matlab_cmd"><code class="xref py py-func docutils literal notranslate"><span class="pre">gen_matlab_cmd.gen_matlab_cmd()</span></code></a></p></li>
+</ul>
+<p>The command list is also written to <code class="docutils literal notranslate"><span class="pre">batch_command_file</span></code> so scheduler
+array jobs can read one command per task index.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>parse_namespace</strong> (<em>argparse.Namespace</em>) – Parsed CLI arguments for run mode.</p></li>
+<li><p><strong>df_subses</strong> (<em>pandas.DataFrame</em>) – Filtered subject/session rows to launch.</p></li>
+<li><p><strong>batch_command_file</strong> (<em>str or path-like</em>) – Output text file that stores the generated command list.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>list[str]</em> – Launch commands in the same order as <code class="docutils literal notranslate"><span class="pre">df_subses</span></code>.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function" id="module-launchcontainers.gen_jobscript.gen_container_cmd">
+<dt class="sig sig-object py" id="launchcontainers.gen_jobscript.gen_container_cmd.gen_cmd_prefix">
+<span class="sig-name descname"><span class="pre">gen_cmd_prefix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lc_config</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.gen_jobscript.gen_container_cmd.gen_cmd_prefix" title="Link to this definition">#</a></dt>
 <dd><p>Generate the common Apptainer command prefix for a configured host.</p>
 <p>The prefix includes optional module loading and the shared bind mounts
 required to run launchcontainers analyses inside an Apptainer/Singularity
@@ -643,8 +847,8 @@ container.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="launchcontainers.gen_launch_cmd.gen_RTP2_cmd">
-<span class="sig-name descname"><span class="pre">gen_RTP2_cmd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lc_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/gen_launch_cmd.py#L77"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.gen_launch_cmd.gen_RTP2_cmd" title="Link to this definition">#</a></dt>
+<dt class="sig sig-object py" id="launchcontainers.gen_jobscript.gen_container_cmd.gen_RTP2_cmd">
+<span class="sig-name descname"><span class="pre">gen_RTP2_cmd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lc_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.gen_jobscript.gen_container_cmd.gen_RTP2_cmd" title="Link to this definition">#</a></dt>
 <dd><p>Build the launch command for one subject/session container run.</p>
 <p>The generated command binds the prepared input and output directories into
 the Flywheel-style container layout expected by the supported DWI-related
@@ -667,367 +871,97 @@ containers and redirects stdout/stderr into timestamped log files.</p>
 </dl>
 </dd></dl>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="launchcontainers.gen_launch_cmd.gen_launch_cmd">
-<span class="sig-name descname"><span class="pre">gen_launch_cmd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parse_namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_subses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_command_file</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/gen_launch_cmd.py#L264"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.gen_launch_cmd.gen_launch_cmd" title="Link to this definition">#</a></dt>
-<dd><p>Generate one launch command per requested subject/session row.</p>
-<p>The command list is also written to <code class="docutils literal notranslate"><span class="pre">batch_command_file</span></code> so scheduler
-array jobs can read one command per task index.</p>
+<dl class="py function" id="module-launchcontainers.gen_jobscript.gen_matlab_cmd">
+<dt class="sig sig-object py" id="launchcontainers.gen_jobscript.gen_matlab_cmd.gen_matlab_cmd">
+<span class="sig-name descname"><span class="pre">gen_matlab_cmd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lc_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.gen_jobscript.gen_matlab_cmd.gen_matlab_cmd" title="Link to this definition">#</a></dt>
+<dd><p>Build a MATLAB launch command for one subject/session.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>parse_namespace</strong> (<em>argparse.Namespace</em>) – Parsed CLI arguments for run mode.</p></li>
-<li><p><strong>df_subses</strong> (<em>pandas.DataFrame</em>) – Filtered subject/session rows to launch.</p></li>
-<li><p><strong>batch_command_file</strong> (<em>str or path-like</em>) – Output text file that stores the generated command list.</p></li>
+<li><p><strong>lc_config</strong> (<em>dict</em>) – Parsed launchcontainers YAML configuration.</p></li>
+<li><p><strong>sub</strong> (<em>str</em>) – Subject identifier without the <code class="docutils literal notranslate"><span class="pre">sub-</span></code> prefix.</p></li>
+<li><p><strong>ses</strong> (<em>str</em>) – Session identifier without the <code class="docutils literal notranslate"><span class="pre">ses-</span></code> prefix.</p></li>
+<li><p><strong>analysis_dir</strong> (<em>str</em>) – Prepared analysis directory containing per-session input/output trees.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>list[str]</em> – Launch commands in the same order as <code class="docutils literal notranslate"><span class="pre">df_subses</span></code>.</p>
+<dd class="field-even"><p><em>str</em> – Full shell command to invoke the MATLAB script for one session.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function" id="module-launchcontainers.gen_jobscript.gen_py_cmd">
+<dt class="sig sig-object py" id="launchcontainers.gen_jobscript.gen_py_cmd.gen_py_cmd">
+<span class="sig-name descname"><span class="pre">gen_py_cmd</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lc_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.gen_jobscript.gen_py_cmd.gen_py_cmd" title="Link to this definition">#</a></dt>
+<dd><p>Build a Python script launch command for one subject/session.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lc_config</strong> (<em>dict</em>) – Parsed launchcontainers YAML configuration.</p></li>
+<li><p><strong>sub</strong> (<em>str</em>) – Subject identifier without the <code class="docutils literal notranslate"><span class="pre">sub-</span></code> prefix.</p></li>
+<li><p><strong>ses</strong> (<em>str</em>) – Session identifier without the <code class="docutils literal notranslate"><span class="pre">ses-</span></code> prefix.</p></li>
+<li><p><strong>analysis_dir</strong> (<em>str</em>) – Prepared analysis directory containing per-session input/output trees.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>str</em> – Full shell command to invoke the Python script for one session.</p>
 </dd>
 </dl>
 </dd></dl>
 
 </section>
-<section id="module-launchcontainers.prepare.prepare_dwi">
-<span id="preparation"></span><h2>Preparation<a class="headerlink" href="#module-launchcontainers.prepare.prepare_dwi" title="Link to this heading">#</a></h2>
-<p>MIT License</p>
-<p>Copyright (c) 2020-2023 Garikoitz Lerma-Usabiaga
-Copyright (c) 2020-2022 Mengxing Liu
-Copyright (c) 2022-2024 Leandro Lecca
-Copyright (c) 2022-2023 Yongning Lei
-Copyright (c) 2023 David Linhardt
-Copyright (c) 2023 Iñigo Tellaetxe</p>
-<p>Permission is hereby granted, free of charge,
-to any person obtaining a copy of this software and associated documentation files
-(the “Software”), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to permit
-persons to whom the Software is furnished to do so, subject to the following conditions:</p>
-<p>The above copyright notice and this permission notice shall be included in all copies
-or substantial portions of the Software.</p>
-<dl class="py function">
-<dt class="sig sig-object py" id="launchcontainers.prepare.prepare_dwi.copy_configs">
-<span class="sig-name descname"><span class="pre">copy_configs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">container</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_config_fpath</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">option</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/prepare/prepare_dwi.py#L35"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.prepare.prepare_dwi.copy_configs" title="Link to this definition">#</a></dt>
-<dd><p>Copy an auxiliary container input file into the analysis directory.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>container</strong> (<em>str</em>) – Active container name.</p></li>
-<li><p><strong>extra_config_fpath</strong> (<em>str</em>) – Source path for the auxiliary file.</p></li>
-<li><p><strong>analysis_dir</strong> (<em>str</em>) – Analysis directory that should receive the copied file.</p></li>
-<li><p><strong>force</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, overwrite an existing destination file.</p></li>
-<li><p><strong>option</strong> (<em>str, optional</em>) – Additional selector used by pipeline containers to distinguish between
-<code class="docutils literal notranslate"><span class="pre">tractparams</span></code> and <code class="docutils literal notranslate"><span class="pre">fsmask</span></code> inputs.</p></li>
+<section id="preparation">
+<h2>Preparation<a class="headerlink" href="#preparation" title="Link to this heading">#</a></h2>
+<p>For full documentation of the prepare pipelines see the tutorial pages:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="prepare_glm.html#prepare-glm"><span class="std std-ref">Prepare — fMRI GLM</span></a> — fMRI GLM preparation (<code class="docutils literal notranslate"><span class="pre">GLMPrepare</span></code>, <code class="docutils literal notranslate"><span class="pre">PRFPrepare</span></code>,
+<code class="docutils literal notranslate"><span class="pre">BasePrepare</span></code>)</p></li>
+<li><p><a class="reference internal" href="prepare_dwi.html#prepare-dwi"><span class="std std-ref">Prepare — DWI</span></a> — DWI pipeline preparation</p></li>
+<li><p><a class="reference internal" href="prepare_ret.html#prepare-ret"><span class="std std-ref">Prepare — Retinotopy (PRF)</span></a> — Retinotopy / PRF preparation</p></li>
 </ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>str</em> – Basename of the copied file.</p>
-</dd>
-<dt class="field-odd">Raises<span class="colon">:</span></dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If the file type is not supported for the selected container/option.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="launchcontainers.prepare.prepare_dwi.gen_config_dict_and_copy">
-<span class="sig-name descname"><span class="pre">gen_config_dict_and_copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser_namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/prepare/prepare_dwi.py#L97"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.prepare.prepare_dwi.gen_config_dict_and_copy" title="Link to this definition">#</a></dt>
-<dd><p>Build the container input mapping and copy auxiliary files when needed.</p>
-<p>The returned dictionary mirrors the <code class="docutils literal notranslate"><span class="pre">inputs</span></code> structure expected by the
-container <code class="docutils literal notranslate"><span class="pre">config.json</span></code> file and includes any optional files copied into
-the analysis directory, such as annotation files, ROI archives, tract
-parameter tables, masks, or qmap archives.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>parser_namespace</strong> (<em>argparse.Namespace</em>) – Parsed CLI arguments for prepare mode.</p></li>
-<li><p><strong>analysis_dir</strong> (<em>str</em>) – Prepared analysis directory.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>dict</em> – Dictionary describing the container input files and the path to the
-copied container JSON under <code class="docutils literal notranslate"><span class="pre">config_path</span></code>.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="launchcontainers.prepare.prepare_dwi.gen_config_json_extra_field">
-<span class="sig-name descname"><span class="pre">gen_config_json_extra_field</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">container</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_json_dict</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/prepare/prepare_dwi.py#L276"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.prepare.prepare_dwi.gen_config_json_extra_field" title="Link to this definition">#</a></dt>
-<dd><p>Convert an internal config mapping into the container <code class="docutils literal notranslate"><span class="pre">inputs</span></code> format.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>container</strong> (<em>str</em>) – Active container name.</p></li>
-<li><p><strong>config_json_dict</strong> (<em>dict</em>) – Internal mapping returned by <a class="reference internal" href="#launchcontainers.prepare.prepare_dwi.gen_config_dict_and_copy" title="launchcontainers.prepare.prepare_dwi.gen_config_dict_and_copy"><code class="xref py py-func docutils literal notranslate"><span class="pre">gen_config_dict_and_copy()</span></code></a>.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>dict</em> – <code class="docutils literal notranslate"><span class="pre">inputs</span></code> block ready to be injected into the container JSON file.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="launchcontainers.prepare.prepare_dwi.write_json">
-<span class="sig-name descname"><span class="pre">write_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">extra_field_config_json</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">json_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/prepare/prepare_dwi.py#L314"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.prepare.prepare_dwi.write_json" title="Link to this definition">#</a></dt>
-<dd><p>Insert or update the <code class="docutils literal notranslate"><span class="pre">inputs</span></code> field of a container JSON file.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>extra_field_config_json</strong> (<em>dict</em>) – Prepared <code class="docutils literal notranslate"><span class="pre">inputs</span></code> block to write.</p></li>
-<li><p><strong>json_path</strong> (<em>str or path-like</em>) – Path to the container JSON file to modify.</p></li>
-<li><p><strong>force</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, overwrite an existing <code class="docutils literal notranslate"><span class="pre">inputs</span></code> block.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>bool</em> – Always returns <code class="docutils literal notranslate"><span class="pre">True</span></code> after writing the JSON file back to disk.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="launchcontainers.prepare.prepare_dwi.copy_and_edit_config_json">
-<span class="sig-name descname"><span class="pre">copy_and_edit_config_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser_namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/prepare/prepare_dwi.py#L360"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.prepare.prepare_dwi.copy_and_edit_config_json" title="Link to this definition">#</a></dt>
-<dd><p>Prepare the container JSON file stored under the analysis directory.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>parser_namespace</strong> (<em>argparse.Namespace</em>) – Parsed CLI arguments for prepare mode.</p></li>
-<li><p><strong>analysis_dir</strong> (<em>str</em>) – Prepared analysis directory.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>dict</em> – Internal mapping of copied inputs and the rewritten JSON path.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="launchcontainers.prepare.prepare_dwi.prepare_dwi">
-<span class="sig-name descname"><span class="pre">prepare_dwi</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parser_namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_subses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layout</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/prepare/prepare_dwi.py#L402"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.prepare.prepare_dwi.prepare_dwi" title="Link to this definition">#</a></dt>
-<dd><p>Prepare analysis-level and session-level inputs for DWI containers.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>parser_namespace</strong> (<em>argparse.Namespace</em>) – Parsed CLI arguments for prepare mode.</p></li>
-<li><p><strong>analysis_dir</strong> (<em>str</em>) – Prepared analysis directory.</p></li>
-<li><p><strong>df_subses</strong> (<em>pandas.DataFrame</em>) – Filtered subject/session rows to process.</p></li>
-<li><p><strong>layout</strong> (<em>bids.BIDSLayout</em>) – BIDS layout built from the configured raw dataset.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>bool</em> – <code class="docutils literal notranslate"><span class="pre">True</span></code> when the container JSON has been updated and all requested
-session inputs have been prepared.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<p id="module-launchcontainers.prepare.dwi_prepare_input">MIT License</p>
-<p>Copyright (c) 2020-2023 Garikoitz Lerma-Usabiaga
-Copyright (c) 2020-2022 Mengxing Liu
-Copyright (c) 2022-2024 Leandro Lecca
-Copyright (c) 2022-2023 Yongning Lei
-Copyright (c) 2023 David Linhardt
-Copyright (c) 2023 Iñigo Tellaetxe</p>
-<p>Permission is hereby granted, free of charge,
-to any person obtaining a copy of this software and associated documentation files
-(the “Software”), to deal in the Software without restriction,
-including without limitation the rights to use, copy, modify, merge, publish,
-distribute, sublicense, and/or sell copies of the Software, and to permit
-persons to whom the Software is furnished to do so, subject to the following conditions:</p>
-<p>The above copyright notice and this permission notice shall be included in all copies
-or substantial portions of the Software.</p>
-<dl class="py function">
-<dt class="sig sig-object py" id="launchcontainers.prepare.dwi_prepare_input.anatrois">
-<span class="sig-name descname"><span class="pre">anatrois</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dict_store_cs_configs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lc_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layout</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/prepare/dwi_prepare_input.py#L40"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.prepare.dwi_prepare_input.anatrois" title="Link to this definition">#</a></dt>
-<dd><p>Create session input symlinks for <code class="docutils literal notranslate"><span class="pre">anatrois</span></code> and <code class="docutils literal notranslate"><span class="pre">freesurferator</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dict_store_cs_configs</strong> (<em>dict</em>) – Analysis-level container input mapping generated during prepare mode.</p></li>
-<li><p><strong>analysis_dir</strong> (<em>str</em>) – Prepared analysis directory.</p></li>
-<li><p><strong>lc_config</strong> (<em>dict</em>) – Parsed launchcontainers YAML configuration.</p></li>
-<li><p><strong>sub</strong> (<em>str</em>) – Subject identifier without the <code class="docutils literal notranslate"><span class="pre">sub-</span></code> prefix.</p></li>
-<li><p><strong>ses</strong> (<em>str</em>) – Session identifier without the <code class="docutils literal notranslate"><span class="pre">ses-</span></code> prefix.</p></li>
-<li><p><strong>layout</strong> (<em>bids.BIDSLayout</em>) – BIDS layout used to locate raw anatomical inputs.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Raises<span class="colon">:</span></dt>
-<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#FileNotFoundError" title="(in Python v3.14)"><strong>FileNotFoundError</strong></a> – If required anatomical or prior-analysis inputs cannot be located.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="launchcontainers.prepare.dwi_prepare_input.rtppreproc">
-<span class="sig-name descname"><span class="pre">rtppreproc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dict_store_cs_configs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lc_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">layout</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/prepare/dwi_prepare_input.py#L276"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.prepare.dwi_prepare_input.rtppreproc" title="Link to this definition">#</a></dt>
-<dd><p>Create session input symlinks for <code class="docutils literal notranslate"><span class="pre">rtppreproc</span></code> and <code class="docutils literal notranslate"><span class="pre">rtp2-preproc</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dict_store_cs_configs</strong> (<em>dict</em>) – Analysis-level container input mapping generated during prepare mode.</p></li>
-<li><p><strong>analysis_dir</strong> (<em>str</em>) – Prepared analysis directory.</p></li>
-<li><p><strong>lc_config</strong> (<em>dict</em>) – Parsed launchcontainers YAML configuration.</p></li>
-<li><p><strong>sub</strong> (<em>str</em>) – Subject identifier without the <code class="docutils literal notranslate"><span class="pre">sub-</span></code> prefix.</p></li>
-<li><p><strong>ses</strong> (<em>str</em>) – Session identifier without the <code class="docutils literal notranslate"><span class="pre">ses-</span></code> prefix.</p></li>
-<li><p><strong>layout</strong> (<em>bids.BIDSLayout</em>) – BIDS layout used to locate raw DWI inputs.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>None</em> – The function creates the expected symlinks in place.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="launchcontainers.prepare.dwi_prepare_input.rtppipeline">
-<span class="sig-name descname"><span class="pre">rtppipeline</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dict_store_cs_configs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lc_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ses</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/prepare/dwi_prepare_input.py#L722"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.prepare.dwi_prepare_input.rtppipeline" title="Link to this definition">#</a></dt>
-<dd><p>Create session input symlinks for <code class="docutils literal notranslate"><span class="pre">rtp-pipeline</span></code> and <code class="docutils literal notranslate"><span class="pre">rtp2-pipeline</span></code>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dict_store_cs_configs</strong> (<em>dict</em>) – Analysis-level container input mapping generated during prepare mode.</p></li>
-<li><p><strong>analysis_dir</strong> (<em>str</em>) – Prepared analysis directory.</p></li>
-<li><p><strong>lc_config</strong> (<em>dict</em>) – Parsed launchcontainers YAML configuration.</p></li>
-<li><p><strong>sub</strong> (<em>str</em>) – Subject identifier without the <code class="docutils literal notranslate"><span class="pre">sub-</span></code> prefix.</p></li>
-<li><p><strong>ses</strong> (<em>str</em>) – Session identifier without the <code class="docutils literal notranslate"><span class="pre">ses-</span></code> prefix.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>None</em> – The function creates the expected symlinks in place.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<p id="module-launchcontainers.prepare.gen_bids_derivatives">Already use heudiconv to generate empty dataset_descriptions</p>
-<p>Maybe it’s time to use this to write and note down the corresponding containers</p>
-<p>This one is WIP</p>
-<dl class="py function">
-<dt class="sig sig-object py" id="launchcontainers.prepare.gen_bids_derivatives.gen_dataset_desc_json">
-<span class="sig-name descname"><span class="pre">gen_dataset_desc_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/prepare/gen_bids_derivatives.py#L20"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.prepare.gen_bids_derivatives.gen_dataset_desc_json" title="Link to this definition">#</a></dt>
-<dd><p>Create a placeholder <code class="docutils literal notranslate"><span class="pre">dataset_description.json</span></code> file.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>output_dir</strong> (<em>str or path-like</em>) – Directory where the JSON file should be written.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="launchcontainers.prepare.gen_bids_derivatives.gen_participant_json">
-<span class="sig-name descname"><span class="pre">gen_participant_json</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/prepare/gen_bids_derivatives.py#L51"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.prepare.gen_bids_derivatives.gen_participant_json" title="Link to this definition">#</a></dt>
-<dd><p>Create a placeholder <code class="docutils literal notranslate"><span class="pre">participant.json</span></code> sidecar file.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>output_dir</strong> (<em>str or path-like</em>) – Directory where the JSON file should be written.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="launchcontainers.prepare.gen_bids_derivatives.gen_readme">
-<span class="sig-name descname"><span class="pre">gen_readme</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">content</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/prepare/gen_bids_derivatives.py#L85"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.prepare.gen_bids_derivatives.gen_readme" title="Link to this definition">#</a></dt>
-<dd><p>Create a README file for a derivative dataset directory.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>output_dir</strong> (<em>str or path-like</em>) – Directory where the README file should be written.</p></li>
-<li><p><strong>content</strong> (<em>str, default=’’</em>) – README body text to write.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="launchcontainers.prepare.gen_bids_derivatives.gen_participant_tsv">
-<span class="sig-name descname"><span class="pre">gen_participant_tsv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">columns</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/prepare/gen_bids_derivatives.py#L106"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.prepare.gen_bids_derivatives.gen_participant_tsv" title="Link to this definition">#</a></dt>
-<dd><p>Create an empty <code class="docutils literal notranslate"><span class="pre">participants.tsv</span></code> file with the requested columns.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>output_dir</strong> (<em>str or path-like</em>) – Directory where the TSV file should be written.</p></li>
-<li><p><strong>columns</strong> (<em>list[str] | None</em>) – Column names for the TSV file. If <code class="docutils literal notranslate"><span class="pre">None</span></code>, a default participant
-schema is used.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
 </section>
-<section id="module-launchcontainers.clusters.dask_scheduler">
-<span id="schedulers"></span><h2>Schedulers<a class="headerlink" href="#module-launchcontainers.clusters.dask_scheduler" title="Link to this heading">#</a></h2>
+<section id="module-launchcontainers.clusters.local">
+<span id="schedulers"></span><h2>Schedulers<a class="headerlink" href="#module-launchcontainers.clusters.local" title="Link to this heading">#</a></h2>
 <dl class="py function">
-<dt class="sig sig-object py" id="launchcontainers.clusters.dask_scheduler.initiate_cluster">
-<span class="sig-name descname"><span class="pre">initiate_cluster</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">jobqueue_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_job</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dask_logdir</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/clusters/dask_scheduler.py#L31"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.clusters.dask_scheduler.initiate_cluster" title="Link to this definition">#</a></dt>
-<dd><p>Create and scale a Dask cluster from the configured scheduler backend.</p>
+<dt class="sig sig-object py" id="launchcontainers.clusters.local.launch_serial">
+<span class="sig-name descname"><span class="pre">launch_serial</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#launchcontainers.clusters.local.launch_serial" title="Link to this definition">#</a></dt>
+<dd><p>Execute a list of shell commands one by one in order.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>jobqueue_config</strong> (<em>dict</em>) – Scheduler-specific settings loaded from the launchcontainers YAML file.</p></li>
-<li><p><strong>n_job</strong> (<em>int</em>) – Number of worker jobs or local workers to request.</p></li>
-<li><p><strong>dask_logdir</strong> (<em>str</em>) – Directory where Dask worker logs should be written.</p></li>
-</ul>
+<dd class="field-odd"><p><strong>cmds</strong> (<em>list[str]</em>) – Shell commands to run sequentially.</p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>dask_jobqueue.core.JobQueueCluster or dask.distributed.LocalCluster or None</em> – Configured cluster object for the requested backend.</p>
+<dd class="field-even"><p><em>list[int]</em> – Return codes in submission order.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="launchcontainers.clusters.dask_scheduler.dask_scheduler">
-<span class="sig-name descname"><span class="pre">dask_scheduler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">jobqueue_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_job</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dask_logdir</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/clusters/dask_scheduler.py#L113"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.clusters.dask_scheduler.dask_scheduler" title="Link to this definition">#</a></dt>
-<dd><p>Create a Dask client and cluster pair.</p>
+<dt class="sig sig-object py" id="launchcontainers.clusters.local.launch_parallel">
+<span class="sig-name descname"><span class="pre">launch_parallel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_workers</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mem_per_job</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#launchcontainers.clusters.local.launch_parallel" title="Link to this definition">#</a></dt>
+<dd><p>Execute a list of shell commands in parallel using ProcessPoolExecutor.</p>
+<p>Each worker process is initialised with an optional memory ceiling via
+<code class="docutils literal notranslate"><span class="pre">resource.setrlimit</span></code>, so the apptainer container it spawns cannot exceed
+that limit.  CPU concurrency is controlled by <code class="docutils literal notranslate"><span class="pre">max_workers</span></code>; set it to
+<code class="docutils literal notranslate"><span class="pre">floor(total_cores</span> <span class="pre">/</span> <span class="pre">cpus_per_job)</span></code> in the yaml to keep total CPU usage
+within budget.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>jobqueue_config</strong> (<em>dict</em>) – Scheduler-specific settings loaded from the launchcontainers YAML file.</p></li>
-<li><p><strong>n_job</strong> (<em>int</em>) – Number of worker jobs or local workers to request.</p></li>
-<li><p><strong>dask_logdir</strong> (<em>str</em>) – Directory where Dask worker logs should be written.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>tuple[dask.distributed.Client | None, object | None]</em> – The connected client and the cluster object.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="launchcontainers.clusters.dask_scheduler.print_job_script">
-<span class="sig-name descname"><span class="pre">print_job_script</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">host</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">jobqueue_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">daskworker_logdir</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/clusters/dask_scheduler.py#L148"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.clusters.dask_scheduler.print_job_script" title="Link to this definition">#</a></dt>
-<dd><p>Print the scheduler script that Dask would submit for the current backend.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>host</strong> (<em>str</em>) – Host name from the launchcontainers configuration.</p></li>
-<li><p><strong>jobqueue_config</strong> (<em>dict</em>) – Scheduler-specific settings loaded from the YAML file.</p></li>
-<li><p><strong>n_jobs</strong> (<em>int</em>) – Number of worker jobs to request.</p></li>
-<li><p><strong>daskworker_logdir</strong> (<em>str</em>) – Directory where Dask worker logs should be written.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="launchcontainers.clusters.dask_scheduler.launch_with_dask">
-<span class="sig-name descname"><span class="pre">launch_with_dask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">jobqueue_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">daskworker_logdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cmds</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/clusters/dask_scheduler.py#L183"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.clusters.dask_scheduler.launch_with_dask" title="Link to this definition">#</a></dt>
-<dd><p>Execute a list of shell commands through a Dask cluster.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>jobqueue_config</strong> (<em>dict</em>) – Scheduler-specific settings loaded from the YAML file.</p></li>
-<li><p><strong>n_jobs</strong> (<em>int</em>) – Number of worker jobs to request.</p></li>
-<li><p><strong>daskworker_logdir</strong> (<em>str</em>) – Directory where Dask worker logs should be written.</p></li>
 <li><p><strong>cmds</strong> (<em>list[str]</em>) – Shell commands to run in parallel.</p></li>
+<li><p><strong>max_workers</strong> (<em>int or None</em>) – Maximum number of parallel workers. <code class="docutils literal notranslate"><span class="pre">None</span></code> uses the number of CPUs.</p></li>
+<li><p><strong>mem_per_job</strong> (<em>str or None</em>) – Memory limit per worker, e.g. <code class="docutils literal notranslate"><span class="pre">'32g'</span></code>. <code class="docutils literal notranslate"><span class="pre">None</span></code> means no limit.</p></li>
 </ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><em>list[int]</em> – Return codes in completion order.</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py function" id="module-launchcontainers.clusters.slurm">
 <dt class="sig sig-object py" id="launchcontainers.clusters.slurm.gen_slurm_array_job_script">
-<span class="sig-name descname"><span class="pre">gen_slurm_array_job_script</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parse_namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/clusters/slurm.py#L8"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.clusters.slurm.gen_slurm_array_job_script" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">gen_slurm_array_job_script</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parse_namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.clusters.slurm.gen_slurm_array_job_script" title="Link to this definition">#</a></dt>
 <dd><p>Build the SLURM array-job script used for batch container launches.</p>
 <dl class="field-list">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1048,7 +982,7 @@ schema is used.</p></li>
 
 <dl class="py function" id="module-launchcontainers.clusters.sge">
 <dt class="sig sig-object py" id="launchcontainers.clusters.sge.gen_sge_array_job_script">
-<span class="sig-name descname"><span class="pre">gen_sge_array_job_script</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parse_namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/clusters/sge.py#L9"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.clusters.sge.gen_sge_array_job_script" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">gen_sge_array_job_script</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parse_namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_jobs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.clusters.sge.gen_sge_array_job_script" title="Link to this definition">#</a></dt>
 <dd><p>Build the SGE array-job script used for batch container launches.</p>
 <dl class="field-list">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1087,7 +1021,7 @@ persons to whom the Software is furnished to do so, subject to the following con
 or substantial portions of the Software.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.check.check_dwi_pipelines.check_tractparam">
-<span class="sig-name descname"><span class="pre">check_tractparam</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lc_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tractparam_df</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/check/check_dwi_pipelines.py#L35"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.check.check_dwi_pipelines.check_tractparam" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">check_tractparam</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lc_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tractparam_df</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.check.check_dwi_pipelines.check_tractparam" title="Link to this definition">#</a></dt>
 <dd><p>Verify that all ROIs referenced in <code class="docutils literal notranslate"><span class="pre">tractparams</span></code> exist in <code class="docutils literal notranslate"><span class="pre">fs.zip</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1110,7 +1044,7 @@ derivative <code class="docutils literal notranslate"><span class="pre">fs.zip</
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.check.check_dwi_pipelines.check_dwi_analysis_folder">
-<span class="sig-name descname"><span class="pre">check_dwi_analysis_folder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parse_namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/check/check_dwi_pipelines.py#L133"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.check.check_dwi_pipelines.check_dwi_analysis_folder" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">check_dwi_analysis_folder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parse_namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.check.check_dwi_pipelines.check_dwi_analysis_folder" title="Link to this definition">#</a></dt>
 <dd><p>Validate the analysis-level configuration files for a prepared run.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1130,7 +1064,7 @@ derivative <code class="docutils literal notranslate"><span class="pre">fs.zip</
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.check.check_dwi_pipelines.backup_old_rtp2pipeline_log">
-<span class="sig-name descname"><span class="pre">backup_old_rtp2pipeline_log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parse_namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_subses</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/check/check_dwi_pipelines.py#L195"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.check.check_dwi_pipelines.backup_old_rtp2pipeline_log" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">backup_old_rtp2pipeline_log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">parse_namespace</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">df_subses</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.check.check_dwi_pipelines.backup_old_rtp2pipeline_log" title="Link to this definition">#</a></dt>
 <dd><p>Rename pre-existing RTP log files before launching a new run.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1159,7 +1093,7 @@ persons to whom the Software is furnished to do so, subject to the following con
 or substantial portions of the Software.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.check.general_checks.cli_show_folder_struc">
-<span class="sig-name descname"><span class="pre">cli_show_folder_struc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ses</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/check/general_checks.py#L32"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.check.general_checks.cli_show_folder_struc" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">cli_show_folder_struc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ses</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.check.general_checks.cli_show_folder_struc" title="Link to this definition">#</a></dt>
 <dd><p>Show an example prepared input tree for one subject/session.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1174,7 +1108,7 @@ or substantial portions of the Software.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.check.general_checks.print_option_for_review">
-<span class="sig-name descname"><span class="pre">print_option_for_review</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_of_jobs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lc_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bidsdir_name</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/check/general_checks.py#L53"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.check.general_checks.print_option_for_review" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">print_option_for_review</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">num_of_jobs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lc_config</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">container</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bidsdir_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.check.general_checks.print_option_for_review" title="Link to this definition">#</a></dt>
 <dd><p>Log the most important launch settings for manual review.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1193,7 +1127,7 @@ or substantial portions of the Software.</p>
 
 <dl class="py function" id="module-launchcontainers.quality_control.continue_run_rtp2pipeline">
 <dt class="sig sig-object py" id="launchcontainers.quality_control.continue_run_rtp2pipeline.process_tracts">
-<span class="sig-name descname"><span class="pre">process_tracts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/quality_control/continue_run_rtp2pipeline.py#L13"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.quality_control.continue_run_rtp2pipeline.process_tracts" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">process_tracts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.quality_control.continue_run_rtp2pipeline.process_tracts" title="Link to this definition">#</a></dt>
 <dd><p>Unpack and reorganize tract outputs for one subject/session.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1208,7 +1142,7 @@ or substantial portions of the Software.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.quality_control.continue_run_rtp2pipeline.find_subseslist">
-<span class="sig-name descname"><span class="pre">find_subseslist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/quality_control/continue_run_rtp2pipeline.py#L58"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.quality_control.continue_run_rtp2pipeline.find_subseslist" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">find_subseslist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.quality_control.continue_run_rtp2pipeline.find_subseslist" title="Link to this definition">#</a></dt>
 <dd><p>Locate <code class="docutils literal notranslate"><span class="pre">subseslist.txt</span></code> somewhere under an analysis directory.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1222,7 +1156,7 @@ or substantial portions of the Software.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.quality_control.continue_run_rtp2pipeline.main">
-<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/quality_control/continue_run_rtp2pipeline.py#L79"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.quality_control.continue_run_rtp2pipeline.main" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.quality_control.continue_run_rtp2pipeline.main" title="Link to this definition">#</a></dt>
 <dd><p>Reprocess tract outputs in parallel for every runnable DWI session.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1237,7 +1171,7 @@ pybids</p>
 <p>For rtp2preproc, it seems that the only thing we need to check is that if the DWI file was prepared.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.quality_control.qc_rtp2preproc_output.find_newest_log">
-<span class="sig-name descname"><span class="pre">find_newest_log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><span class="pre">Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">exts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">('.err',</span> <span class="pre">'.e')</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><span class="pre">Path</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/quality_control/qc_rtp2preproc_output.py#L33"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.quality_control.qc_rtp2preproc_output.find_newest_log" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">find_newest_log</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">log_dir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><span class="pre">Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">exts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="p"><span class="pre">...</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">('.err',</span> <span class="pre">'.e')</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><span class="pre">Path</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#launchcontainers.quality_control.qc_rtp2preproc_output.find_newest_log" title="Link to this definition">#</a></dt>
 <dd><p>Return the newest log file in a directory.</p>
 <p>The function first looks for files whose names end with a timestamp of the
 form <code class="docutils literal notranslate"><span class="pre">YYYY-MM-DD_HH-MM-SS</span></code> followed by one of the requested extensions.
@@ -1259,7 +1193,7 @@ file exists.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.quality_control.qc_rtp2preproc_output.find_subseslist">
-<span class="sig-name descname"><span class="pre">find_subseslist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/quality_control/qc_rtp2preproc_output.py#L94"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.quality_control.qc_rtp2preproc_output.find_subseslist" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">find_subseslist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.quality_control.qc_rtp2preproc_output.find_subseslist" title="Link to this definition">#</a></dt>
 <dd><p>Locate <code class="docutils literal notranslate"><span class="pre">subseslist.txt</span></code> somewhere under an analysis directory.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1273,7 +1207,7 @@ file exists.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.quality_control.qc_rtp2preproc_output.check_rtp_preproc_logs">
-<span class="sig-name descname"><span class="pre">check_rtp_preproc_logs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/quality_control/qc_rtp2preproc_output.py#L115"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.quality_control.qc_rtp2preproc_output.check_rtp_preproc_logs" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">check_rtp_preproc_logs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.quality_control.qc_rtp2preproc_output.check_rtp_preproc_logs" title="Link to this definition">#</a></dt>
 <dd><p>Report sessions whose expected preprocessed DWI output is missing.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1286,7 +1220,7 @@ file exists.</p>
 <p id="module-launchcontainers.quality_control.qc_tract_finish_rtp2pipeline">Tract processing and validation functions</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.quality_control.qc_tract_finish_rtp2pipeline.load_tract_params">
-<span class="sig-name descname"><span class="pre">load_tract_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tractparams_file</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/quality_control/qc_tract_finish_rtp2pipeline.py#L11"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.quality_control.qc_tract_finish_rtp2pipeline.load_tract_params" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">load_tract_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tractparams_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.quality_control.qc_tract_finish_rtp2pipeline.load_tract_params" title="Link to this definition">#</a></dt>
 <dd><p>Load tract names from a tract parameter CSV file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1300,7 +1234,7 @@ file exists.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.quality_control.qc_tract_finish_rtp2pipeline.get_expected_tract_files">
-<span class="sig-name descname"><span class="pre">get_expected_tract_files</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/quality_control/qc_tract_finish_rtp2pipeline.py#L50"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.quality_control.qc_tract_finish_rtp2pipeline.get_expected_tract_files" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">get_expected_tract_files</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.quality_control.qc_tract_finish_rtp2pipeline.get_expected_tract_files" title="Link to this definition">#</a></dt>
 <dd><p>Return the file suffixes expected for each tract output.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -1311,7 +1245,7 @@ file exists.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.quality_control.qc_tract_finish_rtp2pipeline.check_tract_completeness">
-<span class="sig-name descname"><span class="pre">check_tract_completeness</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subses_outputdir</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/quality_control/qc_tract_finish_rtp2pipeline.py#L65"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.quality_control.qc_tract_finish_rtp2pipeline.check_tract_completeness" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">check_tract_completeness</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subses_outputdir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.quality_control.qc_tract_finish_rtp2pipeline.check_tract_completeness" title="Link to this definition">#</a></dt>
 <dd><p>Check whether each expected tract has all required output files.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1325,7 +1259,7 @@ file exists.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.quality_control.qc_tract_finish_rtp2pipeline.find_subseslist">
-<span class="sig-name descname"><span class="pre">find_subseslist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/quality_control/qc_tract_finish_rtp2pipeline.py#L138"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.quality_control.qc_tract_finish_rtp2pipeline.find_subseslist" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">find_subseslist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.quality_control.qc_tract_finish_rtp2pipeline.find_subseslist" title="Link to this definition">#</a></dt>
 <dd><p>Locate <code class="docutils literal notranslate"><span class="pre">subseslist.txt</span></code> somewhere under an analysis directory.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1339,7 +1273,7 @@ file exists.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.quality_control.qc_tract_finish_rtp2pipeline.check_and_tract_dir">
-<span class="sig-name descname"><span class="pre">check_and_tract_dir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subses_outputdir</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/quality_control/qc_tract_finish_rtp2pipeline.py#L159"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.quality_control.qc_tract_finish_rtp2pipeline.check_and_tract_dir" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">check_and_tract_dir</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subses_outputdir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.quality_control.qc_tract_finish_rtp2pipeline.check_and_tract_dir" title="Link to this definition">#</a></dt>
 <dd><p>Check whether tract output directories or archives are present.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1354,7 +1288,7 @@ whether the state is acceptable, and an optional warning message.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.quality_control.qc_tract_finish_rtp2pipeline.check_all_sub">
-<span class="sig-name descname"><span class="pre">check_all_sub</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/quality_control/qc_tract_finish_rtp2pipeline.py#L188"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.quality_control.qc_tract_finish_rtp2pipeline.check_all_sub" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">check_all_sub</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.quality_control.qc_tract_finish_rtp2pipeline.check_all_sub" title="Link to this definition">#</a></dt>
 <dd><p>Print missing tract summaries for all runnable DWI sessions.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1365,7 +1299,7 @@ whether the state is acceptable, and an optional warning message.</p>
 
 <dl class="py function" id="module-launchcontainers.quality_control.rtp2pipelne_unzip_output">
 <dt class="sig sig-object py" id="launchcontainers.quality_control.rtp2pipelne_unzip_output.find_subseslist">
-<span class="sig-name descname"><span class="pre">find_subseslist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/quality_control/rtp2pipelne_unzip_output.py#L16"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.quality_control.rtp2pipelne_unzip_output.find_subseslist" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">find_subseslist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.quality_control.rtp2pipelne_unzip_output.find_subseslist" title="Link to this definition">#</a></dt>
 <dd><p>Locate <code class="docutils literal notranslate"><span class="pre">subseslist.txt</span></code> somewhere under an analysis directory.
 This is limited to RTP2 pipeline outputs, which should always have this file.
 TODO:
@@ -1375,7 +1309,7 @@ and then this function can be used for all pipelines</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.quality_control.rtp2pipelne_unzip_output.flatten_directory">
-<span class="sig-name descname"><span class="pre">flatten_directory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/quality_control/rtp2pipelne_unzip_output.py#L31"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.quality_control.rtp2pipelne_unzip_output.flatten_directory" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">flatten_directory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">directory</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.quality_control.rtp2pipelne_unzip_output.flatten_directory" title="Link to this definition">#</a></dt>
 <dd><p>Flatten a single nested directory produced by archive extraction.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1386,7 +1320,7 @@ and then this function can be used for all pipelines</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.quality_control.rtp2pipelne_unzip_output.unzip_subses_output">
-<span class="sig-name descname"><span class="pre">unzip_subses_output</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subses_outputdir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><span class="pre">Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/quality_control/rtp2pipelne_unzip_output.py#L49"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.quality_control.rtp2pipelne_unzip_output.unzip_subses_output" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">unzip_subses_output</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subses_outputdir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><span class="pre">Path</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.quality_control.rtp2pipelne_unzip_output.unzip_subses_output" title="Link to this definition">#</a></dt>
 <dd><p>Ensure that one session output has an extracted RTP output directory.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1405,7 +1339,7 @@ extraction success, and an optional warning message.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.quality_control.rtp2pipelne_unzip_output.check_subses_output">
-<span class="sig-name descname"><span class="pre">check_subses_output</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subses_outputdir</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/quality_control/rtp2pipelne_unzip_output.py#L135"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.quality_control.rtp2pipelne_unzip_output.check_subses_output" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">check_subses_output</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">subses_outputdir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.quality_control.rtp2pipelne_unzip_output.check_subses_output" title="Link to this definition">#</a></dt>
 <dd><p>Check whether one session output is ready for tract inspection.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1420,13 +1354,13 @@ whether additional extraction is required, and an optional warning.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.quality_control.rtp2pipelne_unzip_output.process_single_subject">
-<span class="sig-name descname"><span class="pre">process_single_subject</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/quality_control/rtp2pipelne_unzip_output.py#L205"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.quality_control.rtp2pipelne_unzip_output.process_single_subject" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">process_single_subject</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ses</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">run</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dwi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.quality_control.rtp2pipelne_unzip_output.process_single_subject" title="Link to this definition">#</a></dt>
 <dd><p>Unzip tract outputs for one subject/session if the row should run.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.quality_control.rtp2pipelne_unzip_output.unzipping_tracts_parallel">
-<span class="sig-name descname"><span class="pre">unzipping_tracts_parallel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">65</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/quality_control/rtp2pipelne_unzip_output.py#L249"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.quality_control.rtp2pipelne_unzip_output.unzipping_tracts_parallel" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">unzipping_tracts_parallel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">65</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.quality_control.rtp2pipelne_unzip_output.unzipping_tracts_parallel" title="Link to this definition">#</a></dt>
 <dd><p>Unzip all runnable tract archives in parallel.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1444,19 +1378,19 @@ whether additional extraction is required, and an optional warning.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.quality_control.rtp2pipelne_unzip_output.save_processing_summary">
-<span class="sig-name descname"><span class="pre">save_processing_summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">results</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/quality_control/rtp2pipelne_unzip_output.py#L348"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.quality_control.rtp2pipelne_unzip_output.save_processing_summary" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">save_processing_summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">results</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.quality_control.rtp2pipelne_unzip_output.save_processing_summary" title="Link to this definition">#</a></dt>
 <dd><p>Write a JSON summary of the tract-unzipping batch run.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.quality_control.rtp2pipelne_unzip_output.check_and_unzip_tract_wrapper">
-<span class="sig-name descname"><span class="pre">check_and_unzip_tract_wrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ses</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/quality_control/rtp2pipelne_unzip_output.py#L377"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.quality_control.rtp2pipelne_unzip_output.check_and_unzip_tract_wrapper" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">check_and_unzip_tract_wrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ses</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.quality_control.rtp2pipelne_unzip_output.check_and_unzip_tract_wrapper" title="Link to this definition">#</a></dt>
 <dd><p>Wrap <a class="reference internal" href="#launchcontainers.quality_control.rtp2pipelne_unzip_output.unzip_subses_output" title="launchcontainers.quality_control.rtp2pipelne_unzip_output.unzip_subses_output"><code class="xref py py-func docutils literal notranslate"><span class="pre">unzip_subses_output()</span></code></a> for executor-based parallel processing.</p>
 </dd></dl>
 
 <dl class="py function" id="module-launchcontainers.quality_control.batch_sync_tract_and_mrtrix">
 <dt class="sig sig-object py" id="launchcontainers.quality_control.batch_sync_tract_and_mrtrix.rsync_single_subject">
-<span class="sig-name descname"><span class="pre">rsync_single_subject</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ses</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/quality_control/batch_sync_tract_and_mrtrix.py#L17"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.quality_control.batch_sync_tract_and_mrtrix.rsync_single_subject" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">rsync_single_subject</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sub</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ses</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.quality_control.batch_sync_tract_and_mrtrix.rsync_single_subject" title="Link to this definition">#</a></dt>
 <dd><p>Synchronize tract files for one subject/session using <code class="docutils literal notranslate"><span class="pre">rsync</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1474,13 +1408,13 @@ whether additional extraction is required, and an optional warning.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.quality_control.batch_sync_tract_and_mrtrix.find_subseslist">
-<span class="sig-name descname"><span class="pre">find_subseslist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/quality_control/batch_sync_tract_and_mrtrix.py#L70"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.quality_control.batch_sync_tract_and_mrtrix.find_subseslist" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">find_subseslist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.quality_control.batch_sync_tract_and_mrtrix.find_subseslist" title="Link to this definition">#</a></dt>
 <dd><p>Locate <code class="docutils literal notranslate"><span class="pre">subseslist.txt</span></code> somewhere under an analysis directory.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.quality_control.batch_sync_tract_and_mrtrix.batch_rsync_tracts">
-<span class="sig-name descname"><span class="pre">batch_rsync_tracts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/quality_control/batch_sync_tract_and_mrtrix.py#L81"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.quality_control.batch_sync_tract_and_mrtrix.batch_rsync_tracts" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">batch_rsync_tracts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">analysis_dir</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.quality_control.batch_sync_tract_and_mrtrix.batch_rsync_tracts" title="Link to this definition">#</a></dt>
 <dd><p>Run tract synchronization across all runnable DWI sessions in parallel.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1497,7 +1431,7 @@ whether additional extraction is required, and an optional warning.</p>
 <span id="helper-scripts"></span><h2>Helper Scripts<a class="headerlink" href="#module-launchcontainers.helper_function.copy_configs" title="Link to this heading">#</a></h2>
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.helper_function.copy_configs.copy_example_configs">
-<span class="sig-name descname"><span class="pre">copy_example_configs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">copy_configs</span></span></em><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/helper_function/copy_configs.py#L28"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.helper_function.copy_configs.copy_example_configs" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">copy_example_configs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">copy_configs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.helper_function.copy_configs.copy_example_configs" title="Link to this definition">#</a></dt>
 <dd><p>Copy packaged example configuration files into a destination directory.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1508,13 +1442,13 @@ whether additional extraction is required, and an optional warning.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.helper_function.copy_configs.main">
-<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/helper_function/copy_configs.py#L47"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.helper_function.copy_configs.main" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.helper_function.copy_configs.main" title="Link to this definition">#</a></dt>
 <dd><p>Run the <code class="docutils literal notranslate"><span class="pre">copy_configs</span></code> helper from the shared launchcontainers parser.</p>
 </dd></dl>
 
 <dl class="py function" id="module-launchcontainers.helper_function.create_bids">
 <dt class="sig sig-object py" id="launchcontainers.helper_function.create_bids.main">
-<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/helper_function/create_bids.py#L33"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.helper_function.create_bids.main" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.helper_function.create_bids.main" title="Link to this definition">#</a></dt>
 <dd><p>Create a fake BIDS tree and matching derivative skeleton for testing.</p>
 <p>The helper reads a small configuration YAML plus a subject/session list and
 creates empty files and folders that mimic the inputs expected by the rest
@@ -1523,7 +1457,7 @@ of the package.</p>
 
 <dl class="py function" id="module-launchcontainers.helper_function.gen_subses">
 <dt class="sig sig-object py" id="launchcontainers.helper_function.gen_subses.gen_subseslist">
-<span class="sig-name descname"><span class="pre">gen_subseslist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">basedir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/helper_function/gen_subses.py#L27"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.helper_function.gen_subses.gen_subseslist" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">gen_subseslist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">basedir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.14)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#launchcontainers.helper_function.gen_subses.gen_subseslist" title="Link to this definition">#</a></dt>
 <dd><p>Generate a simple <code class="docutils literal notranslate"><span class="pre">subseslist</span></code> file from a BIDS-style directory tree.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
@@ -1539,13 +1473,13 @@ is used.</p></li>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.helper_function.gen_subses.main">
-<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/helper_function/gen_subses.py#L75"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.helper_function.gen_subses.main" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.helper_function.gen_subses.main" title="Link to this definition">#</a></dt>
 <dd><p>Run the <code class="docutils literal notranslate"><span class="pre">gen_subses</span></code> helper from the shared launchcontainers parser.</p>
 </dd></dl>
 
 <dl class="py function" id="module-launchcontainers.helper_function.zip_example_config">
 <dt class="sig sig-object py" id="launchcontainers.helper_function.zip_example_config.get_git_root">
-<span class="sig-name descname"><span class="pre">get_git_root</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/helper_function/zip_example_config.py#L11"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.helper_function.zip_example_config.get_git_root" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">get_git_root</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.helper_function.zip_example_config.get_git_root" title="Link to this definition">#</a></dt>
 <dd><p>Return the repository root detected from Git.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
@@ -1557,7 +1491,7 @@ Git working tree.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="launchcontainers.helper_function.zip_example_config.do_zip_configs">
-<span class="sig-name descname"><span class="pre">do_zip_configs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference external" href="https://github.com/garikoitz/launchcontainers/blob/051efa6/launchcontainers/helper_function/zip_example_config.py#L34"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#launchcontainers.helper_function.zip_example_config.do_zip_configs" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">do_zip_configs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.helper_function.zip_example_config.do_zip_configs" title="Link to this definition">#</a></dt>
 <dd><p>Package the repository example configuration directory as a zip archive.</p>
 </dd></dl>
 
@@ -1575,12 +1509,12 @@ Git working tree.</p>
                   
 <div class="prev-next-area">
     <a class="left-prev"
-       href="index.html"
+       href="changelog.html"
        title="previous page">
       <i class="fa-solid fa-angle-left"></i>
       <div class="prev-next-info">
         <p class="prev-next-subtitle">previous</p>
-        <p class="prev-next-title">launchcontainers</p>
+        <p class="prev-next-title">Changelog</p>
       </div>
     </a>
 </div>
@@ -1603,10 +1537,10 @@ Git working tree.</p>
   <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-launchcontainers.cli">Core CLI</a><ul class="visible nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.cli.get_parser"><code class="docutils literal notranslate"><span class="pre">get_parser()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.cli.create_analysis_dir"><code class="docutils literal notranslate"><span class="pre">create_analysis_dir()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.cli.prepare"><code class="docutils literal notranslate"><span class="pre">prepare()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.cli.run"><code class="docutils literal notranslate"><span class="pre">run()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.cli.qc"><code class="docutils literal notranslate"><span class="pre">qc()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.cli.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.do_prepare.prepare_analysis_dir"><code class="docutils literal notranslate"><span class="pre">prepare_analysis_dir()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.do_prepare.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.do_launch.write_job_script"><code class="docutils literal notranslate"><span class="pre">write_job_script()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.do_launch.launch_jobs"><code class="docutils literal notranslate"><span class="pre">launch_jobs()</span></code></a></li>
@@ -1616,6 +1550,8 @@ Git working tree.</p>
 </ul>
 </li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-launchcontainers.utils">Utilities</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.utils.parse_hms"><code class="docutils literal notranslate"><span class="pre">parse_hms()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.utils.times_match"><code class="docutils literal notranslate"><span class="pre">times_match()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.utils.die"><code class="docutils literal notranslate"><span class="pre">die()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.utils.read_yaml"><code class="docutils literal notranslate"><span class="pre">read_yaml()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.utils.read_df"><code class="docutils literal notranslate"><span class="pre">read_df()</span></code></a></li>
@@ -1623,34 +1559,29 @@ Git working tree.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.utils.copy_configs"><code class="docutils literal notranslate"><span class="pre">copy_configs()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.utils.force_symlink"><code class="docutils literal notranslate"><span class="pre">force_symlink()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.utils.check_symlink"><code class="docutils literal notranslate"><span class="pre">check_symlink()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.config_logger.setup_logger"><code class="docutils literal notranslate"><span class="pre">setup_logger()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.config_logger.setup_logger_create_bids"><code class="docutils literal notranslate"><span class="pre">setup_logger_create_bids()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.gen_launch_cmd.gen_cmd_prefix"><code class="docutils literal notranslate"><span class="pre">gen_cmd_prefix()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.gen_launch_cmd.gen_RTP2_cmd"><code class="docutils literal notranslate"><span class="pre">gen_RTP2_cmd()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.gen_launch_cmd.gen_launch_cmd"><code class="docutils literal notranslate"><span class="pre">gen_launch_cmd()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#verbosity-levels">Verbosity levels</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#color-scheme-mirrors-color-codes-txt">Color scheme (mirrors color_codes.txt)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.log_setup.setup_verbosity"><code class="docutils literal notranslate"><span class="pre">setup_verbosity()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.log_setup.set_log_files"><code class="docutils literal notranslate"><span class="pre">set_log_files()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.log_setup.log_debug"><code class="docutils literal notranslate"><span class="pre">log_debug()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.log_setup.log_info"><code class="docutils literal notranslate"><span class="pre">log_info()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.log_setup.log_warning"><code class="docutils literal notranslate"><span class="pre">log_warning()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.log_setup.log_error"><code class="docutils literal notranslate"><span class="pre">log_error()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.log_setup.log_critical"><code class="docutils literal notranslate"><span class="pre">log_critical()</span></code></a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-launchcontainers.prepare.prepare_dwi">Preparation</a><ul class="visible nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.prepare.prepare_dwi.copy_configs"><code class="docutils literal notranslate"><span class="pre">copy_configs()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.prepare.prepare_dwi.gen_config_dict_and_copy"><code class="docutils literal notranslate"><span class="pre">gen_config_dict_and_copy()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.prepare.prepare_dwi.gen_config_json_extra_field"><code class="docutils literal notranslate"><span class="pre">gen_config_json_extra_field()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.prepare.prepare_dwi.write_json"><code class="docutils literal notranslate"><span class="pre">write_json()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.prepare.prepare_dwi.copy_and_edit_config_json"><code class="docutils literal notranslate"><span class="pre">copy_and_edit_config_json()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.prepare.prepare_dwi.prepare_dwi"><code class="docutils literal notranslate"><span class="pre">prepare_dwi()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.prepare.dwi_prepare_input.anatrois"><code class="docutils literal notranslate"><span class="pre">anatrois()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.prepare.dwi_prepare_input.rtppreproc"><code class="docutils literal notranslate"><span class="pre">rtppreproc()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.prepare.dwi_prepare_input.rtppipeline"><code class="docutils literal notranslate"><span class="pre">rtppipeline()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.prepare.gen_bids_derivatives.gen_dataset_desc_json"><code class="docutils literal notranslate"><span class="pre">gen_dataset_desc_json()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.prepare.gen_bids_derivatives.gen_participant_json"><code class="docutils literal notranslate"><span class="pre">gen_participant_json()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.prepare.gen_bids_derivatives.gen_readme"><code class="docutils literal notranslate"><span class="pre">gen_readme()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.prepare.gen_bids_derivatives.gen_participant_tsv"><code class="docutils literal notranslate"><span class="pre">gen_participant_tsv()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-launchcontainers.gen_jobscript">Job-script generation</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.gen_jobscript.gen_launch_cmd"><code class="docutils literal notranslate"><span class="pre">gen_launch_cmd()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.gen_jobscript.gen_container_cmd.gen_cmd_prefix"><code class="docutils literal notranslate"><span class="pre">gen_cmd_prefix()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.gen_jobscript.gen_container_cmd.gen_RTP2_cmd"><code class="docutils literal notranslate"><span class="pre">gen_RTP2_cmd()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.gen_jobscript.gen_matlab_cmd.gen_matlab_cmd"><code class="docutils literal notranslate"><span class="pre">gen_matlab_cmd()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.gen_jobscript.gen_py_cmd.gen_py_cmd"><code class="docutils literal notranslate"><span class="pre">gen_py_cmd()</span></code></a></li>
 </ul>
 </li>
-<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-launchcontainers.clusters.dask_scheduler">Schedulers</a><ul class="visible nav section-nav flex-column">
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.clusters.dask_scheduler.initiate_cluster"><code class="docutils literal notranslate"><span class="pre">initiate_cluster()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.clusters.dask_scheduler.dask_scheduler"><code class="docutils literal notranslate"><span class="pre">dask_scheduler()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.clusters.dask_scheduler.print_job_script"><code class="docutils literal notranslate"><span class="pre">print_job_script()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.clusters.dask_scheduler.launch_with_dask"><code class="docutils literal notranslate"><span class="pre">launch_with_dask()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#preparation">Preparation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#module-launchcontainers.clusters.local">Schedulers</a><ul class="visible nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.clusters.local.launch_serial"><code class="docutils literal notranslate"><span class="pre">launch_serial()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.clusters.local.launch_parallel"><code class="docutils literal notranslate"><span class="pre">launch_parallel()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.clusters.slurm.gen_slurm_array_job_script"><code class="docutils literal notranslate"><span class="pre">gen_slurm_array_job_script()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.clusters.sge.gen_sge_array_job_script"><code class="docutils literal notranslate"><span class="pre">gen_sge_array_job_script()</span></code></a></li>
 </ul>
@@ -1739,12 +1670,6 @@ Git working tree.</p>
   </p>
 </div>
       
-    </div>
-  
-  
-  
-    <div class="footer-items__end">
-      
         <div class="footer-item">
 
   <p class="sphinx-version">
@@ -1752,6 +1677,18 @@ Git working tree.</p>
     <br/>
   </p>
 </div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
       
     </div>
   

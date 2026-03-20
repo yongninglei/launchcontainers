@@ -1,0 +1,679 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Changelog &#8212; launchcontainers</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="_static/theme_overrides.css?v=bc718776" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="_static/documentation_options.js?v=6c02275b"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/zenodo.js?v=b8a002e4"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'changelog';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API Reference" href="api.html" />
+    <link rel="prev" title="Code Structure" href="code_structure.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.4.0" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">launchcontainers</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="concepts.html">
+    Core Concepts
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="tutorial.html">
+    Tutorial
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="cli_reference.html">
+    CLI Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="extending.html">
+    Extending launchcontainers — Adding a new Prepare pipeline
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="code_structure.html">
+    Code Structure
+  </a>
+</li>
+
+
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="#">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="api.html">
+    API Reference
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/garikoitz/launchcontainers" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="concepts.html">
+    Core Concepts
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="tutorial.html">
+    Tutorial
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="cli_reference.html">
+    CLI Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="extending.html">
+    Extending launchcontainers — Adding a new Prepare pipeline
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="code_structure.html">
+    Code Structure
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api.html">
+    API Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/garikoitz/launchcontainers" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Changelog</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="changelog">
+<h1>Changelog<a class="headerlink" href="#changelog" title="Link to this heading">#</a></h1>
+<section id="id1">
+<h2>0.4.8<a class="headerlink" href="#id1" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>BasePrepare</strong>: introduced <code class="docutils literal notranslate"><span class="pre">launchcontainers/prepare/base_prepare.py</span></code> with
+a <code class="docutils literal notranslate"><span class="pre">BasePrepare</span></code> base class shared by all prepare pipelines.  Provides
+<code class="docutils literal notranslate"><span class="pre">basedir</span></code> / <code class="docutils literal notranslate"><span class="pre">bidsdir</span></code> properties and the <code class="docutils literal notranslate"><span class="pre">write_example_config</span></code> /
+<code class="docutils literal notranslate"><span class="pre">_example_config_dict</span></code> classmethod pair so every subclass can auto-generate
+an annotated <code class="docutils literal notranslate"><span class="pre">lc_config_example.yaml</span></code> without duplicating boilerplate.</p></li>
+<li><p><strong>GLMPrepare</strong> now subclasses <code class="docutils literal notranslate"><span class="pre">BasePrepare</span></code>.  Removed the redundant
+<code class="docutils literal notranslate"><span class="pre">basedir</span></code> / <code class="docutils literal notranslate"><span class="pre">bidsdir</span></code> properties and replaced the <code class="docutils literal notranslate"><span class="pre">&#64;staticmethod</span>
+<span class="pre">write_example_config</span></code> with <code class="docutils literal notranslate"><span class="pre">&#64;classmethod</span> <span class="pre">_example_config_dict</span></code>.</p></li>
+<li><p><strong>GLMPrepare — Word-Center (WC) mode</strong>: new <code class="docutils literal notranslate"><span class="pre">output_bids</span></code> and
+<code class="docutils literal notranslate"><span class="pre">output_bids_dir</span></code> properties.  When <code class="docutils literal notranslate"><span class="pre">is_WC=True</span></code> the prepare workflow
+writes all outputs (events TSVs, BIDS bold symlinks, fMRIprep bold symlinks,
+and their JSON sidecars) into a separate BIDS-mirrored directory tree rooted
+at <code class="docutils literal notranslate"><span class="pre">&lt;basedir&gt;/&lt;output_bids&gt;</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">BIDS_WC/</span></code>), including a
+<code class="docutils literal notranslate"><span class="pre">derivatives/&lt;fmriprep_analysis_name&gt;/</span></code> sub-tree.</p></li>
+<li><p><strong>Symlinks now include JSON sidecars</strong>: both <code class="docutils literal notranslate"><span class="pre">gen_bids_bold_symlinks</span></code> and
+<code class="docutils literal notranslate"><span class="pre">gen_fmriprep_bold_symlinks</span></code> create a matching <code class="docutils literal notranslate"><span class="pre">.json</span></code> symlink alongside
+every NIfTI / GIFTI symlink.</p></li>
+<li><p><strong>Mapping TSV moved to vistadisplog dir</strong>: <code class="docutils literal notranslate"><span class="pre">PRFPrepare.parse_prf_mat</span></code> now
+writes <code class="docutils literal notranslate"><span class="pre">sub-&lt;sub&gt;_ses-&lt;ses&gt;_desc-mapping_PRF_acqtime.tsv</span></code> to the
+vistadisplog source directory instead of the BIDS <code class="docutils literal notranslate"><span class="pre">func/</span></code> directory.
+<code class="docutils literal notranslate"><span class="pre">GLMPrepare._load_mapping_tsv</span></code> reads from the same location.</p></li>
+<li><p><strong>Bug fix</strong>: <code class="docutils literal notranslate"><span class="pre">run_glm_prepare</span></code> was not forwarding the <code class="docutils literal notranslate"><span class="pre">layout</span></code> argument
+to <code class="docutils literal notranslate"><span class="pre">run_prf_glm_prepare</span></code>, causing an <code class="docutils literal notranslate"><span class="pre">AttributeError:</span> <span class="pre">'NoneType'</span> <span class="pre">object</span>
+<span class="pre">has</span> <span class="pre">no</span> <span class="pre">attribute</span> <span class="pre">'get'</span></code> at runtime.</p></li>
+<li><p><strong>Type annotations</strong>: added <code class="docutils literal notranslate"><span class="pre">TYPE_CHECKING</span></code> guard in <code class="docutils literal notranslate"><span class="pre">glm_prepare.py</span></code>
+for <code class="docutils literal notranslate"><span class="pre">pandas.DataFrame</span></code> and <code class="docutils literal notranslate"><span class="pre">bids.BIDSLayout</span></code>; all public wrapper
+functions now carry full type signatures.</p></li>
+<li><p><strong>Docs</strong>: added tutorial sub-pages <code class="docutils literal notranslate"><span class="pre">prepare_glm.rst</span></code>, <code class="docutils literal notranslate"><span class="pre">prepare_dwi.rst</span></code>,
+<code class="docutils literal notranslate"><span class="pre">prepare_ret.rst</span></code> under the Tutorial section.  Rewrote <code class="docutils literal notranslate"><span class="pre">extending.rst</span></code>
+to document the actual <code class="docutils literal notranslate"><span class="pre">BasePrepare</span></code> pattern with step-by-step guidance.
+Updated <code class="docutils literal notranslate"><span class="pre">configuration.rst</span></code> <code class="docutils literal notranslate"><span class="pre">container_specific</span></code> section and <code class="docutils literal notranslate"><span class="pre">api.rst</span></code>
+fMRI-GLM preparation section.</p></li>
+</ul>
+</section>
+<section id="id2">
+<h2>0.4.7<a class="headerlink" href="#id2" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><strong>Logging</strong>: replaced ad-hoc output redirection with a structured logging
+architecture. <code class="docutils literal notranslate"><span class="pre">log_setup.py</span></code> now provides <code class="docutils literal notranslate"><span class="pre">_LoggingConsole</span></code>, a Rich
+<code class="docutils literal notranslate"><span class="pre">Console</span></code> subclass that auto-forwards every <code class="docutils literal notranslate"><span class="pre">console.print()</span></code> call to a
+Python <code class="docutils literal notranslate"><span class="pre">logging.Logger</span></code>. Two log files are written per CLI command and
+copied into the analysis directory on completion:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;cmd&gt;_&lt;timestamp&gt;.log</span></code> — all messages (DEBUG and above)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;cmd&gt;_&lt;timestamp&gt;.err</span></code> — warnings and errors only</p></li>
+</ul>
+</li>
+<li><p><strong>gen_jobscript package</strong>: replaced the single <code class="docutils literal notranslate"><span class="pre">gen_launch_cmd.py</span></code> module
+with a <code class="docutils literal notranslate"><span class="pre">gen_jobscript/</span></code> package. The orchestrator (<code class="docutils literal notranslate"><span class="pre">__init__.py</span></code>) routes
+to per-type command builders:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">gen_container_cmd.py</span></code> — Apptainer/Singularity containers (existing logic)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gen_matlab_cmd.py</span></code> — MATLAB script launcher (stub, raises <code class="docutils literal notranslate"><span class="pre">NotImplementedError</span></code>)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">gen_py_cmd.py</span></code> — Python script launcher (stub, raises <code class="docutils literal notranslate"><span class="pre">NotImplementedError</span></code>)</p></li>
+</ul>
+</li>
+<li><p><strong>clusters/local.py</strong>: renamed <code class="docutils literal notranslate"><span class="pre">job_scheduler.py</span></code> to <code class="docutils literal notranslate"><span class="pre">local.py</span></code>. Added
+<code class="docutils literal notranslate"><span class="pre">launch_serial()</span></code> and <code class="docutils literal notranslate"><span class="pre">launch_parallel()</span></code> functions controlled by the new
+<code class="docutils literal notranslate"><span class="pre">launch_mode</span></code> yaml key. Each subprocess now runs inside <code class="docutils literal notranslate"><span class="pre">bash</span> <span class="pre">-l</span></code> so that
+<code class="docutils literal notranslate"><span class="pre">module</span> <span class="pre">load</span></code> commands work correctly. Parallel mode supports a
+<code class="docutils literal notranslate"><span class="pre">mem_per_job</span></code> memory ceiling enforced via <code class="docutils literal notranslate"><span class="pre">resource.setrlimit</span></code> on each
+worker process.</p></li>
+<li><p><strong>host_options.local</strong> yaml keys updated: <code class="docutils literal notranslate"><span class="pre">launch_mode</span></code> (<code class="docutils literal notranslate"><span class="pre">serial</span></code> /
+<code class="docutils literal notranslate"><span class="pre">parallel</span></code>), <code class="docutils literal notranslate"><span class="pre">max_workers</span></code> (concurrent container limit), <code class="docutils literal notranslate"><span class="pre">mem_per_job</span></code>
+(per-worker memory cap). Old Dask-era keys (<code class="docutils literal notranslate"><span class="pre">njobs</span></code>, <code class="docutils literal notranslate"><span class="pre">memory_limit</span></code>,
+<code class="docutils literal notranslate"><span class="pre">threads_per_worker</span></code>) are no longer used.</p></li>
+</ul>
+</section>
+<section id="id3">
+<h2>0.4.6<a class="headerlink" href="#id3" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">GLMPreparer</span></code> and <code class="docutils literal notranslate"><span class="pre">BasePreparer</span></code> abstract class hierarchy for
+analysis-based (fMRI) pipelines.</p></li>
+<li><p>Introduced <code class="docutils literal notranslate"><span class="pre">PREPARER_REGISTRY</span></code> for zero-touch extension of new analysis types.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">cli.py</span></code>: two-path dispatch — legacy DWI path untouched; new registry path
+for analysis-based pipelines.</p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">glm_specific</span></code> config section and <code class="docutils literal notranslate"><span class="pre">glm_config_template.yaml</span></code>.</p></li>
+</ul>
+</section>
+<section id="id4">
+<h2>0.4.3<a class="headerlink" href="#id4" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Improved temporal proximity matching for sbref↔bold pairing (180-second window).</p></li>
+<li><p>Fixed DWI file mapping for PA/AP direction naming.</p></li>
+<li><p>Fixed datetime parsing for ISO timestamp formats in scans.tsv validation.</p></li>
+<li><p>Fixed bidirectional file matching to always produce <code class="docutils literal notranslate"><span class="pre">_dwi.nii.gz</span></code> suffixes.</p></li>
+</ul>
+</section>
+<section id="id5">
+<h2>0.4.0<a class="headerlink" href="#id5" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Initial public release of the <code class="docutils literal notranslate"><span class="pre">lc</span></code> CLI with <code class="docutils literal notranslate"><span class="pre">prepare</span></code>, <code class="docutils literal notranslate"><span class="pre">run</span></code>, <code class="docutils literal notranslate"><span class="pre">qc</span></code>,
+<code class="docutils literal notranslate"><span class="pre">copy_configs</span></code>, <code class="docutils literal notranslate"><span class="pre">gen_subses</span></code>, and <code class="docutils literal notranslate"><span class="pre">create_bids</span></code> subcommands.</p></li>
+<li><p>SLURM (DIPC) and SGE (BCBL) scheduler support.</p></li>
+<li><p>Container-based pipeline support: <code class="docutils literal notranslate"><span class="pre">anatrois</span></code>, <code class="docutils literal notranslate"><span class="pre">freesurferator</span></code>,
+<code class="docutils literal notranslate"><span class="pre">rtppreproc</span></code>, <code class="docutils literal notranslate"><span class="pre">rtp-pipeline</span></code>, <code class="docutils literal notranslate"><span class="pre">rtp2-preproc</span></code>, <code class="docutils literal notranslate"><span class="pre">rtp2-pipeline</span></code>.</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="code_structure.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Code Structure</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="api.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">API Reference</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">0.4.8</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">0.4.7</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">0.4.6</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">0.4.3</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">0.4.0</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/changelog.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, launchcontainers Developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
