@@ -1,0 +1,817 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Extending launchcontainers — Adding a new Prepare pipeline &#8212; launchcontainers</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="_static/theme_overrides.css?v=bc718776" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+    <script src="_static/documentation_options.js?v=6c02275b"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/zenodo.js?v=b8a002e4"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'extending';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Code Structure" href="code_structure.html" />
+    <link rel="prev" title="Prepare — fMRIPrep (fmap + sbref)" href="prepare_fmriprep.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.4.0" />
+  
+    
+    <script src="_static/searchtools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script src="searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">launchcontainers</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="bcbl_computing.html">
+    BCBL Computing Environment
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="concepts.html">
+    Core Concepts
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="tutorial.html">
+    Tutorial
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="cli_reference.html">
+    CLI Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="prepare_fmriprep.html">
+    Prepare — fMRIPrep (fmap + sbref)
+  </a>
+</li>
+
+
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="#">
+    Extending launchcontainers — Adding a new Prepare pipeline
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="code_structure.html">
+    Code Structure
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="changelog.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="api.html">
+    API Reference
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/garikoitz/launchcontainers" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="bcbl_computing.html">
+    BCBL Computing Environment
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="concepts.html">
+    Core Concepts
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="tutorial.html">
+    Tutorial
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="cli_reference.html">
+    CLI Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="prepare_fmriprep.html">
+    Prepare — fMRIPrep (fmap + sbref)
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Extending launchcontainers — Adding a new Prepare pipeline
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="code_structure.html">
+    Code Structure
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="changelog.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api.html">
+    API Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/garikoitz/launchcontainers" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar"><svg class="pst-icon svg-inline--fa" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Extending launchcontainers — Adding a new Prepare pipeline</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="extending-launchcontainers-adding-a-new-prepare-pipeline">
+<h1>Extending launchcontainers — Adding a new Prepare pipeline<a class="headerlink" href="#extending-launchcontainers-adding-a-new-prepare-pipeline" title="Link to this heading">#</a></h1>
+<p>This page describes the <strong>design pattern</strong> used by all prepare pipelines in
+launchcontainers and explains how to add a new one.  The pattern was
+established while building the <a class="reference internal" href="prepare_glm.html#prepare-glm"><span class="std std-ref">Prepare — fMRI GLM</span></a> pipeline and applies to
+every future pipeline (DWI, PRF, and beyond).</p>
+<hr class="docutils" />
+<section id="the-pattern-in-one-sentence">
+<h2>The pattern in one sentence<a class="headerlink" href="#the-pattern-in-one-sentence" title="Link to this heading">#</a></h2>
+<p><em>Be clear about what goes in and what comes out, expose every option as a
+typed property, let the class generate its own example config, implement
+one method per prepare step, and put a single wrapper function at the bottom
+of the module for</em> <code class="docutils literal notranslate"><span class="pre">do_prepare.py</span></code> <em>to call.</em></p>
+</section>
+<hr class="docutils" />
+<section id="step-0-think-before-you-code">
+<h2>Step 0 — Think before you code<a class="headerlink" href="#step-0-think-before-you-code" title="Link to this heading">#</a></h2>
+<p>Before writing any code, answer these four questions:</p>
+<ol class="arabic simple">
+<li><p><strong>What are the inputs?</strong> — raw data files, derivatives, log files, config
+values.</p></li>
+<li><p><strong>What are the outputs?</strong> — files written, symlinks created, directories
+produced.</p></li>
+<li><p><strong>What are the options?</strong> — every tunable parameter (space, task filter,
+block duration, …).</p></li>
+<li><p><strong>What are the steps?</strong> — break the prepare work into discrete, testable
+operations.</p></li>
+</ol>
+<p>Only once these are clear should you open a new file.</p>
+</section>
+<hr class="docutils" />
+<section id="step-1-create-the-module-and-subclass-baseprepare">
+<h2>Step 1 — Create the module and subclass <code class="docutils literal notranslate"><span class="pre">BasePrepare</span></code><a class="headerlink" href="#step-1-create-the-module-and-subclass-baseprepare" title="Link to this heading">#</a></h2>
+<p>Create <code class="docutils literal notranslate"><span class="pre">launchcontainers/prepare/&lt;name&gt;_prepare.py</span></code> and subclass
+<code class="xref py py-class docutils literal notranslate"><span class="pre">BasePrepare</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">launchcontainers.prepare.base_prepare</span><span class="w"> </span><span class="kn">import</span> <span class="n">BasePrepare</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">MyPrepare</span><span class="p">(</span><span class="n">BasePrepare</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lc_config</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">lc_config</span><span class="p">)</span>
+        <span class="c1"># pull your pipeline&#39;s sub-dict from container_specific</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_cfg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">lc_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;container_specific&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;MyPipeline&quot;</span><span class="p">,</span> <span class="p">{})</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">BasePrepare</span></code> provides for free:</p>
+<ul class="simple">
+<li><p><code class="xref py py-attr docutils literal notranslate"><span class="pre">basedir</span></code> —
+<code class="docutils literal notranslate"><span class="pre">general.basedir</span></code></p></li>
+<li><p><code class="xref py py-attr docutils literal notranslate"><span class="pre">bidsdir</span></code> —
+<code class="docutils literal notranslate"><span class="pre">&lt;basedir&gt;/&lt;bidsdir_name&gt;</span></code></p></li>
+<li><p><code class="xref py py-meth docutils literal notranslate"><span class="pre">write_example_config()</span></code> —
+writes a YAML file; delegates content to <code class="xref py py-meth docutils literal notranslate"><span class="pre">_example_config_dict()</span></code></p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="step-2-expose-every-option-as-a-typed-property">
+<h2>Step 2 — Expose every option as a typed <code class="docutils literal notranslate"><span class="pre">&#64;property</span></code><a class="headerlink" href="#step-2-expose-every-option-as-a-typed-property" title="Link to this heading">#</a></h2>
+<p>One property per config key.  Always provide a sensible default via
+<code class="docutils literal notranslate"><span class="pre">.get(key,</span> <span class="pre">default)</span></code> so the class can be instantiated with a minimal config
+during testing:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@property</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">space</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Output space (e.g. ``fsnative``, ``T1w``).&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;space&quot;</span><span class="p">,</span> <span class="s2">&quot;fsnative&quot;</span><span class="p">)</span>
+
+<span class="nd">@property</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">dry_run</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;If ``True``, log actions without writing files.&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dry_run&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Properties that derive a <strong>path</strong> from another property (e.g.
+<code class="docutils literal notranslate"><span class="pre">fmriprep_dir</span></code>) should be properties too, not computed inside methods:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@property</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">fmriprep_dir</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">op</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bidsdir</span><span class="p">,</span> <span class="s2">&quot;derivatives&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fmriprep_analysis_name</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="step-3-override-example-config-dict">
+<h2>Step 3 — Override <code class="docutils literal notranslate"><span class="pre">_example_config_dict</span></code><a class="headerlink" href="#step-3-override-example-config-dict" title="Link to this heading">#</a></h2>
+<p>Return a plain Python <code class="docutils literal notranslate"><span class="pre">dict</span></code> that represents a fully annotated
+<code class="docutils literal notranslate"><span class="pre">lc_config.yaml</span></code> for your pipeline.
+<code class="xref py py-meth docutils literal notranslate"><span class="pre">write_example_config()</span></code>
+(inherited from <code class="docutils literal notranslate"><span class="pre">BasePrepare</span></code>) handles the YAML serialisation:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@classmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">_example_config_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">&quot;general&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;basedir&quot;</span><span class="p">:</span> <span class="s2">&quot;/path/to/basedir&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;bidsdir_name&quot;</span><span class="p">:</span> <span class="s2">&quot;BIDS&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;container&quot;</span><span class="p">:</span> <span class="s2">&quot;MyPipeline&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;host&quot;</span><span class="p">:</span> <span class="s2">&quot;local&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;force&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;container_specific&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">&quot;MyPipeline&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;space&quot;</span><span class="p">:</span> <span class="s2">&quot;fsnative&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;dry_run&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+                <span class="c1"># ... all keys with sensible defaults</span>
+            <span class="p">}</span>
+        <span class="p">},</span>
+        <span class="s2">&quot;host_options&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;local&quot;</span><span class="p">:</span> <span class="p">{}},</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+<p>Users can then auto-generate a starter config:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python -c &quot;from launchcontainers.prepare.my_prepare import MyPrepare; MyPrepare.write_example_config()&quot;</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="step-4-implement-one-method-per-prepare-step">
+<h2>Step 4 — Implement one method per prepare step<a class="headerlink" href="#step-4-implement-one-method-per-prepare-step" title="Link to this heading">#</a></h2>
+<p>Name methods after what they produce, not after implementation details.
+Each method should:</p>
+<ul class="simple">
+<li><p>accept <code class="docutils literal notranslate"><span class="pre">sub</span></code> and <code class="docutils literal notranslate"><span class="pre">ses</span></code> as its first arguments;</p></li>
+<li><p>accept an optional <code class="docutils literal notranslate"><span class="pre">output_dir</span></code> so tests can redirect output;</p></li>
+<li><p>return the paths (or a structured list) of everything written.</p></li>
+</ul>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">gen_events_tsv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">ses</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Write one events.tsv per run and return their paths.&quot;&quot;&quot;</span>
+    <span class="o">...</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">gen_bold_symlinks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sub</span><span class="p">,</span> <span class="n">ses</span><span class="p">,</span> <span class="n">layout</span><span class="p">,</span> <span class="n">output_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Symlink bold NIfTIs with normalised names; return matched list.&quot;&quot;&quot;</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><strong>Module-level helper functions</strong> (pure utilities that do not need
+<code class="docutils literal notranslate"><span class="pre">self</span></code>) may live outside the class at the top of the module.  This is
+fine — especially when the class is still small.  Note it in a comment so
+the next developer knows it is intentional and not forgotten refactoring.</p>
+</div>
+</section>
+<hr class="docutils" />
+<section id="step-5-add-a-module-level-wrapper-function">
+<h2>Step 5 — Add a module-level wrapper function<a class="headerlink" href="#step-5-add-a-module-level-wrapper-function" title="Link to this heading">#</a></h2>
+<p>After the class definition, add a standalone function that <code class="docutils literal notranslate"><span class="pre">do_prepare.py</span></code>
+can call.  It instantiates the class, iterates over <code class="docutils literal notranslate"><span class="pre">df_subses</span></code>, and calls
+the step methods in order:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">run_my_prepare</span><span class="p">(</span><span class="n">lc_config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">df_subses</span><span class="p">,</span> <span class="n">layout</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Entry point called by do_prepare.main when container == &#39;MyPipeline&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">prep</span> <span class="o">=</span> <span class="n">MyPrepare</span><span class="p">(</span><span class="n">lc_config</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">df_subses</span><span class="o">.</span><span class="n">itertuples</span><span class="p">():</span>
+        <span class="n">sub</span><span class="p">,</span> <span class="n">ses</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">sub</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">ses</span><span class="p">)</span>
+        <span class="n">prep</span><span class="o">.</span><span class="n">gen_events_tsv</span><span class="p">(</span><span class="n">sub</span><span class="p">,</span> <span class="n">ses</span><span class="p">)</span>
+        <span class="n">matched</span> <span class="o">=</span> <span class="n">prep</span><span class="o">.</span><span class="n">gen_bold_symlinks</span><span class="p">(</span><span class="n">sub</span><span class="p">,</span> <span class="n">ses</span><span class="p">,</span> <span class="n">layout</span><span class="p">)</span>
+        <span class="n">prep</span><span class="o">.</span><span class="n">gen_preprocessed_symlinks</span><span class="p">(</span><span class="n">sub</span><span class="p">,</span> <span class="n">ses</span><span class="p">,</span> <span class="n">matched</span><span class="p">)</span>
+    <span class="k">return</span> <span class="kc">True</span>
+</pre></div>
+</div>
+<p>This keeps <code class="docutils literal notranslate"><span class="pre">do_prepare.py</span></code> free of pipeline-specific logic — it only needs
+to know the function name.</p>
+</section>
+<hr class="docutils" />
+<section id="step-6-register-in-do-prepare-py">
+<h2>Step 6 — Register in <code class="docutils literal notranslate"><span class="pre">do_prepare.py</span></code><a class="headerlink" href="#step-6-register-in-do-prepare-py" title="Link to this heading">#</a></h2>
+<p>Add one import and one dispatch entry:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">launchcontainers.prepare.my_prepare</span><span class="w"> </span><span class="kn">import</span> <span class="n">run_my_prepare</span>
+
+<span class="c1"># inside the dispatch block:</span>
+<span class="k">elif</span> <span class="n">container</span> <span class="o">==</span> <span class="s2">&quot;MyPipeline&quot;</span><span class="p">:</span>
+    <span class="n">run_my_prepare</span><span class="p">(</span><span class="n">lc_config</span><span class="p">,</span> <span class="n">df_subses</span><span class="p">,</span> <span class="n">layout</span><span class="o">=</span><span class="n">layout</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="summary-anatomy-of-a-prepare-module">
+<h2>Summary — anatomy of a prepare module<a class="headerlink" href="#summary-anatomy-of-a-prepare-module" title="Link to this heading">#</a></h2>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>my_prepare.py
+├── module-level helper functions   ← pure utils, no self needed (note intentional)
+├── class MyPrepare(BasePrepare)
+│   ├── __init__                    ← super().__init__ + pull container_specific sub-dict
+│   ├── @property …                 ← one per config key; path derivations too
+│   ├── _example_config_dict        ← full lc_config.yaml as a dict
+│   └── methods: gen_*              ← one per prepare step; return paths written
+└── run_my_prepare(…)               ← wrapper called by do_prepare.py
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="baseprepare-api">
+<h2><code class="docutils literal notranslate"><span class="pre">BasePrepare</span></code> API<a class="headerlink" href="#baseprepare-api" title="Link to this heading">#</a></h2>
+<p>See <a class="reference internal" href="api.html#api-ref"><span class="std std-ref">API Reference</span></a> for the full auto-generated documentation:</p>
+<ul class="simple">
+<li><p><code class="xref py py-class docutils literal notranslate"><span class="pre">launchcontainers.prepare.base_prepare.BasePrepare</span></code></p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="prepare_fmriprep.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Prepare — fMRIPrep (fmap + sbref)</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="code_structure.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Code Structure</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-pattern-in-one-sentence">The pattern in one sentence</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-0-think-before-you-code">Step 0 — Think before you code</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-create-the-module-and-subclass-baseprepare">Step 1 — Create the module and subclass <code class="docutils literal notranslate"><span class="pre">BasePrepare</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-2-expose-every-option-as-a-typed-property">Step 2 — Expose every option as a typed <code class="docutils literal notranslate"><span class="pre">@property</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-3-override-example-config-dict">Step 3 — Override <code class="docutils literal notranslate"><span class="pre">_example_config_dict</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-4-implement-one-method-per-prepare-step">Step 4 — Implement one method per prepare step</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-5-add-a-module-level-wrapper-function">Step 5 — Add a module-level wrapper function</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-6-register-in-do-prepare-py">Step 6 — Register in <code class="docutils literal notranslate"><span class="pre">do_prepare.py</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#summary-anatomy-of-a-prepare-module">Summary — anatomy of a prepare module</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#baseprepare-api"><code class="docutils literal notranslate"><span class="pre">BasePrepare</span></code> API</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="_sources/extending.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, launchcontainers Developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
