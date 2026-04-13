@@ -1,0 +1,957 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Prepare — fMRIPrep (fmap + sbref) &#8212; launchcontainers</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="_static/theme_overrides.css?v=bc718776" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+    <script src="_static/documentation_options.js?v=6c02275b"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/zenodo.js?v=b8a002e4"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'prepare_fmriprep';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Extending launchcontainers — Adding a new Prepare pipeline" href="extending.html" />
+    <link rel="prev" title="Configuration Reference" href="configuration.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.4.0" />
+  
+    
+    <script src="_static/searchtools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script src="searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">launchcontainers</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="bcbl_computing.html">
+    BCBL Computing Environment
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="concepts.html">
+    Core Concepts
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="tutorial.html">
+    Tutorial
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="cli_reference.html">
+    CLI Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="#">
+    Prepare — fMRIPrep (fmap + sbref)
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="extending.html">
+    Extending launchcontainers — Adding a new Prepare pipeline
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="code_structure.html">
+    Code Structure
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="changelog.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="api.html">
+    API Reference
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/garikoitz/launchcontainers" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="bcbl_computing.html">
+    BCBL Computing Environment
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="concepts.html">
+    Core Concepts
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="tutorial.html">
+    Tutorial
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="cli_reference.html">
+    CLI Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Prepare — fMRIPrep (fmap + sbref)
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="extending.html">
+    Extending launchcontainers — Adding a new Prepare pipeline
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="code_structure.html">
+    Code Structure
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="changelog.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api.html">
+    API Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/garikoitz/launchcontainers" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar"><svg class="pst-icon svg-inline--fa" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Prepare — fMRIPrep (fmap + sbref)</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="prepare-fmriprep-fmap-sbref">
+<span id="prepare-fmriprep"></span><h1>Prepare — fMRIPrep (fmap + sbref)<a class="headerlink" href="#prepare-fmriprep-fmap-sbref" title="Link to this heading">#</a></h1>
+<section id="why-this-matters">
+<h2>Why this matters<a class="headerlink" href="#why-this-matters" title="Link to this heading">#</a></h2>
+<p><strong>fMRIPrep</strong> performs susceptibility distortion correction (SDC) on functional
+EPI data using field maps (fmaps) and uses single-band reference images (sbref)
+as the EPI reference for motion correction and co-registration.  For this to
+work correctly, the BIDS dataset must satisfy two conditions <strong>before</strong> fMRIPrep
+is run:</p>
+<ol class="arabic simple">
+<li><p>Every fmap JSON sidecar must contain a valid <code class="docutils literal notranslate"><span class="pre">IntendedFor</span></code> field listing
+exactly the func runs it should correct.</p></li>
+<li><p>Every func run must be paired with its matching sbref, and both must have
+consistent run indices.</p></li>
+</ol>
+<p>Even a single mismatched or missing <code class="docutils literal notranslate"><span class="pre">IntendedFor</span></code> entry will cause fMRIPrep to
+either skip SDC for that run entirely, or apply the wrong field map — silently
+producing incorrect distortion correction.  Similarly, an orphaned or
+mis-numbered sbref will cause fMRIPrep to use the wrong reference image for
+motion correction.</p>
+<p>This pipeline provides a fully automated, auditable way to clean and annotate
+your raw BIDS data so it is ready to pass into fMRIPrep.</p>
+</section>
+<hr class="docutils" />
+<section id="overview-of-the-pipeline">
+<h2>Overview of the pipeline<a class="headerlink" href="#overview-of-the-pipeline" title="Link to this heading">#</a></h2>
+<p>The pipeline consists of four scripts that must be run <strong>in order</strong>:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 85.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Script</p></th>
+<th class="head"><p>What it does</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">00_merge_split_ses_reording_runs.py</span></code></p></td>
+<td><p>Merges split session directories and fixes run-number gaps / non-1
+starting indices across <strong>all modalities</strong> (func, fmap, dwi, anat).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">00b_copy_fmap_to_bids.py</span></code></p></td>
+<td><p>Copies fmap folders and scans.tsv from the raw_nifti source tree into the
+target BIDS directory, then <code class="docutils literal notranslate"><span class="pre">chmod</span> <span class="pre">755</span></code> the destination fmap folder.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">01_drop_duplicated_sbrefs.py</span></code></p></td>
+<td><p>Drops orphaned sbref files (no matching func within 30 s) and renumbers
+kept sbrefs sequentially per task.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">02_prepare_fmap_intendedfor.py</span></code></p></td>
+<td><p>Prunes invalid fmaps, renumbers survivors, and writes (or repairs) the
+<code class="docutils literal notranslate"><span class="pre">IntendedFor</span></code> field in every fmap JSON sidecar.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>All scripts share the same CLI conventions:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">-s</span> <span class="pre">10,02</span></code> — single sub/ses pair (for testing)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-f</span> <span class="pre">subseslist.tsv</span></code> — batch mode over a TSV/CSV file with <code class="docutils literal notranslate"><span class="pre">sub</span></code>, <code class="docutils literal notranslate"><span class="pre">ses</span></code> columns</p></li>
+<li><p>Default mode is always <strong>dry-run</strong> (nothing is changed).  Pass <code class="docutils literal notranslate"><span class="pre">--execute</span></code> to apply.</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="step-0-merge-split-sessions-and-reorder-runs">
+<h2>Step 0 — Merge split sessions and reorder runs<a class="headerlink" href="#step-0-merge-split-sessions-and-reorder-runs" title="Link to this heading">#</a></h2>
+<p>Script: <code class="docutils literal notranslate"><span class="pre">00_merge_split_ses_reording_runs.py</span></code></p>
+<p><strong>Problem it solves</strong></p>
+<p>Scanners sometimes split a long session across two directories
+(e.g. <code class="docutils literal notranslate"><span class="pre">ses-02</span></code> and <code class="docutils literal notranslate"><span class="pre">ses-02part2</span></code>).  Files in the secondary directory
+restart their run indices from <code class="docutils literal notranslate"><span class="pre">run-01</span></code>, which creates BIDS conflicts.
+Additionally, if a run was aborted and re-acquired, gaps in run numbering
+(e.g. <code class="docutils literal notranslate"><span class="pre">run-08</span></code> → <code class="docutils literal notranslate"><span class="pre">run-10</span></code>) can appear even in a single-directory session.</p>
+<p><strong>How it works</strong></p>
+<p>For every modality (func, fmap, dwi, anat) the script:</p>
+<ol class="arabic simple">
+<li><p>Collects all files across <strong>all</strong> matching <code class="docutils literal notranslate"><span class="pre">ses-{label}*</span></code> directories.</p></li>
+<li><p>Groups files by logical run unit (see below) and sorts each group by
+<code class="docutils literal notranslate"><span class="pre">AcquisitionTime</span></code>.</p></li>
+<li><p>Assigns new run numbers 1, 2, 3 … sequentially — this both merges split
+sessions and fills any gaps.</p></li>
+<li><p>Moves secondary-directory files into the primary <code class="docutils literal notranslate"><span class="pre">ses-{label}</span></code> directory
+with updated names (two-phase rename: <code class="docutils literal notranslate"><span class="pre">→</span> <span class="pre">temp</span> <span class="pre">→</span> <span class="pre">final</span></code> to avoid conflicts).</p></li>
+<li><p>Merges <code class="docutils literal notranslate"><span class="pre">scans.tsv</span></code> files and removes empty secondary directories.</p></li>
+</ol>
+<p><strong>Run-number formatting</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>fmap   → 1-digit   (run-1, run-2, …)
+others → 2-digit   (run-01, run-02, …)
+</pre></div>
+</div>
+<p><strong>Grouping rules</strong> (what counts as “one run sequence”)</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 80.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Modality</p></th>
+<th class="head"><p>Group key</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">func</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(mod,</span> <span class="pre">task,</span> <span class="pre">suffix)</span></code> — sbref, magnitude, and phase are counted
+<strong>independently</strong> per task (<code class="docutils literal notranslate"><span class="pre">task-fLoc_run-01_sbref</span></code> and
+<code class="docutils literal notranslate"><span class="pre">task-fLoc_run-01_magnitude</span></code> are separate sequences).</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">fmap</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(mod,</span> <span class="pre">None,</span> <span class="pre">None)</span></code> — AP and PA of the same acquisition share a run
+number; pairs are identified by <code class="docutils literal notranslate"><span class="pre">(ses_label,</span> <span class="pre">run_int)</span></code> so that
+<code class="docutils literal notranslate"><span class="pre">ses-02</span> <span class="pre">run-1</span></code> and <code class="docutils literal notranslate"><span class="pre">ses-02part2</span> <span class="pre">run-1</span></code> are treated as distinct runs.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">dwi</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(mod,</span> <span class="pre">acq,</span> <span class="pre">None)</span></code> — AP and PA share a run number; different <code class="docutils literal notranslate"><span class="pre">acq-</span></code>
+labels (e.g. <code class="docutils literal notranslate"><span class="pre">acq-b0</span></code> vs <code class="docutils literal notranslate"><span class="pre">acq-b1000</span></code>) are independent sequences.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">anat</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(mod,</span> <span class="pre">None,</span> <span class="pre">suffix)</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Things to check</strong></p>
+<ul class="simple">
+<li><p>Run in dry-run mode first and inspect the timeline table — verify that
+secondary-session files get the expected new run numbers.</p></li>
+<li><p>Watch for <code class="docutils literal notranslate"><span class="pre">ses</span> <span class="pre">only</span></code> entries (session label changes but run number is
+already correct) vs <code class="docutils literal notranslate"><span class="pre">run-01</span> <span class="pre">→</span> <span class="pre">run-02</span></code> entries (actual renumber).</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="step-0b-copy-fmap-to-bids">
+<h2>Step 0b — Copy fmap to BIDS<a class="headerlink" href="#step-0b-copy-fmap-to-bids" title="Link to this heading">#</a></h2>
+<p>Script: <code class="docutils literal notranslate"><span class="pre">00b_copy_fmap_to_bids.py</span></code></p>
+<p>Copies the cleaned fmap folder (and scans.tsv) from the raw_nifti source
+tree into the target BIDS directory.  After copying, <code class="docutils literal notranslate"><span class="pre">chmod</span> <span class="pre">755</span></code> is applied
+to the destination fmap directory and all files inside it to ensure fMRIPrep
+can read them.</p>
+<p>Options:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">--force</span></code> — overwrite existing destination files.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--sync-bids-components</span></code> — also copy top-level BIDS files
+(<code class="docutils literal notranslate"><span class="pre">dataset_description.json</span></code>, <code class="docutils literal notranslate"><span class="pre">participants.tsv</span></code>, <code class="docutils literal notranslate"><span class="pre">README</span></code>) once.</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="step-1-drop-orphaned-sbrefs">
+<h2>Step 1 — Drop orphaned sbrefs<a class="headerlink" href="#step-1-drop-orphaned-sbrefs" title="Link to this heading">#</a></h2>
+<p>Script: <code class="docutils literal notranslate"><span class="pre">01_drop_duplicated_sbrefs.py</span></code></p>
+<p><strong>The sbref ↔ func pairing rule</strong></p>
+<p>For susceptibility distortion correction, fMRIPrep uses the sbref as the
+EPI reference image.  Each sbref must be acquired <strong>immediately before</strong> its
+corresponding func run (the scanner acquires it as the first volume of the
+EPI sequence, then aborts and starts the full run).  A sbref that is not
+followed by a func run within <code class="docutils literal notranslate"><span class="pre">--max-gap</span></code> seconds (default: 30 s) is
+<strong>orphaned</strong> — it has no matching run and must be dropped.</p>
+<p><strong>Algorithm</strong></p>
+<ol class="arabic simple">
+<li><p>For each sbref (in chronological order), find the nearest func run that
+comes <strong>after</strong> it in time.</p></li>
+<li><p>If that func is within <code class="docutils literal notranslate"><span class="pre">max_gap</span></code> seconds → <strong>keep</strong>.  Otherwise → <strong>drop</strong>.</p></li>
+<li><p>After all drops are decided, renumber kept sbrefs sequentially
+(<code class="docutils literal notranslate"><span class="pre">run-01</span></code>, <code class="docutils literal notranslate"><span class="pre">run-02</span></code>, …) <strong>per task</strong> so indices remain gapless.</p></li>
+</ol>
+<p><strong>Important</strong>: drops happen before renames to avoid a renamed file being
+immediately deleted by the path it replaced.</p>
+<p><strong>Things to check</strong></p>
+<ul class="simple">
+<li><p>The <code class="docutils literal notranslate"><span class="pre">Δs</span></code> column shows the time gap between each sbref and its matched func —
+values around 14 s are normal (the sbref takes ~14 s to acquire).</p></li>
+<li><p>A gap &gt; 30 s indicates a broken pairing.  Inspect these manually before
+executing.</p></li>
+<li><p>The sbref run index is task-specific: <code class="docutils literal notranslate"><span class="pre">task-fLoc_run-01_sbref</span></code> and
+<code class="docutils literal notranslate"><span class="pre">task-retRW_run-01_sbref</span></code> are independent sequences.</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="step-2-prepare-fmap-intendedfor">
+<h2>Step 2 — Prepare fmap IntendedFor<a class="headerlink" href="#step-2-prepare-fmap-intendedfor" title="Link to this heading">#</a></h2>
+<p>Script: <code class="docutils literal notranslate"><span class="pre">02_prepare_fmap_intendedfor.py</span></code></p>
+<p><strong>Why IntendedFor?</strong></p>
+<p>BIDS requires that each fmap JSON contains an <code class="docutils literal notranslate"><span class="pre">IntendedFor</span></code> list of NIfTI
+paths (relative to the subject directory) for all func runs it should correct.
+fMRIPrep reads this field to decide which fmap to apply to which run.</p>
+<p><strong>How IntendedFor windows are assigned</strong></p>
+<p>Fmaps are sorted by <code class="docutils literal notranslate"><span class="pre">AcquisitionTime</span></code>.  Each fmap “owns” all func files
+whose <code class="docutils literal notranslate"><span class="pre">AcquisitionTime</span></code> falls <strong>after that fmap and before the next fmap</strong>.
+This reflects the physical reality that a fmap is acquired once per scanning
+block and corrects all the runs that follow it.</p>
+<p><strong>Fmap pruning (two passes)</strong></p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>Pass 1 — consecutive fmaps with no func between them:
+    The earlier fmap has an empty window → drop it, keep the later one
+    (which is closer to the actual func block).
+
+Pass 2 — tail orphans:
+    Any fmap with an empty IntendedFor after pass 1 (no func follows it
+    at all) → drop.
+</pre></div>
+</div>
+<p>After pruning, surviving fmaps are renumbered 1-digit sequentially (<code class="docutils literal notranslate"><span class="pre">run-1</span></code>,
+<code class="docutils literal notranslate"><span class="pre">run-2</span></code>, …).</p>
+<p><strong>Checks and warnings</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<colgroup>
+<col style="width: 20.0%" />
+<col style="width: 15.0%" />
+<col style="width: 65.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Check</p></th>
+<th class="head"><p>Severity</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>SESSION GAP</p></td>
+<td><p>Warning</p></td>
+<td><p>A fmap → first-func-after-it gap &gt; 45 min.  This often indicates
+a genuine session break but can also be a metadata error.</p></td>
+</tr>
+<tr class="row-odd"><td><p>FMAP→FUNC GAP</p></td>
+<td><p>Warning</p></td>
+<td><p>The gap between a kept fmap and the nearest func after it is &gt; 3 min.
+Suspicious — may indicate the wrong fmap is being used for that block.</p></td>
+</tr>
+<tr class="row-even"><td><p>FMAP→FIRST-FUNC GAP</p></td>
+<td><p>Warning</p></td>
+<td><p>The fmap immediately before the first func run has a gap &gt; 3 min.</p></td>
+</tr>
+<tr class="row-odd"><td><p>NO FMAP BEFORE FIRST FUNC</p></td>
+<td><p><strong>Error</strong></p></td>
+<td><p>The earliest func run has no fmap preceding it in time.  IntendedFor
+cannot be correctly assigned.  Session is <strong>blocked</strong> in <code class="docutils literal notranslate"><span class="pre">--execute</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p>NOT COVERED</p></td>
+<td><p><strong>Error</strong></p></td>
+<td><p>One or more func runs fall outside all fmap time windows and will have no
+<code class="docutils literal notranslate"><span class="pre">IntendedFor</span></code> pointing to them.  Session is <strong>blocked</strong> in <code class="docutils literal notranslate"><span class="pre">--execute</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>IntendedFor status per fmap JSON</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 85.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Status</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">GOOD</span></code></p></td>
+<td><p>The JSON already has the correct <code class="docutils literal notranslate"><span class="pre">IntendedFor</span></code> — nothing written.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">WRONG</span></code></p></td>
+<td><p>The JSON has an <code class="docutils literal notranslate"><span class="pre">IntendedFor</span></code> field but it points to wrong/stale runs —
+overwritten on <code class="docutils literal notranslate"><span class="pre">--execute</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">MISSING</span></code></p></td>
+<td><p>The JSON has no <code class="docutils literal notranslate"><span class="pre">IntendedFor</span></code> field — written on <code class="docutils literal notranslate"><span class="pre">--execute</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">ERROR</span></code></p></td>
+<td><p>One of the blocking checks above fired.  <code class="docutils literal notranslate"><span class="pre">--execute</span></code> is refused for
+this session until the data issue is resolved manually.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Things to check</strong></p>
+<ul>
+<li><p>Run in dry-run mode (default) and read every <code class="docutils literal notranslate"><span class="pre">ERROR</span></code> session carefully
+before proceeding.</p></li>
+<li><p>A <code class="docutils literal notranslate"><span class="pre">NOT</span> <span class="pre">COVERED</span></code> error for the first few func runs of a session usually means
+the fmap was acquired too late — the scan protocol needs to be fixed for
+future sessions.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">WRONG</span></code> status is common after re-running <code class="docutils literal notranslate"><span class="pre">00_</span></code> or <code class="docutils literal notranslate"><span class="pre">01_</span></code> (run indices
+changed, so old <code class="docutils literal notranslate"><span class="pre">IntendedFor</span></code> paths are stale).  <code class="docutils literal notranslate"><span class="pre">--execute</span></code> will fix them
+automatically.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IntendedFor</span></code> paths are written relative to the <strong>subject directory</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ses</span><span class="o">-</span><span class="mi">02</span><span class="o">/</span><span class="n">func</span><span class="o">/</span><span class="n">sub</span><span class="o">-</span><span class="mi">10</span><span class="n">_ses</span><span class="o">-</span><span class="mi">02</span><span class="n">_task</span><span class="o">-</span><span class="n">fLoc_run</span><span class="o">-</span><span class="mi">01</span><span class="n">_bold</span><span class="o">.</span><span class="n">nii</span><span class="o">.</span><span class="n">gz</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="end-to-end-workflow-example">
+<h2>End-to-end workflow example<a class="headerlink" href="#end-to-end-workflow-example" title="Link to this heading">#</a></h2>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp"># </span><span class="m">1</span>.<span class="w"> </span>Merge<span class="w"> </span>split<span class="w"> </span>sessions<span class="w"> </span>and<span class="w"> </span>fix<span class="w"> </span>run-number<span class="w"> </span>gaps<span class="w"> </span><span class="o">(</span>inspect<span class="w"> </span>output<span class="w"> </span>first<span class="o">)</span>
+<span class="go">python 00_merge_split_ses_reording_runs.py -b /raw_nifti -s 10,02</span>
+<span class="go">python 00_merge_split_ses_reording_runs.py -b /raw_nifti -s 10,02 --execute</span>
+
+<span class="gp"># </span><span class="m">2</span>.<span class="w"> </span>Copy<span class="w"> </span>cleaned<span class="w"> </span>fmaps<span class="w"> </span>to<span class="w"> </span>the<span class="w"> </span>target<span class="w"> </span>BIDS<span class="w"> </span>directory
+<span class="go">python 00b_copy_fmap_to_bids.py -b /raw_nifti -t /BIDS -s 10,02</span>
+<span class="go">python 00b_copy_fmap_to_bids.py -b /raw_nifti -t /BIDS -s 10,02 --execute</span>
+
+<span class="gp"># </span><span class="m">3</span>.<span class="w"> </span>Drop<span class="w"> </span>orphaned<span class="w"> </span>sbrefs
+<span class="go">python 01_drop_duplicated_sbrefs.py -b /BIDS -s 10,02</span>
+<span class="go">python 01_drop_duplicated_sbrefs.py -b /BIDS -s 10,02 --execute</span>
+
+<span class="gp"># </span><span class="m">4</span>.<span class="w"> </span>Write<span class="w"> </span>IntendedFor
+<span class="go">python 02_prepare_fmap_intendedfor.py -b /BIDS -s 10,02</span>
+<span class="go">python 02_prepare_fmap_intendedfor.py -b /BIDS -s 10,02 --execute</span>
+
+<span class="gp"># </span>Batch<span class="w"> </span>run<span class="w"> </span>over<span class="w"> </span>a<span class="w"> </span>full<span class="w"> </span>subject<span class="w"> </span>list
+<span class="go">python 00_merge_split_ses_reording_runs.py -b /raw_nifti -f subseslist.tsv --execute</span>
+<span class="go">python 00b_copy_fmap_to_bids.py  -b /raw_nifti -t /BIDS -f subseslist.tsv --execute</span>
+<span class="go">python 01_drop_duplicated_sbrefs.py -b /BIDS -f subseslist.tsv --execute</span>
+<span class="go">python 02_prepare_fmap_intendedfor.py -b /BIDS -f subseslist.tsv --execute</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="common-failure-scenarios">
+<h2>Common failure scenarios<a class="headerlink" href="#common-failure-scenarios" title="Link to this heading">#</a></h2>
+<p><strong>fLoc runs acquired before the first fmap</strong></p>
+<p>The fLoc task is sometimes run at the start of a session before the fieldmap
+is acquired.  These runs will trigger <code class="docutils literal notranslate"><span class="pre">NOT</span> <span class="pre">COVERED</span></code> errors.  There is no
+automatic fix — either the scan protocol must be changed (acquire a fmap before
+fLoc) or fMRIPrep must be configured to run without SDC for those runs.</p>
+<p><strong>Split session with colliding fmap run-1</strong></p>
+<p>Both <code class="docutils literal notranslate"><span class="pre">ses-02</span></code> and <code class="docutils literal notranslate"><span class="pre">ses-02part2</span></code> contain a <code class="docutils literal notranslate"><span class="pre">run-1</span></code> fmap.  <code class="docutils literal notranslate"><span class="pre">00_</span></code> will
+correctly identify these as distinct logical runs (keyed by <code class="docutils literal notranslate"><span class="pre">ses_label</span> <span class="pre">+</span>
+<span class="pre">run_int</span></code>) and renumber them to <code class="docutils literal notranslate"><span class="pre">run-1</span></code> and <code class="docutils literal notranslate"><span class="pre">run-2</span></code>.</p>
+<p><strong>Orphaned sbref after abort</strong></p>
+<p>If a run was aborted immediately after the sbref was acquired (before any func
+volumes), the sbref will have no matching func within 30 s and be dropped by
+<code class="docutils literal notranslate"><span class="pre">01_</span></code>.  The run-number gap left by the drop is closed by <code class="docutils literal notranslate"><span class="pre">01_</span></code>’s sequential
+renumbering.</p>
+<p><strong>WRONG IntendedFor after re-running 00_ or 01_</strong></p>
+<p>Any time run indices change, previously written <code class="docutils literal notranslate"><span class="pre">IntendedFor</span></code> paths become
+stale.  Re-running <code class="docutils literal notranslate"><span class="pre">02_</span></code> with <code class="docutils literal notranslate"><span class="pre">--execute</span></code> will detect the <code class="docutils literal notranslate"><span class="pre">WRONG</span></code> status
+and overwrite all affected fmap JSONs.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="configuration.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Configuration Reference</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="extending.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Extending launchcontainers — Adding a new Prepare pipeline</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#why-this-matters">Why this matters</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview-of-the-pipeline">Overview of the pipeline</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-0-merge-split-sessions-and-reorder-runs">Step 0 — Merge split sessions and reorder runs</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-0b-copy-fmap-to-bids">Step 0b — Copy fmap to BIDS</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-drop-orphaned-sbrefs">Step 1 — Drop orphaned sbrefs</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-2-prepare-fmap-intendedfor">Step 2 — Prepare fmap IntendedFor</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#end-to-end-workflow-example">End-to-end workflow example</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#common-failure-scenarios">Common failure scenarios</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="_sources/prepare_fmriprep.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, launchcontainers Developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

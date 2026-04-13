@@ -26,18 +26,18 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
-<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+  <link href="_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
     <link rel="stylesheet" type="text/css" href="_static/theme_overrides.css?v=bc718776" />
   
   <!-- So that users can add custom icons -->
-  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <script defer src="_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
-<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
 
     <script src="_static/documentation_options.js?v=6c02275b"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
@@ -45,19 +45,24 @@
     <script src="_static/zenodo.js?v=b8a002e4"></script>
     <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'genindex';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
     <link rel="index" title="Index" href="#" />
     <link rel="search" title="Search" href="search.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   <meta name="docsearch:version" content="0.4.0" />
+  
+    
+    <script src="_static/searchtools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script src="searchindex.js"></script>
+  
   </head>
-  
-  
-  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
-
+  <body data-default-mode="">
   
   
   <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
   
   <div id="pst-scroll-pixel-helper"></div>
   
@@ -89,7 +94,7 @@
 </div>
 
   
-    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
 <div class="bd-header__inner bd-page-width">
   <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
     <span class="fa-solid fa-bars"></span>
@@ -126,6 +131,13 @@
   <ul class="bd-navbar-elements navbar-nav">
     
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="bcbl_computing.html">
+    BCBL Computing Environment
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="installation.html">
     Installation
   </a>
@@ -152,13 +164,6 @@
   </a>
 </li>
 
-
-<li class="nav-item ">
-  <a class="nav-link nav-internal" href="configuration.html">
-    Configuration Reference
-  </a>
-</li>
-
             <li class="nav-item dropdown">
                 <button class="btn dropdown-toggle nav-item" type="button"
                 data-bs-toggle="dropdown" aria-expanded="false"
@@ -167,6 +172,20 @@
                 </button>
                 <ul id="pst-nav-more-links" class="dropdown-menu">
                     
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="prepare_fmriprep.html">
+    Prepare — fMRIPrep (fmap + sbref)
+  </a>
+</li>
+
+
 <li class=" ">
   <a class="nav-link dropdown-item nav-internal" href="extending.html">
     Extending launchcontainers — Adding a new Prepare pipeline
@@ -285,6 +304,13 @@
   <ul class="bd-navbar-elements navbar-nav">
     
 <li class="nav-item ">
+  <a class="nav-link nav-internal" href="bcbl_computing.html">
+    BCBL Computing Environment
+  </a>
+</li>
+
+
+<li class="nav-item ">
   <a class="nav-link nav-internal" href="installation.html">
     Installation
   </a>
@@ -315,6 +341,13 @@
 <li class="nav-item ">
   <a class="nav-link nav-internal" href="configuration.html">
     Configuration Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="prepare_fmriprep.html">
+    Prepare — fMRIPrep (fmap + sbref)
   </a>
 </li>
 
@@ -417,11 +450,13 @@
 
 <div class="genindex-jumpbox">
  <a href="#Symbols"><strong>Symbols</strong></a>
+ | <a href="#A"><strong>A</strong></a>
  | <a href="#B"><strong>B</strong></a>
  | <a href="#C"><strong>C</strong></a>
  | <a href="#D"><strong>D</strong></a>
  | <a href="#F"><strong>F</strong></a>
  | <a href="#G"><strong>G</strong></a>
+ | <a href="#H"><strong>H</strong></a>
  | <a href="#L"><strong>L</strong></a>
  | <a href="#M"><strong>M</strong></a>
  | <a href="#P"><strong>P</strong></a>
@@ -588,6 +623,14 @@
   </ul></td>
 </tr></table>
 
+<h2 id="A">A</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#launchcontainers.utils.atomic_rename_pairs">atomic_rename_pairs() (in module launchcontainers.utils)</a>
+</li>
+  </ul></td>
+</tr></table>
+
 <h2 id="B">B</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%; vertical-align: top;"><ul>
@@ -743,6 +786,14 @@
       <li><a href="api.html#launchcontainers.quality_control.qc_tract_finish_rtp2pipeline.get_expected_tract_files">get_expected_tract_files() (in module launchcontainers.quality_control.qc_tract_finish_rtp2pipeline)</a>
 </li>
       <li><a href="api.html#launchcontainers.helper_function.zip_example_config.get_git_root">get_git_root() (in module launchcontainers.helper_function.zip_example_config)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="H">H</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#launchcontainers.utils.hms_to_sec">hms_to_sec() (in module launchcontainers.utils)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1023,6 +1074,8 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#launchcontainers.utils.parse_hms">parse_hms() (in module launchcontainers.utils)</a>
 </li>
+      <li><a href="api.html#launchcontainers.utils.parse_subses_list">parse_subses_list() (in module launchcontainers.utils)</a>
+</li>
       <li><a href="api.html#launchcontainers.cli.prepare">prepare() (in module launchcontainers.cli)</a>
 </li>
   </ul></td>
@@ -1053,10 +1106,14 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#launchcontainers.utils.read_df">read_df() (in module launchcontainers.utils)</a>
 </li>
+      <li><a href="api.html#launchcontainers.utils.read_json_acqtime">read_json_acqtime() (in module launchcontainers.utils)</a>
+</li>
       <li><a href="api.html#launchcontainers.utils.read_yaml">read_yaml() (in module launchcontainers.utils)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="api.html#launchcontainers.utils.reorder_bids_runs">reorder_bids_runs() (in module launchcontainers.utils)</a>
+</li>
       <li><a href="api.html#launchcontainers.quality_control.batch_sync_tract_and_mrtrix.rsync_single_subject">rsync_single_subject() (in module launchcontainers.quality_control.batch_sync_tract_and_mrtrix)</a>
 </li>
       <li><a href="api.html#launchcontainers.cli.run">run() (in module launchcontainers.cli)</a>
@@ -1069,11 +1126,13 @@
   <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#launchcontainers.quality_control.rtp2pipelne_unzip_output.save_processing_summary">save_processing_summary() (in module launchcontainers.quality_control.rtp2pipelne_unzip_output)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#launchcontainers.log_setup.set_log_files">set_log_files() (in module launchcontainers.log_setup)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="api.html#launchcontainers.log_setup.setup_verbosity">setup_verbosity() (in module launchcontainers.log_setup)</a>
+</li>
+      <li><a href="api.html#launchcontainers.utils.substitute_run">substitute_run() (in module launchcontainers.utils)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -1135,8 +1194,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
-<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+  <script defer src="_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1170,7 +1229,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.16.1.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.0.
 </p></div>
       
     </div>

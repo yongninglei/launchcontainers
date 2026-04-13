@@ -120,6 +120,7 @@ If you use launchcontainers in your research, please cite:
    :maxdepth: 2
    :caption: Getting Started
 
+   bcbl_computing
    installation
    concepts
 
@@ -131,6 +132,7 @@ If you use launchcontainers in your research, please cite:
    tutorial
    cli_reference
    configuration
+   prepare_fmriprep
 
 .. toctree::
    :hidden:
