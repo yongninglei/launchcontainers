@@ -536,7 +536,7 @@ details.</p>
 </dl>
 <div class="admonition important">
 <p class="admonition-title">Important</p>
-<p><strong>Home directory paths differ between systems:</strong></p>
+<p><strong>Home directory paths differ between systems (the ~ represents):</strong></p>
 <div class="pst-scrollable-table-container"><table class="table">
 <thead>
 <tr class="row-odd"><th class="head"><p>System</p></th>
@@ -548,12 +548,12 @@ details.</p>
 <td><p><code class="docutils literal notranslate"><span class="pre">/home/&lt;user&gt;</span></code></p></td>
 </tr>
 <tr class="row-odd"><td><p>Cajal / IPS</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">/exporthome/&lt;user&gt;</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">/export/home/&lt;user&gt;</span></code></p></td>
 </tr>
 </tbody>
 </table>
 </div>
-<p>Always store your work <strong>under your user directory</strong> so it is
+<p>Always store your work <strong>under your user directory （/export/home/&lt;user&gt;/&lt;user&gt;）</strong> so it is
 available across systems.</p>
 </div>
 <p><strong>Check system load:</strong></p>
@@ -596,11 +596,11 @@ any environment variables your pipelines need.</p>
 <tbody>
 <tr class="row-even"><td><p><strong>micromamba</strong></p></td>
 <td><p>Environment management (fast conda replacement)</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">~/soft/</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">/export/home/&lt;user&gt;/&lt;user&gt;/soft/</span></code></p></td>
 </tr>
 <tr class="row-odd"><td><p><strong>pipx</strong></p></td>
 <td><p>Isolated tool installation</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">/exporthome/&lt;user&gt;</span></code> (export home)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">to</span> <span class="pre">~/.local/bin/pipx</span></code></p></td>
 </tr>
 <tr class="row-even"><td><p><strong>poetry</strong></p></td>
 <td><p>Dependency management and packaging</p></td>
@@ -609,9 +609,9 @@ any environment variables your pipelines need.</p>
 </tbody>
 </table>
 </div>
-<p><strong>Step 1 — Install micromamba</strong> into <code class="docutils literal notranslate"><span class="pre">~/soft/</span></code>:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">mkdir -p ~/soft</span>
-<span class="go">cd ~/soft</span>
+<p><strong>Step 1 — Install micromamba</strong> into <code class="docutils literal notranslate"><span class="pre">~/&lt;user&gt;/soft/</span></code>:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">mkdir -p ~/&lt;user&gt;/soft/</span>
+<span class="go">cd ~/&lt;user&gt;/soft/</span>
 <span class="go">curl -L micro.mamba.pm/install.sh | bash</span>
 </pre></div>
 </div>

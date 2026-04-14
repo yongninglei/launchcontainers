@@ -52,17 +52,17 @@ only as an entry point — do not run heavy computations on it.
 
 .. important::
 
-   **Home directory paths differ between systems:**
+   **Home directory paths differ between systems (the ~ represents):**
 
-   +--------------------+------------------------+
-   | System             | Home path              |
-   +====================+========================+
-   | brodmann           | ``/home/<user>``       |
-   +--------------------+------------------------+
-   | Cajal / IPS        | ``/exporthome/<user>`` |
-   +--------------------+------------------------+
+   +--------------------+-------------------------+
+   | System             | Home path               |
+   +====================+=========================+
+   | brodmann           | ``/home/<user>``        |
+   +--------------------+-------------------------+
+   | Cajal / IPS        | ``/export/home/<user>`` |
+   +--------------------+-------------------------+
 
-   Always store your work **under your user directory** so it is
+   Always store your work **under your user directory （/export/home/<user>/<user>）** so it is
    available across systems.
 
 **Check system load:**
@@ -106,19 +106,19 @@ We use three tools together:
 +--------------------+--------------------------------------------------+-----------------------------------------+
 | Tool               | Purpose                                          | Install location                        |
 +====================+==================================================+=========================================+
-| **micromamba**     | Environment management (fast conda replacement)  | ``~/soft/``                             |
+| **micromamba**     | Environment management (fast conda replacement)  | ``/export/home/<user>/<user>/soft/``    |
 +--------------------+--------------------------------------------------+-----------------------------------------+
-| **pipx**           | Isolated tool installation                       | ``/exporthome/<user>`` (export home)    |
+| **pipx**           | Isolated tool installation                       | ``pip install to ~/.local/bin/pipx``    |
 +--------------------+--------------------------------------------------+-----------------------------------------+
 | **poetry**         | Dependency management and packaging              | installed via pipx                      |
 +--------------------+--------------------------------------------------+-----------------------------------------+
 
-**Step 1 — Install micromamba** into ``~/soft/``:
+**Step 1 — Install micromamba** into ``~/<user>/soft/``:
 
 .. code-block:: console
 
-   mkdir -p ~/soft
-   cd ~/soft
+   mkdir -p ~/<user>/soft/
+   cd ~/<user>/soft/
    curl -L micro.mamba.pm/install.sh | bash
 
 **Step 2 — Install pipx** (on the export filesystem):
