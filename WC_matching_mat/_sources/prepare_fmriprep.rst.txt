@@ -275,6 +275,48 @@ After pruning, surviving fmaps are renumbered 1-digit sequentially (``run-1``,
 
 ----
 
+SLURM submission
+-----------------
+
+Script: ``MR_pipelines/03_fmriprep/run_dipc/launch_fmriprep_on_slurm.sh``
+
+After the BIDS preparation scripts have been run, fMRIPrep itself is submitted
+as a SLURM array job.
+
+**Required options:**
+
+* ``-a <analysis_name>`` — label for this analysis run, used in output paths
+  and log directory names (e.g. ``t2w_fmapsbref_newest``).
+* ``-s <sub>,<ses>`` **or** ``-f <subseslist>`` — target subject/session(s).
+
+.. code-block:: console
+
+   # Single subject
+   bash launch_fmriprep_on_slurm.sh -a t2w_fmapsbref_newest -s 03,01
+
+   # Batch from file
+   bash launch_fmriprep_on_slurm.sh -a t2w_fmapsbref_newest -f /path/subseslist.txt
+
+**Logging convention** (matches the PRF pipeline):
+
+SLURM ``.o``/``.e`` files are written directly to the log directory:
+
+.. code-block:: text
+
+   $OUTPUT_BASE/dipc_fmriprep/{fp_version}_{analysis_name}_{date}/
+
+After each job finishes, ``src_fmriprep.slurm`` appends one line to
+``job_results.tsv`` in that same directory:
+
+.. code-block:: text
+
+   2026-04-16 09:15:42   sub-03   ses-01   fp_s03_01   67890   exit=0
+
+The submission script and subseslist are copied into the log directory at
+submission time for full reproducibility.
+
+----
+
 End-to-end workflow example
 ----------------------------
 

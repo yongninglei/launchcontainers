@@ -794,6 +794,38 @@ automatically.</p></li>
 </ul>
 </section>
 <hr class="docutils" />
+<section id="slurm-submission">
+<h2>SLURM submission<a class="headerlink" href="#slurm-submission" title="Link to this heading">#</a></h2>
+<p>Script: <code class="docutils literal notranslate"><span class="pre">MR_pipelines/03_fmriprep/run_dipc/launch_fmriprep_on_slurm.sh</span></code></p>
+<p>After the BIDS preparation scripts have been run, fMRIPrep itself is submitted
+as a SLURM array job.</p>
+<p><strong>Required options:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">-a</span> <span class="pre">&lt;analysis_name&gt;</span></code> — label for this analysis run, used in output paths
+and log directory names (e.g. <code class="docutils literal notranslate"><span class="pre">t2w_fmapsbref_newest</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-s</span> <span class="pre">&lt;sub&gt;,&lt;ses&gt;</span></code> <strong>or</strong> <code class="docutils literal notranslate"><span class="pre">-f</span> <span class="pre">&lt;subseslist&gt;</span></code> — target subject/session(s).</p></li>
+</ul>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp"># </span>Single<span class="w"> </span>subject
+<span class="go">bash launch_fmriprep_on_slurm.sh -a t2w_fmapsbref_newest -s 03,01</span>
+
+<span class="gp"># </span>Batch<span class="w"> </span>from<span class="w"> </span>file
+<span class="go">bash launch_fmriprep_on_slurm.sh -a t2w_fmapsbref_newest -f /path/subseslist.txt</span>
+</pre></div>
+</div>
+<p><strong>Logging convention</strong> (matches the PRF pipeline):</p>
+<p>SLURM <code class="docutils literal notranslate"><span class="pre">.o</span></code>/<code class="docutils literal notranslate"><span class="pre">.e</span></code> files are written directly to the log directory:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>$OUTPUT_BASE/dipc_fmriprep/{fp_version}_{analysis_name}_{date}/
+</pre></div>
+</div>
+<p>After each job finishes, <code class="docutils literal notranslate"><span class="pre">src_fmriprep.slurm</span></code> appends one line to
+<code class="docutils literal notranslate"><span class="pre">job_results.tsv</span></code> in that same directory:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>2026-04-16 09:15:42   sub-03   ses-01   fp_s03_01   67890   exit=0
+</pre></div>
+</div>
+<p>The submission script and subseslist are copied into the log directory at
+submission time for full reproducibility.</p>
+</section>
+<hr class="docutils" />
 <section id="end-to-end-workflow-example">
 <h2>End-to-end workflow example<a class="headerlink" href="#end-to-end-workflow-example" title="Link to this heading">#</a></h2>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp"># </span><span class="m">1</span>.<span class="w"> </span>Merge<span class="w"> </span>split<span class="w"> </span>sessions<span class="w"> </span>and<span class="w"> </span>fix<span class="w"> </span>run-number<span class="w"> </span>gaps<span class="w"> </span><span class="o">(</span>inspect<span class="w"> </span>output<span class="w"> </span>first<span class="o">)</span>
@@ -897,6 +929,7 @@ and overwrite all affected fmap JSONs.</p>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-0b-copy-fmap-to-bids">Step 0b — Copy fmap to BIDS</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-drop-orphaned-sbrefs">Step 1 — Drop orphaned sbrefs</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-2-prepare-fmap-intendedfor">Step 2 — Prepare fmap IntendedFor</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#slurm-submission">SLURM submission</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#end-to-end-workflow-example">End-to-end workflow example</a></li>
 <li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#common-failure-scenarios">Common failure scenarios</a></li>
 </ul>

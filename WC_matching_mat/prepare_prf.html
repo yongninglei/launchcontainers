@@ -613,10 +613,15 @@ Auto-detects tasks by globbing existing JSONs — no manual task list
 needed.</p></td>
 </tr>
 <tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">prfprepare_dipc.sh</span></code></p></td>
-<td><p>SLURM job script called by <code class="docutils literal notranslate"><span class="pre">sbatch_prfprepare.sh</span></code> on the compute node.</p></td>
+<td><p>SLURM job script called by <code class="docutils literal notranslate"><span class="pre">sbatch_prfprepare.sh</span></code> on the compute node.
+After the container finishes, captures the exit code and appends one
+summary line to <code class="docutils literal notranslate"><span class="pre">job_results.tsv</span></code> in the log directory.</p></td>
 </tr>
 <tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">prfanalyze-vista_dipc.sh</span></code></p></td>
-<td><p>SLURM job script called by <code class="docutils literal notranslate"><span class="pre">sbatch_prfanalyze.sh</span></code> on the compute node.</p></td>
+<td><p>SLURM job script called by <code class="docutils literal notranslate"><span class="pre">sbatch_prfanalyze.sh</span></code> on the compute node.
+After the container finishes, captures the exit code and appends one
+summary line (including task label) to <code class="docutils literal notranslate"><span class="pre">job_results.tsv</span></code> in the log
+directory.</p></td>
 </tr>
 </tbody>
 </table>
@@ -828,29 +833,56 @@ whether the FreeSurfer symlink inside it is valid.</p>
 <p>Script: <code class="docutils literal notranslate"><span class="pre">sbatch_prfprepare.sh</span></code></p>
 <p>Configure the hardcoded variables at the top of the script (<code class="docutils literal notranslate"><span class="pre">baseP</span></code>,
 <code class="docutils literal notranslate"><span class="pre">version</span></code>, <code class="docutils literal notranslate"><span class="pre">qos</span></code>, <code class="docutils literal notranslate"><span class="pre">json_dir</span></code>, <code class="docutils literal notranslate"><span class="pre">sif_path</span></code>), then submit:</p>
+<p><strong>Required options:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">-n</span> <span class="pre">&lt;log_note&gt;</span></code> — short label included in the log directory name (e.g. <code class="docutils literal notranslate"><span class="pre">firstbatch</span></code>, <code class="docutils literal notranslate"><span class="pre">rerun_sub03</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-s</span> <span class="pre">&lt;sub&gt;,&lt;ses&gt;</span></code> <strong>or</strong> <code class="docutils literal notranslate"><span class="pre">-f</span> <span class="pre">&lt;subseslist&gt;</span></code> — target subject/session(s).</p></li>
+</ul>
 <div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp"># </span>Single<span class="w"> </span>sub/ses
-<span class="go">bash sbatch_prfprepare.sh -s 01,09</span>
+<span class="go">bash sbatch_prfprepare.sh -n firstbatch -s 01,09</span>
 
 <span class="gp"># </span>Batch<span class="w"> </span>from<span class="w"> </span>file
-<span class="go">bash sbatch_prfprepare.sh -f /path/subseslist.tsv</span>
+<span class="go">bash sbatch_prfprepare.sh -n firstbatch -f /path/subseslist.tsv</span>
 </pre></div>
 </div>
-<p>Logs are written to <code class="docutils literal notranslate"><span class="pre">$baseP/dipc_prfprepare_logs/{date}_{name}/</span></code>.
-The script and subseslist are copied into the log directory for reproducibility.</p>
+<p>SLURM <code class="docutils literal notranslate"><span class="pre">.o</span></code>/<code class="docutils literal notranslate"><span class="pre">.e</span></code> log files and the submission script are written to:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>$baseP/dipc_prfprepare_logs/{date}_{log_note}_{analysis_name}/
+</pre></div>
+</div>
+<p>After each job finishes, <code class="docutils literal notranslate"><span class="pre">prfprepare_dipc.sh</span></code> appends one line to
+<code class="docutils literal notranslate"><span class="pre">job_results.tsv</span></code> in that directory:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>2026-04-16 14:10:05   sub-01   ses-09   1_all_prfprepare   12345   exit=0
+</pre></div>
+</div>
 </section>
 <hr class="docutils" />
 <section id="step-6-submit-prfanalyze-vista-jobs">
 <h3>Step 6 — Submit prfanalyze-vista jobs<a class="headerlink" href="#step-6-submit-prfanalyze-vista-jobs" title="Link to this heading">#</a></h3>
 <p>Script: <code class="docutils literal notranslate"><span class="pre">sbatch_prfanalyze.sh</span></code></p>
-<p><strong>Task auto-detection:</strong> the script globs existing JSONs in <code class="docutils literal notranslate"><span class="pre">json_dir</span></code> to
-determine which tasks to run for each sub/ses pair — no manual task list is
-needed.  One SLURM job is submitted per detected task.</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">bash sbatch_prfanalyze.sh -s 01,09</span>
-<span class="go">bash sbatch_prfanalyze.sh -f /path/subseslist.tsv</span>
+<p><strong>Required options:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">-n</span> <span class="pre">&lt;log_note&gt;</span></code> — short label included in the log directory name.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-m</span> <span class="pre">&lt;model&gt;</span></code> — model label: <code class="docutils literal notranslate"><span class="pre">og</span></code> (one gaussian) or <code class="docutils literal notranslate"><span class="pre">css</span></code>.  Must match
+the <code class="docutils literal notranslate"><span class="pre">--model</span></code> value used in step 4.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-s</span> <span class="pre">&lt;sub&gt;,&lt;ses&gt;</span></code> <strong>or</strong> <code class="docutils literal notranslate"><span class="pre">-f</span> <span class="pre">&lt;subseslist&gt;</span></code> — target subject/session(s).</p></li>
+</ul>
+<p><strong>Task auto-detection:</strong> the script globs existing JSONs in <code class="docutils literal notranslate"><span class="pre">json_dir</span></code>
+matching <code class="docutils literal notranslate"><span class="pre">*_{model}_sub-{sub}_ses-{ses}.json</span></code> to determine which tasks to
+run — no manual task list is needed.  One SLURM job is submitted per detected
+task.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">bash sbatch_prfanalyze.sh -n firstbatch -m og -s 01,09</span>
+<span class="go">bash sbatch_prfanalyze.sh -n firstbatch -m og -f /path/subseslist.tsv</span>
 </pre></div>
 </div>
-<p>The <code class="docutils literal notranslate"><span class="pre">model</span></code> variable at the top of the script (e.g. <code class="docutils literal notranslate"><span class="pre">css</span></code>) must match the
-model label used when generating JSONs in step 4.</p>
+<p>SLURM <code class="docutils literal notranslate"><span class="pre">.o</span></code>/<code class="docutils literal notranslate"><span class="pre">.e</span></code> log files are written to:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>$baseP/dipc_prfanalyze-vista_logs/{date}_{log_note}_{analysis_name}/
+</pre></div>
+</div>
+<p>After each job finishes, <code class="docutils literal notranslate"><span class="pre">prfanalyze-vista_dipc.sh</span></code> appends one line to
+<code class="docutils literal notranslate"><span class="pre">job_results.tsv</span></code> in that directory:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>2026-04-16 14:23:01   sub-03   ses-01   task-retRW   3_retRW_prfanalyze-vista   12346   exit=0
+</pre></div>
+</div>
 </section>
 <hr class="docutils" />
 <section id="step-7-prfresult-bcbl-only">
@@ -982,18 +1014,18 @@ matches the <code class="docutils literal notranslate"><span class="pre">json_di
 
 <span class="gp"># </span><span class="m">6</span>.<span class="w"> </span>Submit<span class="w"> </span>prfprepare
 <span class="go">cd ../run_prf</span>
-<span class="go">bash sbatch_prfprepare.sh -s 01,09</span>
+<span class="go">bash sbatch_prfprepare.sh -n ses09_test -s 01,09</span>
 
 <span class="gp"># </span><span class="m">7</span>.<span class="w"> </span>Generate<span class="w"> </span>prfanalyze-vista<span class="w"> </span>JSONs
 <span class="go">cd ../prepare_prf</span>
 <span class="go">python 03_prepare_prf_subses_json.py \</span>
 <span class="go">    -b /BIDS -s 01 --ses 09 \</span>
-<span class="go">    --step prfanalyze-vista --prepid 01 --model css \</span>
+<span class="go">    --step prfanalyze-vista --prepid 01 --model og \</span>
 <span class="go">    -o /VOTCLOC/code/prfanalyze-vista_jsons</span>
 
 <span class="gp"># </span><span class="m">8</span>.<span class="w"> </span>Submit<span class="w"> </span>prfanalyze<span class="w"> </span><span class="o">(</span>tasks<span class="w"> </span>auto-detected<span class="w"> </span>from<span class="w"> </span>existing<span class="w"> </span>JSONs<span class="o">)</span>
 <span class="go">cd ../run_prf</span>
-<span class="go">bash sbatch_prfanalyze.sh -s 01,09</span>
+<span class="go">bash sbatch_prfanalyze.sh -n ses09_test -m og -s 01,09</span>
 
 <span class="gp"># </span><span class="m">9</span>.<span class="w"> </span>prfresult<span class="w"> </span>—<span class="w"> </span>run<span class="w"> </span>on<span class="w"> </span>BCBL,<span class="w"> </span>not<span class="w"> </span>DIPC
 </pre></div>

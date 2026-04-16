@@ -96,8 +96,13 @@ Run scripts (DIPC)
        needed.
    * - ``prfprepare_dipc.sh``
      - SLURM job script called by ``sbatch_prfprepare.sh`` on the compute node.
+       After the container finishes, captures the exit code and appends one
+       summary line to ``job_results.tsv`` in the log directory.
    * - ``prfanalyze-vista_dipc.sh``
      - SLURM job script called by ``sbatch_prfanalyze.sh`` on the compute node.
+       After the container finishes, captures the exit code and appends one
+       summary line (including task label) to ``job_results.tsv`` in the log
+       directory.
 
 ----
 
@@ -318,16 +323,31 @@ Script: ``sbatch_prfprepare.sh``
 Configure the hardcoded variables at the top of the script (``baseP``,
 ``version``, ``qos``, ``json_dir``, ``sif_path``), then submit:
 
+**Required options:**
+
+* ``-n <log_note>`` — short label included in the log directory name (e.g. ``firstbatch``, ``rerun_sub03``).
+* ``-s <sub>,<ses>`` **or** ``-f <subseslist>`` — target subject/session(s).
+
 .. code-block:: console
 
    # Single sub/ses
-   bash sbatch_prfprepare.sh -s 01,09
+   bash sbatch_prfprepare.sh -n firstbatch -s 01,09
 
    # Batch from file
-   bash sbatch_prfprepare.sh -f /path/subseslist.tsv
+   bash sbatch_prfprepare.sh -n firstbatch -f /path/subseslist.tsv
 
-Logs are written to ``$baseP/dipc_prfprepare_logs/{date}_{name}/``.
-The script and subseslist are copied into the log directory for reproducibility.
+SLURM ``.o``/``.e`` log files and the submission script are written to:
+
+.. code-block:: text
+
+   $baseP/dipc_prfprepare_logs/{date}_{log_note}_{analysis_name}/
+
+After each job finishes, ``prfprepare_dipc.sh`` appends one line to
+``job_results.tsv`` in that directory:
+
+.. code-block:: text
+
+   2026-04-16 14:10:05   sub-01   ses-09   1_all_prfprepare   12345   exit=0
 
 ----
 
@@ -336,17 +356,35 @@ Step 6 — Submit prfanalyze-vista jobs
 
 Script: ``sbatch_prfanalyze.sh``
 
-**Task auto-detection:** the script globs existing JSONs in ``json_dir`` to
-determine which tasks to run for each sub/ses pair — no manual task list is
-needed.  One SLURM job is submitted per detected task.
+**Required options:**
+
+* ``-n <log_note>`` — short label included in the log directory name.
+* ``-m <model>`` — model label: ``og`` (one gaussian) or ``css``.  Must match
+  the ``--model`` value used in step 4.
+* ``-s <sub>,<ses>`` **or** ``-f <subseslist>`` — target subject/session(s).
+
+**Task auto-detection:** the script globs existing JSONs in ``json_dir``
+matching ``*_{model}_sub-{sub}_ses-{ses}.json`` to determine which tasks to
+run — no manual task list is needed.  One SLURM job is submitted per detected
+task.
 
 .. code-block:: console
 
-   bash sbatch_prfanalyze.sh -s 01,09
-   bash sbatch_prfanalyze.sh -f /path/subseslist.tsv
+   bash sbatch_prfanalyze.sh -n firstbatch -m og -s 01,09
+   bash sbatch_prfanalyze.sh -n firstbatch -m og -f /path/subseslist.tsv
 
-The ``model`` variable at the top of the script (e.g. ``css``) must match the
-model label used when generating JSONs in step 4.
+SLURM ``.o``/``.e`` log files are written to:
+
+.. code-block:: text
+
+   $baseP/dipc_prfanalyze-vista_logs/{date}_{log_note}_{analysis_name}/
+
+After each job finishes, ``prfanalyze-vista_dipc.sh`` appends one line to
+``job_results.tsv`` in that directory:
+
+.. code-block:: text
+
+   2026-04-16 14:23:01   sub-03   ses-01   task-retRW   3_retRW_prfanalyze-vista   12346   exit=0
 
 ----
 
@@ -487,17 +525,17 @@ End-to-end example (single session)
 
    # 6. Submit prfprepare
    cd ../run_prf
-   bash sbatch_prfprepare.sh -s 01,09
+   bash sbatch_prfprepare.sh -n ses09_test -s 01,09
 
    # 7. Generate prfanalyze-vista JSONs
    cd ../prepare_prf
    python 03_prepare_prf_subses_json.py \
        -b /BIDS -s 01 --ses 09 \
-       --step prfanalyze-vista --prepid 01 --model css \
+       --step prfanalyze-vista --prepid 01 --model og \
        -o /VOTCLOC/code/prfanalyze-vista_jsons
 
    # 8. Submit prfanalyze (tasks auto-detected from existing JSONs)
    cd ../run_prf
-   bash sbatch_prfanalyze.sh -s 01,09
+   bash sbatch_prfanalyze.sh -n ses09_test -m og -s 01,09
 
    # 9. prfresult — run on BCBL, not DIPC
