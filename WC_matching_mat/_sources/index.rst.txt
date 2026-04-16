@@ -133,6 +133,7 @@ If you use launchcontainers in your research, please cite:
    cli_reference
    configuration
    prepare_fmriprep
+   prepare_prf
 
 .. toctree::
    :hidden:
