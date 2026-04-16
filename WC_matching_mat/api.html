@@ -658,6 +658,8 @@ or an empty string if the field is absent or the file cannot be read.</p>
 <span class="sig-name descname"><span class="pre">parse_subses_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.14)"><span class="pre">Path</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><span class="pre">list</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#launchcontainers.utils.parse_subses_list" title="Link to this definition">#</a></dt>
 <dd><p>Read a subseslist CSV or TSV file and return (sub, ses) pairs.</p>
 <p>The file must have a header row with at least <code class="docutils literal notranslate"><span class="pre">sub</span></code> and <code class="docutils literal notranslate"><span class="pre">ses</span></code> columns.
+If a <code class="docutils literal notranslate"><span class="pre">RUN</span></code> column is present, only rows where <code class="docutils literal notranslate"><span class="pre">RUN</span> <span class="pre">==</span> <span class="pre">&quot;True&quot;</span></code> are
+returned; otherwise all rows are included.
 Values are stripped of whitespace and zero-padded to two digits.
 TSV files (<code class="docutils literal notranslate"><span class="pre">.tsv</span></code> extension) are auto-detected; everything else is
 treated as comma-separated.</p>
@@ -756,23 +758,6 @@ executed when <em>dry_run</em> is <code class="docutils literal notranslate"><sp
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p><em>dict</em> – Parsed YAML contents.</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="launchcontainers.utils.read_df">
-<span class="sig-name descname"><span class="pre">read_df</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path_to_df_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#launchcontainers.utils.read_df" title="Link to this definition">#</a></dt>
-<dd><p>Read a CSV file into a dataframe and count runnable rows.</p>
-<p>This helper is primarily used for <code class="docutils literal notranslate"><span class="pre">subseslist</span></code> files, where the
-<code class="docutils literal notranslate"><span class="pre">RUN</span></code> column marks which rows should be scheduled.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>path_to_df_file</strong> (<em>str or path-like</em>) – Path to the CSV file to read.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p><em>tuple[pandas.DataFrame, int | None]</em> – The loaded dataframe and the number of rows where <code class="docutils literal notranslate"><span class="pre">RUN</span> <span class="pre">==</span> <span class="pre">'True'</span></code>.
-If the file does not contain a <code class="docutils literal notranslate"><span class="pre">RUN</span></code> column, the count is <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1703,7 +1688,6 @@ Git working tree.</p>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.utils.reorder_bids_runs"><code class="docutils literal notranslate"><span class="pre">reorder_bids_runs()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.utils.die"><code class="docutils literal notranslate"><span class="pre">die()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.utils.read_yaml"><code class="docutils literal notranslate"><span class="pre">read_yaml()</span></code></a></li>
-<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.utils.read_df"><code class="docutils literal notranslate"><span class="pre">read_df()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.utils.copy_file"><code class="docutils literal notranslate"><span class="pre">copy_file()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.utils.copy_configs"><code class="docutils literal notranslate"><span class="pre">copy_configs()</span></code></a></li>
 <li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#launchcontainers.utils.force_symlink"><code class="docutils literal notranslate"><span class="pre">force_symlink()</span></code></a></li>
