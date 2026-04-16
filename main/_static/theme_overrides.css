@@ -1,0 +1,191 @@
+:root {
+  --lc-accent: #0f766e;
+  --lc-accent-dark: #115e59;
+  --lc-ink: #102a43;
+  --lc-surface: #f7fbfc;
+  --lc-surface-strong: #e6f4f1;
+  --lc-border: #d8e4e8;
+}
+
+html[data-theme="light"] {
+  --pst-color-primary: var(--lc-accent);
+  --pst-color-secondary: #2563eb;
+  --pst-color-link: var(--lc-accent-dark);
+  --pst-color-link-hover: #0b4f4b;
+}
+
+.bd-main .bd-content .bd-article-container {
+  max-width: 980px;
+}
+
+.navbar-brand.logo .logo__title {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.bd-article-container h1,
+.bd-article-container h2,
+.bd-article-container h3 {
+  color: var(--lc-ink);
+  letter-spacing: -0.02em;
+}
+
+.lc-hero {
+  margin: 0 0 2.5rem;
+  padding: 2.5rem 2rem;
+  border: 1px solid var(--lc-border);
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top right, rgba(15, 118, 110, 0.12), transparent 28%),
+    linear-gradient(135deg, #ffffff 0%, var(--lc-surface) 100%);
+  box-shadow: 0 18px 40px rgba(16, 42, 67, 0.08);
+}
+
+.lc-logo {
+  display: block;
+  width: min(420px, 100%);
+  height: auto;
+  margin: 0 0 1rem;
+}
+
+.lc-eyebrow {
+  margin: 0 0 0.75rem;
+  color: var(--lc-accent-dark);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lc-hero h1 {
+  margin: 0;
+  font-size: clamp(2.5rem, 4vw, 4rem);
+  line-height: 1;
+}
+
+.lc-lead {
+  max-width: 48rem;
+  margin: 1rem 0 0;
+  color: #334e68;
+  font-size: 1.12rem;
+  line-height: 1.7;
+}
+
+.lc-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.lc-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 1.15rem;
+  border-radius: 999px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.lc-button:hover {
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+
+.lc-button-primary {
+  background: var(--lc-accent);
+  color: #ffffff;
+  box-shadow: 0 12px 24px rgba(15, 118, 110, 0.22);
+}
+
+.lc-button-primary:hover {
+  background: var(--lc-accent-dark);
+  color: #ffffff;
+}
+
+.lc-button-secondary {
+  border: 1px solid var(--lc-border);
+  background: #ffffff;
+  color: var(--lc-ink);
+}
+
+.lc-button-secondary:hover {
+  background: var(--lc-surface);
+  color: var(--lc-ink);
+}
+
+.lc-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 0 0 2.5rem;
+}
+
+.lc-card {
+  padding: 1.4rem;
+  border: 1px solid var(--lc-border);
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(16, 42, 67, 0.05);
+}
+
+.lc-card h2 {
+  margin-top: 0;
+  margin-bottom: 0.55rem;
+  font-size: 1.1rem;
+}
+
+.lc-card p {
+  margin: 0;
+  color: #486581;
+}
+
+.lc-section-intro {
+  margin: 0 0 1.5rem;
+}
+
+.lc-section-intro h2 {
+  margin-bottom: 0.5rem;
+}
+
+.lc-section-intro p {
+  max-width: 46rem;
+  color: #486581;
+}
+
+.bd-content .sd-table,
+.bd-content table.docutils {
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+table.docutils td,
+table.docutils th {
+  white-space: normal;
+}
+
+div.admonition,
+.admonition {
+  border-radius: 14px;
+}
+
+div.admonition.caution {
+  background: #fff1f2;
+  border-color: #fecdd3;
+}
+
+.admonition.caution .admonition-title {
+  background: #ffe4e6;
+}
+
+@media (max-width: 900px) {
+  .lc-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lc-hero {
+    padding: 2rem 1.25rem;
+  }
+}

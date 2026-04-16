@@ -1,0 +1,1180 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>PRF Pipeline — Prepare and Run &#8212; launchcontainers</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="_static/theme_overrides.css?v=bc718776" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+
+    <script src="_static/documentation_options.js?v=6c02275b"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/zenodo.js?v=b8a002e4"></script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'prepare_prf';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Extending launchcontainers — Adding a new Prepare pipeline" href="extending.html" />
+    <link rel="prev" title="Prepare — fMRIPrep (fmap + sbref)" href="prepare_fmriprep.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.4.0" />
+  
+    
+    <script src="_static/searchtools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script src="searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">launchcontainers</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="bcbl_computing.html">
+    BCBL Computing Environment
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="concepts.html">
+    Core Concepts
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="tutorial.html">
+    Tutorial
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="cli_reference.html">
+    CLI Reference
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="prepare_fmriprep.html">
+    Prepare — fMRIPrep (fmap + sbref)
+  </a>
+</li>
+
+
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="#">
+    PRF Pipeline — Prepare and Run
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="extending.html">
+    Extending launchcontainers — Adding a new Prepare pipeline
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="code_structure.html">
+    Code Structure
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="changelog.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="api.html">
+    API Reference
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/garikoitz/launchcontainers" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="bcbl_computing.html">
+    BCBL Computing Environment
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installation.html">
+    Installation
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="concepts.html">
+    Core Concepts
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="tutorial.html">
+    Tutorial
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="cli_reference.html">
+    CLI Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="configuration.html">
+    Configuration Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="prepare_fmriprep.html">
+    Prepare — fMRIPrep (fmap + sbref)
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    PRF Pipeline — Prepare and Run
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="extending.html">
+    Extending launchcontainers — Adding a new Prepare pipeline
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="code_structure.html">
+    Code Structure
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="changelog.html">
+    Changelog
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api.html">
+    API Reference
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/garikoitz/launchcontainers" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar"><svg class="pst-icon svg-inline--fa" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"></div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">PRF Pipeline — Prepare and Run</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="prf-pipeline-prepare-and-run">
+<span id="prepare-prf"></span><h1>PRF Pipeline — Prepare and Run<a class="headerlink" href="#prf-pipeline-prepare-and-run" title="Link to this heading">#</a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">#</a></h2>
+<p>The population receptive field (PRF) pipeline chains three containers in
+sequence. Each container reads from the output of the previous one:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>fMRIPrep output
+     ↓
+prfprepare       — projects volumetric BOLD to surface, averages runs
+     ↓
+prfanalyze-vista — fits the pRF model (Benson / vista-based)
+     ↓
+prfresult        — extracts ROI-level pRF parameters and plots
+</pre></div>
+</div>
+<p><strong>Important constraints:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">prfprepare</span></code> and <code class="docutils literal notranslate"><span class="pre">prfanalyze-vista</span></code> run on <strong>DIPC</strong>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">prfresult</span></code> only works on the <strong>BCBL server</strong> — do not submit it on DIPC,
+the container will fail.</p></li>
+<li><p>fMRIPrep must be completed and its output symlinked under
+<code class="docutils literal notranslate"><span class="pre">BIDS/derivatives/fmriprep/analysis-{fp}/</span></code> before any PRF step is run.</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="pipeline-scripts">
+<h2>Pipeline scripts<a class="headerlink" href="#pipeline-scripts" title="Link to this heading">#</a></h2>
+<p>Scripts live in <code class="docutils literal notranslate"><span class="pre">tests/prepare_prf/</span></code> (preparation) and <code class="docutils literal notranslate"><span class="pre">tests/run_prf/</span></code>
+(SLURM submission).  They must be run <strong>in the numbered order</strong> shown below.</p>
+<section id="preparation-scripts">
+<h3>Preparation scripts<a class="headerlink" href="#preparation-scripts" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Script</p></th>
+<th class="head"><p>What it does</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">00_dcm2niix_ret.py</span></code></p></td>
+<td><p>Converts retinotopy DICOM series (retCB, retRW, retFF, retfixRW, …) to
+BIDS NIfTI.  Classifies each folder as <em>magnitude</em>, <em>phase</em>, <em>sbref</em>, or
+<em>skip</em> by folder-name rules.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">00_drop_ret_run.py</span></code></p></td>
+<td><p>Drops a bad ret run from BIDS func/ and renames its vistadisplog <code class="docutils literal notranslate"><span class="pre">.mat</span></code>
+target to <code class="docutils literal notranslate"><span class="pre">wrongrun_*</span></code> so it is excluded from later steps.  Renumbers
+surviving runs of the same task sequentially.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">01_prepare_prf_log_and_bold.py</span></code></p></td>
+<td><p>Reads vistadisplog <code class="docutils literal notranslate"><span class="pre">.mat</span></code> files, determines task identity by
+<strong>reading the file content</strong> (<code class="docutils literal notranslate"><span class="pre">params.loadMatrix</span></code> / stimName field),
+creates named <code class="docutils literal notranslate"><span class="pre">params.mat</span></code> symlinks, and positionally matches each run
+to its BIDS bold/sbref by acquisition time.  Outputs a per-session table
+for visual inspection.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">01b_special_fix_sub01_block02_rename.py</span></code></p></td>
+<td><p><strong>Session-specific script</strong> (sub-01 ses-09 and ses-10 only).  Atomically
+renames <code class="docutils literal notranslate"><span class="pre">retfixRWblock02_run-01</span></code> files (BIDS func, BIDS fmap,
+fmriprep func, fmriprep fmap, and sourcedata <code class="docutils literal notranslate"><span class="pre">_params.mat</span></code>) to the
+correct label.  Each session has its own rule — see
+<a class="reference internal" href="#prf-special-notes"><span class="std std-ref">Special notes</span></a> for context.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">02_correct_wc_bold_naming.py</span></code></p></td>
+<td><p>Fixes BIDS file naming for the wordcentre (WC) condition.  Reads the
+task/run label from the <code class="docutils literal notranslate"><span class="pre">_params.mat</span></code> <strong>filename</strong> (not the file
+content) and the AcquisitionTime from the symlink target filename.
+Matches mats to BIDS bold files by positional time-order and renames
+mismatched files atomically.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">03_prepare_prf_subses_json.py</span></code></p></td>
+<td><p>Generates per-subject/session JSON config files for each pipeline step
+(<code class="docutils literal notranslate"><span class="pre">prfprepare</span></code>, <code class="docutils literal notranslate"><span class="pre">prfanalyze-vista</span></code>, or <code class="docutils literal notranslate"><span class="pre">prfresult</span></code>).</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">04_clean_orphan_events_tsv.py</span></code></p></td>
+<td><p>Removes <code class="docutils literal notranslate"><span class="pre">*_events.tsv</span></code> files from BIDS func directories that have no
+matching <code class="docutils literal notranslate"><span class="pre">bold.nii.gz</span></code>.  Prevents containers from trying to process
+tasks that were never acquired.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="run-scripts-dipc">
+<h3>Run scripts (DIPC)<a class="headerlink" href="#run-scripts-dipc" title="Link to this heading">#</a></h3>
+<div class="pst-scrollable-table-container"><table class="table">
+<colgroup>
+<col style="width: 30.0%" />
+<col style="width: 70.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Script</p></th>
+<th class="head"><p>What it does</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">sbatch_prfprepare.sh</span></code></p></td>
+<td><p>Submits one SLURM job per sub/ses pair for <code class="docutils literal notranslate"><span class="pre">prfprepare</span></code>.  Checks that
+the JSON exists before submitting.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">sbatch_prfanalyze.sh</span></code></p></td>
+<td><p>Submits one SLURM job per task per sub/ses pair for <code class="docutils literal notranslate"><span class="pre">prfanalyze-vista</span></code>.
+Auto-detects tasks by globbing existing JSONs — no manual task list
+needed.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">prfprepare_dipc.sh</span></code></p></td>
+<td><p>SLURM job script called by <code class="docutils literal notranslate"><span class="pre">sbatch_prfprepare.sh</span></code> on the compute node.
+After the container finishes, captures the exit code and appends one
+summary line to <code class="docutils literal notranslate"><span class="pre">job_results.tsv</span></code> in the log directory.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">prfanalyze-vista_dipc.sh</span></code></p></td>
+<td><p>SLURM job script called by <code class="docutils literal notranslate"><span class="pre">sbatch_prfanalyze.sh</span></code> on the compute node.
+After the container finishes, captures the exit code and appends one
+summary line (including task label) to <code class="docutils literal notranslate"><span class="pre">job_results.tsv</span></code> in the log
+directory.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="step-by-step-workflow">
+<h2>Step-by-step workflow<a class="headerlink" href="#step-by-step-workflow" title="Link to this heading">#</a></h2>
+<section id="step-0-dicom-conversion">
+<h3>Step 0 — DICOM conversion<a class="headerlink" href="#step-0-dicom-conversion" title="Link to this heading">#</a></h3>
+<p>Script: <code class="docutils literal notranslate"><span class="pre">00_dcm2niix_ret.py</span></code></p>
+<p>Converts raw retinotopy DICOM folders to BIDS NIfTI.  Each run produces four
+DICOM folders; the script classifies them by name:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<colgroup>
+<col style="width: 35.0%" />
+<col style="width: 65.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Folder pattern</p></th>
+<th class="head"><p>Output label</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Neither <code class="docutils literal notranslate"><span class="pre">SBRef</span></code> nor <code class="docutils literal notranslate"><span class="pre">Pha</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">*_bold.nii.gz</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">Pha</span></code> only</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">*_phase.nii.gz</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SBRef</span></code> only</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">*_sbref.nii.gz</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>Both <code class="docutils literal notranslate"><span class="pre">SBRef</span></code> and <code class="docutils literal notranslate"><span class="pre">Pha</span></code></p></td>
+<td><p>skipped</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python 00_dcm2niix_ret.py -s 01 --ses 09 -d /path/dicom -o /path/BIDS --dry-run</span>
+<span class="go">python 00_dcm2niix_ret.py -s 01 --ses 09 -d /path/dicom -o /path/BIDS</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="step-0b-drop-a-bad-run">
+<h3>Step 0b — Drop a bad run<a class="headerlink" href="#step-0b-drop-a-bad-run" title="Link to this heading">#</a></h3>
+<p>Script: <code class="docutils literal notranslate"><span class="pre">00_drop_ret_run.py</span></code></p>
+<p>Use this when a run was aborted or is otherwise unusable.  It:</p>
+<ol class="arabic simple">
+<li><p>Removes all BIDS func files for the specified <code class="docutils literal notranslate"><span class="pre">task</span></code>/<code class="docutils literal notranslate"><span class="pre">run</span></code>.</p></li>
+<li><p>Renames the vistadisplog <code class="docutils literal notranslate"><span class="pre">.mat</span></code> target to <code class="docutils literal notranslate"><span class="pre">wrongrun_*.mat</span></code> (preserves
+the data while excluding it from later steps).</p></li>
+<li><p>Renumbers surviving runs of the same task (e.g. <code class="docutils literal notranslate"><span class="pre">run-03</span></code> → <code class="docutils literal notranslate"><span class="pre">run-02</span></code>).</p></li>
+</ol>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp"># </span>Dry-run<span class="w"> </span>—<span class="w"> </span>inspect<span class="w"> </span>what<span class="w"> </span>would<span class="w"> </span>change
+<span class="go">python 00_drop_ret_run.py -s 01,09 --task retRW --run 01 --bidsdir /path/BIDS</span>
+
+<span class="gp"># </span>Apply
+<span class="go">python 00_drop_ret_run.py -s 01,09 --task retRW --run 01 --bidsdir /path/BIDS --execute</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="step-1-prepare-vistadisplog-links-and-verify-bids-pairing">
+<h3>Step 1 — Prepare vistadisplog links and verify BIDS pairing<a class="headerlink" href="#step-1-prepare-vistadisplog-links-and-verify-bids-pairing" title="Link to this heading">#</a></h3>
+<p>Script: <code class="docutils literal notranslate"><span class="pre">01_prepare_prf_log_and_bold.py</span></code></p>
+<p>Reads each vistadisplog <code class="docutils literal notranslate"><span class="pre">.mat</span></code> file and identifies the task by <strong>reading
+the file content</strong>: it opens the <code class="docutils literal notranslate"><span class="pre">.mat</span></code> with <code class="docutils literal notranslate"><span class="pre">scipy.io.loadmat</span></code> and
+inspects the <code class="docutils literal notranslate"><span class="pre">params.loadMatrix</span></code> (stimName) field for keywords such as
+<code class="docutils literal notranslate"><span class="pre">fixRWblock01_</span></code>, <code class="docutils literal notranslate"><span class="pre">fixRWblock02_</span></code>, <code class="docutils literal notranslate"><span class="pre">FF_</span></code>, <code class="docutils literal notranslate"><span class="pre">RW_</span></code>, etc.  This is the
+<strong>only step that opens the .mat binary</strong> — subsequent scripts work from the
+symlink filenames only.</p>
+<p>After task identification it creates a named symlink
+<code class="docutils literal notranslate"><span class="pre">sub-{sub}_ses-{ses}_task-{task}_run-{N}_params.mat</span></code> pointing to the
+original timestamp-named file, then matches each <code class="docutils literal notranslate"><span class="pre">.mat</span></code> to its BIDS
+bold/sbref by <strong>positional ordering</strong>: both lists are sorted by acquisition
+time and the i-th mat is paired with the i-th bold.  A table is printed for
+visual inspection.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp"># </span>Dry-run<span class="w"> </span><span class="o">(</span>default<span class="o">)</span>:<span class="w"> </span>inspect<span class="w"> </span>the<span class="w"> </span>table
+<span class="go">python 01_prepare_prf_log_and_bold.py -s 01,09 --logdir /path/vistadisplog -b /path/BIDS -v</span>
+
+<span class="gp"># </span>Create<span class="w"> </span>symlinks
+<span class="go">python 01_prepare_prf_log_and_bold.py -s 01,09 --logdir /path/vistadisplog -b /path/BIDS --execute</span>
+
+<span class="gp"># </span>Batch
+<span class="go">python 01_prepare_prf_log_and_bold.py -f subseslist.tsv --logdir /path/vistadisplog -b /path/BIDS --execute</span>
+</pre></div>
+</div>
+<p><strong>Things to check</strong></p>
+<ul class="simple">
+<li><p>The <code class="docutils literal notranslate"><span class="pre">Mats</span></code> and <code class="docutils literal notranslate"><span class="pre">Bolds</span></code> columns in the output table should be equal.
+A mismatch means a run was dropped from BIDS but its <code class="docutils literal notranslate"><span class="pre">.mat</span></code> was not renamed
+(or vice versa) — fix with <code class="docutils literal notranslate"><span class="pre">00_drop_ret_run.py</span></code> before continuing.</p></li>
+<li><p>Verify task labels match the expected stimuli for each session.</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="step-2-fix-wordcentre-bold-naming">
+<h3>Step 2 — Fix wordcentre bold naming<a class="headerlink" href="#step-2-fix-wordcentre-bold-naming" title="Link to this heading">#</a></h3>
+<p>Script: <code class="docutils literal notranslate"><span class="pre">02_correct_wc_bold_naming.py</span></code></p>
+<p>For sessions that contain the wordcentre (WC) condition, BIDS files may need
+renaming to reflect the correct task label.</p>
+<p><strong>How it reads the params.mat files</strong> — unlike step 1, this script does
+<em>not</em> open the <code class="docutils literal notranslate"><span class="pre">.mat</span></code> binary.  Instead it reads:</p>
+<ul class="simple">
+<li><p>The <strong>task/run label</strong> from the <code class="docutils literal notranslate"><span class="pre">_params.mat</span></code> symlink filename via regex
+(<code class="docutils literal notranslate"><span class="pre">task-(\w+)_run-(\d+)</span></code>).</p></li>
+<li><p>The <strong>AcquisitionTime</strong> from the symlink target filename (e.g.
+<code class="docutils literal notranslate"><span class="pre">20230531T172442.mat</span></code> → <code class="docutils literal notranslate"><span class="pre">17:24:42</span></code>).</p></li>
+</ul>
+<p>Both params.mat and BIDS bold lists are sorted by acquisition time and
+matched positionally (same approach as step 1).  If a BIDS file’s task/run
+label differs from its paired params.mat label, the BIDS file is renamed
+atomically.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python 02_correct_wc_bold_naming.py -s 01,09 -b /path/BIDS --dry-run</span>
+<span class="go">python 02_correct_wc_bold_naming.py -s 01,09 -b /path/BIDS --execute</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="step-3-clean-orphan-events-tsv">
+<h3>Step 3 — Clean orphan events.tsv<a class="headerlink" href="#step-3-clean-orphan-events-tsv" title="Link to this heading">#</a></h3>
+<p>Script: <code class="docutils literal notranslate"><span class="pre">04_clean_orphan_events_tsv.py</span></code></p>
+<p>BIDS validation tools (and some containers) scan for <code class="docutils literal notranslate"><span class="pre">*_events.tsv</span></code> files
+and infer the existence of a corresponding task from the filename.  If a task
+was listed in the protocol but never acquired (or was later dropped), an
+orphaned events file will cause containers to search for bold data that does
+not exist.</p>
+<p>This script identifies events.tsv files with no matching <code class="docutils literal notranslate"><span class="pre">bold.nii.gz</span></code> and
+moves them to a <code class="docutils literal notranslate"><span class="pre">func_backup_orphan_events/</span></code> directory.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp"># </span>Dry-run<span class="w"> </span>—<span class="w"> </span>whole<span class="w"> </span>dataset
+<span class="go">python 04_clean_orphan_events_tsv.py -b /path/BIDS</span>
+
+<span class="gp"># </span>Apply<span class="w"> </span><span class="k">for</span><span class="w"> </span>one<span class="w"> </span>session
+<span class="go">python 04_clean_orphan_events_tsv.py -b /path/BIDS -s 11 --ses 10 --no-dry-run</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="step-4-generate-per-subject-json-configs">
+<h3>Step 4 — Generate per-subject JSON configs<a class="headerlink" href="#step-4-generate-per-subject-json-configs" title="Link to this heading">#</a></h3>
+<p>Script: <code class="docutils literal notranslate"><span class="pre">03_prepare_prf_subses_json.py</span></code></p>
+<p>Generates the JSON config file that each container reads at runtime.  There is
+one JSON format per pipeline step; the step is selected with <code class="docutils literal notranslate"><span class="pre">--step</span></code>.</p>
+<p><strong>Step-specific required options:</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<colgroup>
+<col style="width: 25.0%" />
+<col style="width: 25.0%" />
+<col style="width: 50.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Step</p></th>
+<th class="head"><p>Required option</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">prfprepare</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--fp</span></code></p></td>
+<td><p>Name of the fMRIPrep analysis, e.g. <code class="docutils literal notranslate"><span class="pre">25.1.4_t2w_fmapsbref_newest</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">prfanalyze-vista</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--prepid</span></code></p></td>
+<td><p>prfprepare analysis ID string, e.g. <code class="docutils literal notranslate"><span class="pre">01</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">prfresult</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">--analyzeid</span></code></p></td>
+<td><p>prfanalyze analysis ID string, e.g. <code class="docutils literal notranslate"><span class="pre">03</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The <code class="docutils literal notranslate"><span class="pre">--fp</span></code> / <code class="docutils literal notranslate"><span class="pre">--prepid</span></code> / <code class="docutils literal notranslate"><span class="pre">--analyzeid</span></code> values are written <strong>into the JSON
+content only</strong> — they do not appear in the output filename.</p>
+<p><strong>Output filename conventions</strong> (must match what the container launcher expects):</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>prfprepare       →  all_sub-{sub}_ses-{ses}.json
+prfanalyze-vista →  {task}_{model}_sub-{sub}_ses-{ses}.json
+prfresult        →  all_sub-{sub}_ses-{ses}.json
+</pre></div>
+</div>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp"># </span>prfprepare<span class="w"> </span>JSONs
+<span class="go">python 03_prepare_prf_subses_json.py \</span>
+<span class="go">    -b /path/BIDS -f subseslist.tsv \</span>
+<span class="go">    --step prfprepare --fp 25.1.4_t2w_fmapsbref_newest \</span>
+<span class="go">    -o /path/code/prfprepare_jsons</span>
+
+<span class="gp"># </span>prfanalyze-vista<span class="w"> </span>JSONs<span class="w"> </span><span class="o">(</span>one<span class="w"> </span>per<span class="w"> </span>task<span class="w"> </span>per<span class="w"> </span>sub/ses<span class="o">)</span>
+<span class="go">python 03_prepare_prf_subses_json.py \</span>
+<span class="go">    -b /path/BIDS -f subseslist.tsv \</span>
+<span class="go">    --step prfanalyze-vista --prepid 01 --model css \</span>
+<span class="go">    -o /path/code/prfanalyze-vista_jsons</span>
+
+<span class="gp"># </span>prfresult<span class="w"> </span>JSONs
+<span class="go">python 03_prepare_prf_subses_json.py \</span>
+<span class="go">    -b /path/BIDS -f subseslist.tsv \</span>
+<span class="go">    --step prfresult --analyzeid 03 \</span>
+<span class="go">    -o /path/code/prfresult_jsons</span>
+</pre></div>
+</div>
+<p>The script also checks whether the fmriprep analysis directory exists and
+whether the FreeSurfer symlink inside it is valid.</p>
+</section>
+<hr class="docutils" />
+<section id="step-5-submit-prfprepare-jobs">
+<h3>Step 5 — Submit prfprepare jobs<a class="headerlink" href="#step-5-submit-prfprepare-jobs" title="Link to this heading">#</a></h3>
+<p>Script: <code class="docutils literal notranslate"><span class="pre">sbatch_prfprepare.sh</span></code></p>
+<p>Configure the hardcoded variables at the top of the script (<code class="docutils literal notranslate"><span class="pre">baseP</span></code>,
+<code class="docutils literal notranslate"><span class="pre">version</span></code>, <code class="docutils literal notranslate"><span class="pre">qos</span></code>, <code class="docutils literal notranslate"><span class="pre">json_dir</span></code>, <code class="docutils literal notranslate"><span class="pre">sif_path</span></code>), then submit:</p>
+<p><strong>Required options:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">-n</span> <span class="pre">&lt;log_note&gt;</span></code> — short label included in the log directory name (e.g. <code class="docutils literal notranslate"><span class="pre">firstbatch</span></code>, <code class="docutils literal notranslate"><span class="pre">rerun_sub03</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-s</span> <span class="pre">&lt;sub&gt;,&lt;ses&gt;</span></code> <strong>or</strong> <code class="docutils literal notranslate"><span class="pre">-f</span> <span class="pre">&lt;subseslist&gt;</span></code> — target subject/session(s).</p></li>
+</ul>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp"># </span>Single<span class="w"> </span>sub/ses
+<span class="go">bash sbatch_prfprepare.sh -n firstbatch -s 01,09</span>
+
+<span class="gp"># </span>Batch<span class="w"> </span>from<span class="w"> </span>file
+<span class="go">bash sbatch_prfprepare.sh -n firstbatch -f /path/subseslist.tsv</span>
+</pre></div>
+</div>
+<p>SLURM <code class="docutils literal notranslate"><span class="pre">.o</span></code>/<code class="docutils literal notranslate"><span class="pre">.e</span></code> log files and the submission script are written to:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>$baseP/dipc_prfprepare_logs/{date}_{log_note}_{analysis_name}/
+</pre></div>
+</div>
+<p>After each job finishes, <code class="docutils literal notranslate"><span class="pre">prfprepare_dipc.sh</span></code> appends one line to
+<code class="docutils literal notranslate"><span class="pre">job_results.tsv</span></code> in that directory:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>2026-04-16 14:10:05   sub-01   ses-09   1_all_prfprepare   12345   exit=0
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="step-6-submit-prfanalyze-vista-jobs">
+<h3>Step 6 — Submit prfanalyze-vista jobs<a class="headerlink" href="#step-6-submit-prfanalyze-vista-jobs" title="Link to this heading">#</a></h3>
+<p>Script: <code class="docutils literal notranslate"><span class="pre">sbatch_prfanalyze.sh</span></code></p>
+<p><strong>Required options:</strong></p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">-n</span> <span class="pre">&lt;log_note&gt;</span></code> — short label included in the log directory name.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-m</span> <span class="pre">&lt;model&gt;</span></code> — model label: <code class="docutils literal notranslate"><span class="pre">og</span></code> (one gaussian) or <code class="docutils literal notranslate"><span class="pre">css</span></code>.  Must match
+the <code class="docutils literal notranslate"><span class="pre">--model</span></code> value used in step 4.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-s</span> <span class="pre">&lt;sub&gt;,&lt;ses&gt;</span></code> <strong>or</strong> <code class="docutils literal notranslate"><span class="pre">-f</span> <span class="pre">&lt;subseslist&gt;</span></code> — target subject/session(s).</p></li>
+</ul>
+<p><strong>Task auto-detection:</strong> the script globs existing JSONs in <code class="docutils literal notranslate"><span class="pre">json_dir</span></code>
+matching <code class="docutils literal notranslate"><span class="pre">*_{model}_sub-{sub}_ses-{ses}.json</span></code> to determine which tasks to
+run — no manual task list is needed.  One SLURM job is submitted per detected
+task.</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">bash sbatch_prfanalyze.sh -n firstbatch -m og -s 01,09</span>
+<span class="go">bash sbatch_prfanalyze.sh -n firstbatch -m og -f /path/subseslist.tsv</span>
+</pre></div>
+</div>
+<p>SLURM <code class="docutils literal notranslate"><span class="pre">.o</span></code>/<code class="docutils literal notranslate"><span class="pre">.e</span></code> log files are written to:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>$baseP/dipc_prfanalyze-vista_logs/{date}_{log_note}_{analysis_name}/
+</pre></div>
+</div>
+<p>After each job finishes, <code class="docutils literal notranslate"><span class="pre">prfanalyze-vista_dipc.sh</span></code> appends one line to
+<code class="docutils literal notranslate"><span class="pre">job_results.tsv</span></code> in that directory:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>2026-04-16 14:23:01   sub-03   ses-01   task-retRW   3_retRW_prfanalyze-vista   12346   exit=0
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="step-7-prfresult-bcbl-only">
+<h3>Step 7 — prfresult (BCBL only)<a class="headerlink" href="#step-7-prfresult-bcbl-only" title="Link to this heading">#</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><code class="docutils literal notranslate"><span class="pre">prfresult</span></code> only works on the <strong>BCBL server</strong>.  Do not submit it on DIPC
+— the container will fail.  Use the equivalent script on the BCBL cluster.</p>
+</div>
+<hr class="docutils" />
+</section>
+</section>
+<section id="special-notes">
+<span id="prf-special-notes"></span><h2>Special notes<a class="headerlink" href="#special-notes" title="Link to this heading">#</a></h2>
+<section id="fmriprep-analysis-directory-layout">
+<h3>fMRIPrep analysis directory layout<a class="headerlink" href="#fmriprep-analysis-directory-layout" title="Link to this heading">#</a></h3>
+<p>The prfprepare container expects the fMRIPrep output under:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>BIDS/derivatives/fmriprep/analysis-{fp}/sub-{sub}/ses-{ses}/func/
+</pre></div>
+</div>
+<p>If the fMRIPrep output was produced with a different naming scheme (e.g.
+<code class="docutils literal notranslate"><span class="pre">fmriprep-{fp}/</span></code>), a symlink is needed:</p>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span>BIDS/derivatives/fmriprep/analysis-{fp}  →  BIDS/derivatives/fmriprep-{fp}
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">03_prepare_prf_subses_json.py</span></code> checks for this symlink automatically when
+<code class="docutils literal notranslate"><span class="pre">--step</span> <span class="pre">prfprepare</span></code> is used and prints a warning if it is missing or broken.</p>
+</section>
+<section id="freesurfer-license">
+<h3>FreeSurfer license<a class="headerlink" href="#freesurfer-license" title="Link to this heading">#</a></h3>
+<p>prfprepare requires a FreeSurfer license file.  The path is currently
+hardcoded in the SLURM job scripts (<code class="docutils literal notranslate"><span class="pre">sbatch_prfprepare.sh</span></code>).  Ensure
+<code class="docutils literal notranslate"><span class="pre">license_path</span></code> at the top of the script points to a valid <code class="docutils literal notranslate"><span class="pre">.license</span></code> file
+before submitting.</p>
+</section>
+<section id="prfanalyze-vista-output-folder-structure">
+<h3>prfanalyze-vista output folder structure<a class="headerlink" href="#prfanalyze-vista-output-folder-structure" title="Link to this heading">#</a></h3>
+<p>The folder structure written by <code class="docutils literal notranslate"><span class="pre">prfanalyze-vista</span></code> is <strong>hardcoded in the
+original Benson MATLAB code</strong> and cannot be changed at runtime.  The LC
+workflow must therefore respect that structure when referencing prfanalyze
+outputs in subsequent steps.  Do not rename or reorganise the prfanalyze
+output directories.</p>
+</section>
+<section id="events-tsv-and-phantom-tasks">
+<h3>events.tsv and phantom tasks<a class="headerlink" href="#events-tsv-and-phantom-tasks" title="Link to this heading">#</a></h3>
+<p>BIDS <code class="docutils literal notranslate"><span class="pre">*_events.tsv</span></code> files are sometimes created during protocol design for
+tasks that were never actually acquired (e.g. <code class="docutils literal notranslate"><span class="pre">task-fixblock</span></code>).  Because
+containers scan <code class="docutils literal notranslate"><span class="pre">events.tsv</span></code> filenames to infer available tasks, an orphaned
+events file causes the container to look for bold data that does not exist,
+producing a <code class="docutils literal notranslate"><span class="pre">FileNotFoundError</span></code>.</p>
+<p>Fix: run <code class="docutils literal notranslate"><span class="pre">04_clean_orphan_events_tsv.py</span></code> to move orphaned events files to a
+backup directory before submitting any containers.</p>
+</section>
+<section id="sub-01-ses-09-10-retfixrwblock-renaming">
+<h3>sub-01 ses-09/10 — retfixRWblock renaming<a class="headerlink" href="#sub-01-ses-09-10-retfixrwblock-renaming" title="Link to this heading">#</a></h3>
+<p>sub-01 sessions 09 and 10 contain both <code class="docutils literal notranslate"><span class="pre">retfixRWblock01</span></code> and
+<code class="docutils literal notranslate"><span class="pre">retfixRWblock02</span></code> within the same session.  The two sessions have
+<strong>different rename rules</strong>:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 35.0%" />
+<col style="width: 35.0%" />
+<col style="width: 15.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Session</p></th>
+<th class="head"><p>Old name</p></th>
+<th class="head"><p>New name</p></th>
+<th class="head"><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>ses-09</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">task-retfixRWblock02_run-01</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">task-retfixRWblock01_run-01</span></code></p></td>
+<td><p>task renamed; run number unchanged</p></td>
+</tr>
+<tr class="row-odd"><td><p>ses-10</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">task-retfixRWblock02_run-01</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">task-retfixRWblock01_run-02</span></code></p></td>
+<td><p>task renamed; run-01 → run-02</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">01b_special_fix_sub01_block02_rename.py</span></code> applies the rename across five
+locations per session: BIDS/func, BIDS/fmap (IntendedFor), fmriprep/func,
+fmriprep/fmap (IntendedFor), and <code class="docutils literal notranslate"><span class="pre">sourcedata/</span></code> (<code class="docutils literal notranslate"><span class="pre">_params.mat</span></code> symlinks).
+All renames are <strong>atomic</strong> (via UUID tmp dir) — no backup directories are
+created.  Run in dry-run mode first to verify:</p>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">python 01b_special_fix_sub01_block02_rename.py          # dry-run</span>
+<span class="go">python 01b_special_fix_sub01_block02_rename.py --no-dry-run</span>
+</pre></div>
+</div>
+</section>
+<section id="json-path-matching">
+<h3>JSON path matching<a class="headerlink" href="#json-path-matching" title="Link to this heading">#</a></h3>
+<p>The container launcher binds the JSON directory into the container at a fixed
+path.  If the JSON filename or location does not match what the launcher
+expects, the job will fail silently or with a confusing bind error.  Always
+verify that the output directory passed to <code class="docutils literal notranslate"><span class="pre">03_prepare_prf_subses_json.py</span></code>
+matches the <code class="docutils literal notranslate"><span class="pre">json_dir</span></code> variable in the SLURM submission scripts.</p>
+</section>
+</section>
+<hr class="docutils" />
+<section id="end-to-end-example-single-session">
+<h2>End-to-end example (single session)<a class="headerlink" href="#end-to-end-example-single-session" title="Link to this heading">#</a></h2>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="go">cd tests/prepare_prf</span>
+
+<span class="gp"># </span><span class="m">1</span>.<span class="w"> </span>Convert<span class="w"> </span>DICOMs
+<span class="go">python 00_dcm2niix_ret.py -s 01 --ses 09 -d /dicom -o /BIDS</span>
+
+<span class="gp"># </span><span class="m">2</span>.<span class="w"> </span>Inspect<span class="w"> </span>vistadisplog<span class="w"> </span>pairing<span class="w"> </span>table
+<span class="go">python 01_prepare_prf_log_and_bold.py -s 01,09 --logdir /vistadisplog -b /BIDS -v</span>
+
+<span class="gp"># </span><span class="m">3</span>.<span class="w"> </span>Create<span class="w"> </span>params.mat<span class="w"> </span>symlinks
+<span class="go">python 01_prepare_prf_log_and_bold.py -s 01,09 --logdir /vistadisplog -b /BIDS --execute</span>
+
+<span class="gp"># </span><span class="m">4</span>.<span class="w"> </span>Clean<span class="w"> </span>orphan<span class="w"> </span>events.tsv<span class="w"> </span><span class="o">(</span>dry-run<span class="w"> </span><span class="k">then</span><span class="w"> </span>apply<span class="o">)</span>
+<span class="go">python 04_clean_orphan_events_tsv.py -b /BIDS -s 01 --ses 09</span>
+<span class="go">python 04_clean_orphan_events_tsv.py -b /BIDS -s 01 --ses 09 --no-dry-run</span>
+
+<span class="gp"># </span><span class="m">5</span>.<span class="w"> </span>Generate<span class="w"> </span>prfprepare<span class="w"> </span>JSON
+<span class="go">python 03_prepare_prf_subses_json.py \</span>
+<span class="go">    -b /BIDS -s 01 --ses 09 \</span>
+<span class="go">    --step prfprepare --fp 25.1.4_t2w_fmapsbref_newest \</span>
+<span class="go">    -o /VOTCLOC/code/prfprepare_jsons</span>
+
+<span class="gp"># </span><span class="m">6</span>.<span class="w"> </span>Submit<span class="w"> </span>prfprepare
+<span class="go">cd ../run_prf</span>
+<span class="go">bash sbatch_prfprepare.sh -n ses09_test -s 01,09</span>
+
+<span class="gp"># </span><span class="m">7</span>.<span class="w"> </span>Generate<span class="w"> </span>prfanalyze-vista<span class="w"> </span>JSONs
+<span class="go">cd ../prepare_prf</span>
+<span class="go">python 03_prepare_prf_subses_json.py \</span>
+<span class="go">    -b /BIDS -s 01 --ses 09 \</span>
+<span class="go">    --step prfanalyze-vista --prepid 01 --model og \</span>
+<span class="go">    -o /VOTCLOC/code/prfanalyze-vista_jsons</span>
+
+<span class="gp"># </span><span class="m">8</span>.<span class="w"> </span>Submit<span class="w"> </span>prfanalyze<span class="w"> </span><span class="o">(</span>tasks<span class="w"> </span>auto-detected<span class="w"> </span>from<span class="w"> </span>existing<span class="w"> </span>JSONs<span class="o">)</span>
+<span class="go">cd ../run_prf</span>
+<span class="go">bash sbatch_prfanalyze.sh -n ses09_test -m og -s 01,09</span>
+
+<span class="gp"># </span><span class="m">9</span>.<span class="w"> </span>prfresult<span class="w"> </span>—<span class="w"> </span>run<span class="w"> </span>on<span class="w"> </span>BCBL,<span class="w"> </span>not<span class="w"> </span>DIPC
+</pre></div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="prepare_fmriprep.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Prepare — fMRIPrep (fmap + sbref)</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="extending.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Extending launchcontainers — Adding a new Prepare pipeline</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overview">Overview</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pipeline-scripts">Pipeline scripts</a><ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#preparation-scripts">Preparation scripts</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#run-scripts-dipc">Run scripts (DIPC)</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#step-by-step-workflow">Step-by-step workflow</a><ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-0-dicom-conversion">Step 0 — DICOM conversion</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-0b-drop-a-bad-run">Step 0b — Drop a bad run</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-1-prepare-vistadisplog-links-and-verify-bids-pairing">Step 1 — Prepare vistadisplog links and verify BIDS pairing</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-2-fix-wordcentre-bold-naming">Step 2 — Fix wordcentre bold naming</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-3-clean-orphan-events-tsv">Step 3 — Clean orphan events.tsv</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-4-generate-per-subject-json-configs">Step 4 — Generate per-subject JSON configs</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-5-submit-prfprepare-jobs">Step 5 — Submit prfprepare jobs</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-6-submit-prfanalyze-vista-jobs">Step 6 — Submit prfanalyze-vista jobs</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#step-7-prfresult-bcbl-only">Step 7 — prfresult (BCBL only)</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#special-notes">Special notes</a><ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#fmriprep-analysis-directory-layout">fMRIPrep analysis directory layout</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#freesurfer-license">FreeSurfer license</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#prfanalyze-vista-output-folder-structure">prfanalyze-vista output folder structure</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#events-tsv-and-phantom-tasks">events.tsv and phantom tasks</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#sub-01-ses-09-10-retfixrwblock-renaming">sub-01 ses-09/10 — retfixRWblock renaming</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#json-path-matching">JSON path matching</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#end-to-end-example-single-session">End-to-end example (single session)</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="_sources/prepare_prf.rst.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2021-2026, launchcontainers Developers.
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.0.4.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>
