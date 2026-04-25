@@ -27,18 +27,18 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="_static/styles/theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
-<link href="_static/styles/pydata-sphinx-theme.css?digest=7f76b32a3354e82990f2" rel="stylesheet" />
+  <link href="_static/styles/theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=55c26ed414f5f8a31ebb" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=03e43079" />
     <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
     <link rel="stylesheet" type="text/css" href="_static/theme_overrides.css?v=bc718776" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="_static/scripts/fontawesome.js?digest=7f76b32a3354e82990f2"></script>
+  <script defer src="_static/scripts/fontawesome.js?digest=55c26ed414f5f8a31ebb"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2" />
-<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2" />
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb" />
 
     <script src="_static/documentation_options.js?v=6c02275b"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
@@ -70,7 +70,9 @@
   
   <button type="button" class="btn rounded-pill" id="pst-back-to-top">
     <i class="fa-solid fa-arrow-up"></i>Back to top</button>
-
+  
+  
+  
   
   <dialog id="pst-search-dialog">
     
@@ -580,7 +582,7 @@ locally in parallel using <code class="docutils literal notranslate"><span class
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>parse_namespace</strong> (<em>argparse.Namespace</em>) – Parsed CLI arguments for run mode.</p></li>
-<li><p><strong>df_subses</strong> (<em>pandas.DataFrame</em>) – Filtered subject/session rows to launch.</p></li>
+<li><p><strong>df_subses</strong> (<em>list[tuple[str, str]]</em>) – Filtered subject/session rows to launch.</p></li>
 <li><p><strong>job_script_dir</strong> (<em>str</em>) – Directory used to store generated scripts and batch command files.</p></li>
 <li><p><strong>run_lc</strong> (<em>bool</em>) – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, submit jobs for execution. If <code class="docutils literal notranslate"><span class="pre">False</span></code>, only print the
 generated launch information.</p></li>
@@ -961,7 +963,7 @@ array jobs can read one command per task index.</p>
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>parse_namespace</strong> (<em>argparse.Namespace</em>) – Parsed CLI arguments for run mode.</p></li>
-<li><p><strong>df_subses</strong> (<em>pandas.DataFrame</em>) – Filtered subject/session rows to launch.</p></li>
+<li><p><strong>df_subses</strong> (<em>list[tuple[str, str]]</em>) – Filtered subject/session pairs to launch.</p></li>
 <li><p><strong>batch_command_file</strong> (<em>str or path-like</em>) – Output text file that stores the generated command list.</p></li>
 </ul>
 </dd>
@@ -1212,7 +1214,7 @@ derivative <code class="docutils literal notranslate"><span class="pre">fs.zip</
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>parse_namespace</strong> (<em>argparse.Namespace</em>) – Parsed CLI arguments for run mode.</p></li>
-<li><p><strong>df_subses</strong> (<em>pandas.DataFrame</em>) – Subject/session rows whose output directories should be inspected.</p></li>
+<li><p><strong>df_subses</strong> (<em>list[tuple[str, str]]</em>) – Subject/session pairs whose output directories should be inspected.</p></li>
 </ul>
 </dd>
 </dl>
@@ -1799,8 +1801,8 @@ Git working tree.</p>
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="_static/scripts/bootstrap.js?digest=7f76b32a3354e82990f2"></script>
-<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=7f76b32a3354e82990f2"></script>
+  <script defer src="_static/scripts/bootstrap.js?digest=55c26ed414f5f8a31ebb"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=55c26ed414f5f8a31ebb"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1834,7 +1836,7 @@ Git working tree.</p>
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.17.1.
 </p></div>
       
     </div>
