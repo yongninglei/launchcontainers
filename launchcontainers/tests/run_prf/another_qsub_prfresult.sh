@@ -5,15 +5,16 @@
 # ===========================================================================
 # NOTE: prfresult container only works on the BCBL server, NOT on DIPC.
 #       Do not submit this script on DIPC — the container will fail.
-#       Use the equivalent script on the BCBL cluster instead, 
+#       Use the equivalent script on the BCBL cluster instead,
 # TODO: change the settings to SGE instead of SLURM, now it is SLURM
 # ===========================================================================
 
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-baseP="/scratch/tlei/VOTCLOC"
-script_dir="/home/tlei/soft/launchcontainers/MR_pipelines/04_fMRI_ret"
+baseP="/bcbl/home/public/Gari/VOTCLOC/main_exp"
+codedir="$baseP/code"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 HOME_DIR="$baseP/singularity_home"
 license_path="$baseP/BIDS/.license"
@@ -23,7 +24,7 @@ version="0.1.1"
 qos="test"            # regular | test
 mem="16G"
 cpus="10"
-time="00:10:00"
+time="00:30:00"
 task="all"
 
 json_dir="$baseP/code/${step}_jsons"

@@ -9,6 +9,7 @@ subject to the following conditions:
 The above copyright notice and this permission notice shall be included in all copies or substantial
 portions of the Software.
 """
+
 from __future__ import annotations
 
 import copy
@@ -29,9 +30,14 @@ app = typer.Typer(pretty_exceptions_show_locals=False)
 # All task labels that are valid PRF tasks.  Only these are recognised when
 # scanning BIDS func/ — any other task label in the filenames is ignored.
 _ALL_VALID_TASKS: set[str] = {
-    "retRW", "retFF", "retCB",
-    "retfixFF", "retfixRW",
-    "retfixRWblock", "retfixRWblock01", "retfixRWblock02",
+    "retRW",
+    "retFF",
+    "retCB",
+    "retfixFF",
+    "retfixRW",
+    "retfixRWblock",
+    "retfixRWblock01",
+    "retfixRWblock02",
 }
 
 # ---------------------------------------------------------------------------
@@ -42,7 +48,7 @@ _ALL_VALID_TASKS: set[str] = {
 
 # Maps the short CLI label to the value written into the JSON "model" field.
 _MODEL_LABELS: dict[str, str] = {
-    "og":  "one gaussian",
+    "og": "one gaussian",
     "css": "css",
 }
 
@@ -87,13 +93,10 @@ _BASE: dict[str, dict] = {
         "masks": {
             "rois": [
                 [
-                    "V1", "V2", "V3", "hV4",
-                    "G_oc-temp_lat-fusifor",
-                    "G_temporal_inf",
-                    "S_oc-temp_lat",
+                    "all",
                 ]
             ],
-            "atlases": ["benson", "prf_VOTC"],
+            "atlases": ["all"],
             "varianceExplained": [0.1],
             "eccentricity": False,
             "beta": False,
@@ -150,14 +153,18 @@ def _discover_tasks_for_session(bids_dir: Path, sub: str, ses: str) -> list[str]
 
 def _check_and_create_symlinks(fmriprep_analysis: str, bids_dir: Path) -> None:
     """Check and create necessary symlinks for fmriprep analysis directory."""
-    analysis_dir = bids_dir / "derivatives" / "fmriprep" / f"analysis-{fmriprep_analysis}"
+    analysis_dir = (
+        bids_dir / "derivatives" / "fmriprep" / f"analysis-{fmriprep_analysis}"
+    )
     source_dir = bids_dir / "derivatives" / f"fmriprep-{fmriprep_analysis}"
     freesurfer_link = analysis_dir / "sourcedata" / "freesurfer"
 
     if not analysis_dir.exists():
         if source_dir.exists():
             os.symlink(source_dir, analysis_dir)
-            console.print(f"[green]✓ Created symlink:[/green] {analysis_dir} -> {source_dir}")
+            console.print(
+                f"[green]✓ Created symlink:[/green] {analysis_dir} -> {source_dir}"
+            )
         else:
             console.print(f"[yellow]⚠ Source dir does not exist: {source_dir}[/yellow]")
             return
@@ -168,7 +175,9 @@ def _check_and_create_symlinks(fmriprep_analysis: str, bids_dir: Path) -> None:
         if freesurfer_link.exists():
             console.print(f"[green]✓ FreeSurfer link valid:[/green] {freesurfer_link}")
         else:
-            console.print(f"[yellow]⚠ FreeSurfer symlink broken:[/yellow] {freesurfer_link}")
+            console.print(
+                f"[yellow]⚠ FreeSurfer symlink broken:[/yellow] {freesurfer_link}"
+            )
     elif freesurfer_link.exists():
         console.print(f"[green]✓ FreeSurfer dir exists:[/green] {freesurfer_link}")
     else:
@@ -183,7 +192,9 @@ def _check_and_create_symlinks(fmriprep_analysis: str, bids_dir: Path) -> None:
 @app.command()
 def main(
     bids_dir: Path = typer.Option(..., "--bids", "-b", help="BIDS root directory."),
-    sub: Optional[str] = typer.Option(None, "--sub", "-s", help="Subject ID (e.g. 03)."),
+    sub: Optional[str] = typer.Option(
+        None, "--sub", "-s", help="Subject ID (e.g. 03)."
+    ),
     ses: Optional[str] = typer.Option(None, "--ses", help="Session ID (e.g. 01)."),
     file: Optional[Path] = typer.Option(
         None, "--file", "-f", help="Subseslist CSV/TSV with sub,ses columns."
@@ -256,7 +267,9 @@ def main(
     if step == "prfanalyze-vista" and not prepid:
         raise typer.BadParameter("--prepid is required for step prfanalyze-vista")
     if step == "prfanalyze-vista" and model not in _MODEL_LABELS:
-        raise typer.BadParameter(f"--model is required for step prfanalyze-vista; choose: {', '.join(_MODEL_LABELS)}")
+        raise typer.BadParameter(
+            f"--model is required for step prfanalyze-vista; choose: {', '.join(_MODEL_LABELS)}"
+        )
     if step == "prfresult" and not analyzeid:
         raise typer.BadParameter("--analyzeid is required for step prfresult")
 
@@ -296,9 +309,7 @@ def main(
                     f"BIDS func, skipping"
                 )
                 continue
-            console.print(
-                f"[dim]sub-{sub} ses-{ses}[/dim] — tasks detected: {tasks}"
-            )
+            console.print(f"[dim]sub-{sub} ses-{ses}[/dim] — tasks detected: {tasks}")
             for task in tasks:
                 base = copy.deepcopy(_BASE["prfanalyze-vista"])
                 base["options"]["prfprepareAnalysis"] = prepid
@@ -316,7 +327,12 @@ def main(
 
         elif step == "prfresult":
             base = copy.deepcopy(_BASE["prfresult"])
-            config = {"subjects": sub, "sessions": ses, "prfanalyzeAnalysis": analyzeid, **base}
+            config = {
+                "subjects": sub,
+                "sessions": ses,
+                "prfanalyzeAnalysis": analyzeid,
+                **base,
+            }
             out_path = output_dir / f"all_sub-{sub}_ses-{ses}.json"
 
             if out_path.exists() and not force:
@@ -327,7 +343,9 @@ def main(
             console.print(f"[green]Generated:[/green] {out_path.name}")
             generated += 1
 
-    console.print(f"\n[bold]Done:[/bold] {generated} JSON file(s) written to {output_dir}")
+    console.print(
+        f"\n[bold]Done:[/bold] {generated} JSON file(s) written to {output_dir}"
+    )
 
 
 if __name__ == "__main__":
