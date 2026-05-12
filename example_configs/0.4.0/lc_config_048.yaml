@@ -32,6 +32,7 @@ general:
   ## anatrois, rtppreproc, rtp-pipeline (RTP_old)
   # prf pipelines:
   ## prfprepare, prfanalyze-vista, prfresult
+  # l1_surface (fMRI-GLM on surface)
   container:  freesurferator
   # Name of analysis folder; if input 01, need to add quote ""
   analysis_name: test_lc_logger2
@@ -161,8 +162,7 @@ container_specific:
     # A super identifier to find the pattern
     qmap_fname: '^qmap.*\.zip$'
 
-  fMRI-GLM:
-    version: 0.1.0
+  l1_surface:
     is_WC: True
     output_bids: BIDS_WC
     fmriprep_analysis_name: fmriprep-25.1.4
