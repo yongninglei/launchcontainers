@@ -109,7 +109,11 @@ def _chmod777(path: str) -> None:
     for dirpath, dirnames, filenames in os.walk(path):
         os.chmod(dirpath, 0o777)
         for fname in filenames:
-            os.chmod(op.join(dirpath, fname), 0o777)
+            fpath = op.join(dirpath, fname)
+            try:
+                os.chmod(fpath, 0o777)
+            except PermissionError:
+                pass
 
 
 def main(parse_namespace) -> tuple[bool, str | None]:
