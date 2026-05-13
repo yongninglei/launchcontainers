@@ -5,40 +5,52 @@
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-step=presurfer
-basedir=/bcbl/home/public/Gari/VOTCLOC/main_exp
-codedir=/bcbl/home/public/Gari/VOTCLOC/main_exp/code
+script_dir=$(dirname "$(realpath "$0")")
 
 tbPath=/export/home/tlei/tlei/toolboxes
-src_dir=$basedir/raw_nifti
-outputdir=${basedir}/BIDS
-force=false
-script_dir=/export/home/tlei/tlei/soft/launchcontainers/MR_pipelines/01_prepare_nifti/prepare_anat
+force=true
 
 # ---------------------------------------------------------------------------
 # Parse arguments
 # ---------------------------------------------------------------------------
 usage() {
     echo "Usage:"
-    echo "  $0 -s <sub>,<ses>         # single sub/ses pair"
-    echo "  $0 -f <full_path_to_subseslist>   # batch mode"
+    echo "  $0 -b <basedir> -i <src_dir> -s <sub>,<ses>"
+    echo "  $0 -b <basedir> -i <src_dir> -f <full_path_to_subseslist>"
+    echo ""
+    echo "  -b  project base directory (logs go to <basedir>/logs/)"
+    echo "  -i  input raw nifti directory (relative to basedir)"
+    echo "  -s  single sub,ses pair"
+    echo "  -f  batch mode: path to subseslist file"
     exit 1
 }
 
+basedir=""
+src_dir=""
 subses_arg=""
 file_arg=""
 
-while getopts ":s:f:" opt; do
+while getopts ":b:i:s:f:" opt; do
     case $opt in
+        b) basedir="$OPTARG" ;;
+        i) src_dir="$OPTARG" ;;
         s) subses_arg="$OPTARG" ;;
         f) file_arg="$OPTARG" ;;
         *) usage ;;
     esac
 done
 
+if [[ -z "$basedir" || -z "$src_dir" ]]; then
+    echo "Error: -b <basedir> and -i <src_dir> are required."
+    usage
+fi
+
 if [[ -z "$subses_arg" && -z "$file_arg" ]]; then
     usage
 fi
+
+src_dir=${basedir}/${src_dir}
+outputdir=${basedir}/BIDS
 
 # ---------------------------------------------------------------------------
 # Build sub/ses list
@@ -61,7 +73,8 @@ fi
 # ---------------------------------------------------------------------------
 # Logging setup
 # ---------------------------------------------------------------------------
-logdir=${outputdir}/log_${step}/${analysis_name}_$(date +"%Y-%m-%d")
+step=presurfer
+logdir=${basedir}/logs/log_${step}/${analysis_name}_$(date +"%Y-%m-%d")
 echo "The logdir is $logdir"
 echo "The outputdir is $outputdir"
 mkdir -p "$logdir"

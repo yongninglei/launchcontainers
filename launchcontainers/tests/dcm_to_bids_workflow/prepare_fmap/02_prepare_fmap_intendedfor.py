@@ -8,7 +8,8 @@ How it works
 1. Read AcquisitionTime from every func JSON sidecar (bold + sbref).
 2. Read AcquisitionTime from every fmap JSON sidecar (AP and PA epi).
 3. Sort fmaps by AcquisitionTime.  For each fmap, collect every func file
-   whose AcquisitionTime falls AFTER that fmap and BEFORE the next fmap.
+   whose AcquisitionTime falls within ``--lookback`` minutes BEFORE that fmap
+   or AFTER that fmap and BEFORE the next fmap (default lookback: 10 min).
 4. Check if IntendedFor already exists and is correct (GOOD / WRONG / MISSING).
 5. Remove any fmap run with no func files after it (delete JSON + nii.gz for
    both AP and PA directions).
@@ -32,6 +33,7 @@ Usage
     python prepare_fmap_intendedfor.py --bidsdir /path/BIDS -f subseslist.tsv -v
     python prepare_fmap_intendedfor.py --bidsdir /path/BIDS -f subseslist.tsv --execute
     python prepare_fmap_intendedfor.py --bidsdir /path/BIDS -f subseslist.tsv --execute -w 8
+    python prepare_fmap_intendedfor.py --bidsdir /path/BIDS -s 06,10 --lookback 10
 """
 
 from __future__ import annotations
@@ -66,6 +68,9 @@ SESSION_GAP_MAX_SEC = (
 FMAP_FUNC_MAX_GAP_SEC = (
     8 * 60
 )  # 8   min  — fmap must be followed by func within this window
+FMAP_LOOKBACK_SEC = (
+    10 * 60
+)  # 10 min — how far before a fmap to look back for func files
 
 # ---------------------------------------------------------------------------
 # Verbosity gate — set once by CLI, read everywhere
@@ -219,13 +224,18 @@ def _check_fmap_timing(func_files: list[dict], fmap_runs: list[dict]) -> None:
         )
 
 
-def _assign_intendedfor(func_files: list[dict], fmap_runs: list[dict]) -> list[dict]:
+def _assign_intendedfor(
+    func_files: list[dict], fmap_runs: list[dict], lookback_sec: int = FMAP_LOOKBACK_SEC
+) -> list[dict]:
     for i, fm in enumerate(fmap_runs):
+        # Look back up to lookback_sec, but not before the previous fmap (no overlap).
+        prev_sec = fmap_runs[i - 1]["acq_sec"] if i > 0 else 0.0
+        window_start = max(fm["acq_sec"] - lookback_sec, prev_sec)
         next_sec = (
             fmap_runs[i + 1]["acq_sec"] if i + 1 < len(fmap_runs) else float("inf")
         )
         funcs_in_window = [
-            f for f in func_files if fm["acq_sec"] < f["acq_sec"] < next_sec
+            f for f in func_files if window_start <= f["acq_sec"] < next_sec
         ]
         fm["intended_for"] = [f["intended_for_path"] for f in funcs_in_window]
         # Store the acq_sec of the first func in the window for session-gap check
@@ -303,19 +313,19 @@ def _prune_fmaps(fmap_runs: list[dict]) -> tuple[list[dict], list[dict]]:
 
 
 def _check_first_func_coverage(
-    fmap_runs: list[dict], func_files: list[dict]
+    fmap_runs: list[dict], func_files: list[dict], lookback_sec: int = FMAP_LOOKBACK_SEC
 ) -> list[str]:
     """
     Two checks focused on the FIRST functional run:
 
-    Check A — no fmap before first func (ERROR):
-        If the earliest func has no fmap that precedes it in time, the session
-        has no field-map coverage for its first run → conversion will fail.
-        Flagged as ERROR (blocks writing IntendedFor).
+    Check A — first func outside lookback window of all fmaps (ERROR):
+        If the earliest func is more than lookback_sec before the nearest fmap,
+        it is not covered → ERROR (blocks writing IntendedFor).
+        If it is within lookback_sec before the nearest fmap → OK (covered by
+        the lookback window).
 
-    Check B — fmap→first-func gap > 8 min (WARNING):
-        The fmap that immediately precedes the first func has a time gap larger
-        than FMAP_FUNC_MAX_GAP_SEC → suspicious, may indicate a wrong fmap.
+    Check B — fmap→first-func gap > FMAP_FUNC_MAX_GAP_SEC (WARNING):
+        Only applies when first func comes AFTER its nearest fmap.
 
     Returns list of warning/error strings (empty if all OK).
     """
@@ -323,18 +333,25 @@ def _check_first_func_coverage(
         return []
 
     first_func = min(func_files, key=lambda f: f["acq_sec"])
-    fmaps_before = [fm for fm in fmap_runs if fm["acq_sec"] < first_func["acq_sec"]]
-
+    first_fmap = min(fmap_runs, key=lambda fm: fm["acq_sec"])
     issues = []
 
-    if not fmaps_before:
-        issues.append(
-            f"  [bold red]✗ NO FMAP BEFORE FIRST FUNC[/]  sub has no fmap acquired before"
-            f"  {first_func['basename']} ({first_func['acq_time']})"
-            f"  — IntendedFor cannot be assigned for the first run"
-        )
-        return issues  # gap check is meaningless if there is no preceding fmap
+    # First func comes before the first fmap.
+    if first_func["acq_sec"] < first_fmap["acq_sec"]:
+        gap = first_fmap["acq_sec"] - first_func["acq_sec"]
+        if gap > lookback_sec:
+            issues.append(
+                f"  [bold red]✗ FIRST FUNC OUTSIDE LOOKBACK[/]"
+                f"  {first_func['basename']} ({first_func['acq_time']})"
+                f"  is {gap / 60:.1f} min before first fmap run-{first_fmap['run']}"
+                f"  (>{lookback_sec // 60} min lookback)"
+                f"  — IntendedFor cannot be assigned for the first run"
+            )
+        # else: within lookback window → covered, no issue
+        return issues
 
+    # First func comes after the first fmap — check gap.
+    fmaps_before = [fm for fm in fmap_runs if fm["acq_sec"] < first_func["acq_sec"]]
     nearest_before = max(fmaps_before, key=lambda fm: fm["acq_sec"])
     gap = first_func["acq_sec"] - nearest_before["acq_sec"]
     if gap > FMAP_FUNC_MAX_GAP_SEC:
@@ -643,6 +660,7 @@ def process_session(
     ses: str,
     dry_run: bool = True,
     ln_fmap_counts: dict | None = None,
+    lookback_sec: int = FMAP_LOOKBACK_SEC,
 ) -> dict:
     """
     Returns {sub, ses, n_fmaps_orig, n_removed, n_written, intendedfor_status, warnings}.
@@ -695,8 +713,8 @@ def process_session(
     _vprint(f"\n  [bold cyan]sub-{sub}  ses-{ses}[/]  timing check", level=2)
     _check_fmap_timing(func_files, fmap_runs)
 
-    # --- 4. Check first-func coverage (ERROR if no fmap precedes first func) ---
-    first_func_issues = _check_first_func_coverage(fmap_runs, func_files)
+    # --- 4. Check first-func coverage (ERROR if first func outside lookback window) ---
+    first_func_issues = _check_first_func_coverage(fmap_runs, func_files, lookback_sec)
     has_coverage_error = any(
         "NO FMAP BEFORE FIRST FUNC" in w for w in first_func_issues
     )
@@ -719,7 +737,7 @@ def process_session(
             }
 
     # --- 5. Assign IntendedFor windows, then prune ---
-    fmap_runs = _assign_intendedfor(func_files, fmap_runs)
+    fmap_runs = _assign_intendedfor(func_files, fmap_runs, lookback_sec)
     kept_runs, removed_runs = _prune_fmaps(fmap_runs)
     kept_runs, removed_runs = _prune_session_gap_fmaps(kept_runs, removed_runs)
 
@@ -903,6 +921,11 @@ def main(
         help="Lab-note Excel (e.g. VOTCLOC_subses_list.xlsx). "
         "When supplied, compares expected fmap count from lab note against BIDS.",
     ),
+    lookback: int = typer.Option(
+        FMAP_LOOKBACK_SEC // 60,
+        "--lookback",
+        help="Minutes before a fmap to include func files in IntendedFor (default: 10).",
+    ),
 ):
     """
     Populate IntendedFor in fmap JSONs based on AcquisitionTime ordering.
@@ -916,6 +939,7 @@ def main(
     global _verbose, _debug
     _verbose = verbose or debug  # debug implies verbose
     _debug = debug
+    lookback_sec = lookback * 60
 
     # Load lab-note fmap counts once if provided
     ln_fmap_counts: dict | None = None
@@ -947,7 +971,13 @@ def main(
         with ThreadPoolExecutor(max_workers=workers) as pool:
             futures = {
                 pool.submit(
-                    process_session, str(bidsdir), sub, ses, dry_run, ln_fmap_counts
+                    process_session,
+                    str(bidsdir),
+                    sub,
+                    ses,
+                    dry_run,
+                    ln_fmap_counts,
+                    lookback_sec,
                 ): (sub, ses)
                 for sub, ses in pairs
             }
@@ -967,6 +997,7 @@ def main(
                     ses,
                     dry_run=dry_run,
                     ln_fmap_counts=ln_fmap_counts,
+                    lookback_sec=lookback_sec,
                 )
             )
 

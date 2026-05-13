@@ -3,8 +3,8 @@
 # run_glm_slurm.sh  —  Slurm launcher for run_glm.py
 #
 # Usage:
-#   bash run_glm_slurm.sh -n <output_name> -s 01,10
-#   bash run_glm_slurm.sh -n <output_name> -f subseslist.txt
+#   bash run_glm_slurm.sh -n <analysis_name> -s 01,10
+#   bash run_glm_slurm.sh -n <analysis_name> -f subseslist.txt
 # =============================================================================
 
 # ---------------------------------------------------------------------------
@@ -43,29 +43,29 @@ CONDA_ENV="lc"
 # ---------------------------------------------------------------------------
 usage() {
     echo "Usage:"
-    echo "  bash $0 -o <output_name> -s <sub>,<ses>          # single session"
-    echo "  bash $0 -o <output_name> -f <path/subseslist>    # batch from file (RUN==True only)"
+    echo "  bash $0 -o <analysis_name> -s <sub>,<ses>          # single session"
+    echo "  bash $0 -o <analysis_name> -f <path/subseslist>    # batch from file (RUN==True only)"
     echo ""
     echo "Required:"
-    echo "  -o <output_name>   GLM output label (--output-name) and log dir suffix"
+    echo "  -o <analysis_name>   GLM output label (--analysis-name) and log dir suffix"
     exit 1
 }
 
 subses_arg=""
 file_arg=""
-output_name=""
+analysis_name=""
 
 while getopts ":o:s:f:" opt; do
     case $opt in
-        o) output_name="$OPTARG"  ;;
+        o) analysis_name="$OPTARG"  ;;
         s) subses_arg="$OPTARG"   ;;
         f) file_arg="$OPTARG"     ;;
         *) usage ;;
     esac
 done
 
-if [[ -z "$output_name" ]]; then
-    echo "Error: -n <output_name> is required"
+if [[ -z "$analysis_name" ]]; then
+    echo "Error: -n <analysis_name> is required"
     usage
 fi
 
@@ -74,9 +74,9 @@ if [[ -z "$subses_arg" && -z "$file_arg" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Log directory:  <LOGBASE>/<date>_<output_name>/
+# Log directory:  <LOGBASE>/<date>_<analysis_name>/
 # ---------------------------------------------------------------------------
-LOG_DIR="${LOGBASE}/$(date +"%Y-%m-%d")_${output_name}"
+LOG_DIR="${LOGBASE}/$(date +"%Y-%m-%d")_${analysis_name}"
 mkdir -p "${LOG_DIR}"
 chmod -R 777 "${LOG_DIR}"
 
@@ -107,7 +107,7 @@ cp "$0" "${LOG_DIR}/launcher_$(date +"%Y-%m-%d_%H-%M-%S").sh"
 SOURCE="${subses_arg:-$file_arg}"
 echo "============================================================"
 echo "  GLM Slurm launcher"
-echo "  Output name : ${output_name}"
+echo "  Analysis name : ${analysis_name}"
 echo "  Input       : ${SOURCE}"
 echo "  Sessions    : ${#PAIRS[@]}"
 echo "  Task        : ${TASK}"
@@ -133,7 +133,7 @@ for pair in "${PAIRS[@]}"; do
     SES=$(printf "%02d" "$((10#$SES_RAW))")
 
     # Build the python command
-    PY_CMD="python ${PYTHON_SCRIPT} --base ${BASE} -s ${SUB},${SES} --fp-ana-name ${FP_ANA_NAME} --task ${TASK} --space ${SPACE} --start-scans ${START_SCANS} --contrast ${CONTRAST} --output-name ${output_name}"
+    PY_CMD="python ${PYTHON_SCRIPT} --base ${BASE} -s ${SUB},${SES} --fp-ana-name ${FP_ANA_NAME} --task ${TASK} --space ${SPACE} --start-scans ${START_SCANS} --contrast ${CONTRAST} --analysis-name ${analysis_name}"
     if [[ -n "${RERUN_MAP}" ]]; then
         PY_CMD="${PY_CMD} --rerun-map ${RERUN_MAP}"
     fi
@@ -160,7 +160,7 @@ echo '============================================================'
 echo '  Job ID      : '\${SLURM_JOB_ID}
 echo '  sub         : ${SUB}'
 echo '  ses         : ${SES}'
-echo '  output_name : ${output_name}'
+echo '  analysis_name : ${analysis_name}'
 echo '  Node        : '\$(hostname)
 echo '  Start       : '\$(date '+%Y-%m-%d %H:%M:%S')
 echo '============================================================'

@@ -132,7 +132,7 @@ class GLMPrepare(BasePrepare):
        read by nilearn to build the first-level model.
     3. **Preprocessed bold** — ``<fmriprep_dir>/sub-X/ses-X/func/*_bold.nii.gz``;
        symlinked with normalised GLM task-run names.
-    4. **Contrast config** — path to contrast YAML under ``container_specific.fMRI-GLM``.
+    4. **Contrast config** — path to contrast YAML under ``container_specific.l1_surface``.
 
     Inherits :attr:`~launchcontainers.prepare.base_prepare.BasePrepare.basedir`,
     :attr:`~launchcontainers.prepare.base_prepare.BasePrepare.bidsdir`, and
@@ -148,10 +148,10 @@ class GLMPrepare(BasePrepare):
 
     def __init__(self, lc_config: dict | None = None):
         super().__init__(lc_config)
-        self._glm_cfg = self.lc_config.get("container_specific", {}).get("fMRI-GLM", {})
+        self._glm_cfg = self.lc_config.get("container_specific", {}).get("l1_surface", {})
 
     # ------------------------------------------------------------------
-    # Convenience properties — from container_specific.fMRI-GLM
+    # Convenience properties — from container_specific.l1_surface
     # ------------------------------------------------------------------
     @property
     def is_WC(self) -> bool:
@@ -208,9 +208,9 @@ class GLMPrepare(BasePrepare):
         return self._glm_cfg.get("contrast_yaml")
 
     @property
-    def output_name(self) -> str | None:
-        """Output folder name for the GLM results."""
-        return self._glm_cfg.get("output_name")
+    def analysis_name(self) -> str:
+        """Analysis name for the GLM results, taken from general.analysis_name."""
+        return self.lc_config["general"]["analysis_name"]
 
     @property
     def slice_timing_ref(self) -> float:
@@ -278,19 +278,18 @@ class GLMPrepare(BasePrepare):
 
     @classmethod
     def _example_config_dict(cls) -> dict:
-        """Return the example config dict for the fMRI-GLM pipeline."""
+        """Return the example config dict for the l1_surface pipeline."""
         return {
             "general": {
                 "basedir": "/path/to/basedir",
                 "bidsdir_name": "BIDS",
-                "container": "fMRI-GLM",
+                "container": "l1_surface",
                 "analysis_name": "glm_01",
                 "host": "local",
                 "force": True,
             },
             "container_specific": {
-                "fMRI-GLM": {
-                    "version": "0.1.0",
+                "l1_surface": {
                     "is_WC": False,
                     "output_bids": "BIDS_WC",
                     "fmriprep_analysis_name": "fmriprep-25.1.4",
@@ -298,7 +297,6 @@ class GLMPrepare(BasePrepare):
                     "start_scans": 5,
                     "space": "fsnative",
                     "contrast_yaml": "/path/to/contrast.yaml",
-                    "output_name": "glm_output",
                     "slice_timing_ref": 0.5,
                     "use_smoothed": False,
                     "dry_run": False,
@@ -880,7 +878,7 @@ def run_glm_prepare(
     Run the full GLM preparation pipeline for every subject/session.
 
     Called by :func:`launchcontainers.do_prepare.main` when
-    ``general.container`` is ``fMRI-GLM``.
+    ``general.container`` is ``l1_surface``.
 
     If called with no arguments, writes an example config YAML to the current
     working directory and returns ``False``.

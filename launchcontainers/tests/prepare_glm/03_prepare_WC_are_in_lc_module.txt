@@ -1,0 +1,1 @@
+The code that is preparing the WC conditon is in the lc module, you can launch it with lc prepare glm etc

@@ -60,7 +60,7 @@ _TASK = "fLoc"
 # e.g. sub-07_ses-01_task-fLoc_14-Mar-2025_CN_Stimset1_1back_10runs
 _ONSET_SUB_RE  = re.compile(r"(?:^|_)sub-(\d+)")
 _ONSET_SES_RE  = re.compile(r"(?:^|_)ses-(\d+)")
-_ONSET_DATE_RE = re.compile(r"(\d{1,2}-[A-Za-z]{3}-\d{4})")
+_ONSET_DATE_RE = re.compile(r"(\d{1,2}-[A-Za-z]{3,4}-\d{4})")
 
 _DATE_FMTS = ["%d-%b-%Y", "%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", "%d-%m-%Y"]
 _BAD_SES_RE = r"-|wrong|failed|lost|ME|bad|00|test|-t"
@@ -214,6 +214,8 @@ def _parse_date_flexible(val) -> date | None:
     if hasattr(val, "date"):           # pandas Timestamp / datetime
         return val.date()
     s = str(val).strip()
+    # normalise non-standard month abbreviations (e.g. "Sept" → "Sep")
+    s = re.sub(r"\bSept\b", "Sep", s, flags=re.IGNORECASE)
     for fmt in _DATE_FMTS:
         try:
             return datetime.strptime(s, fmt).date()

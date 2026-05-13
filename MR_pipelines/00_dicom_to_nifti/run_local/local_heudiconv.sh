@@ -5,9 +5,9 @@
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-project=votcloc
-basedir=/bcbl/home/public/Gari/VOTCLOC/main_exp
-codedir=/bcbl/home/public/Gari/VOTCLOC/main_exp/code
+project=IRAKEINU
+basedir=/bcbl/home/public/Gari/$project
+codedir=$basedir/code
 
 outputdir=$basedir/raw_nifti
 dcm_dir=/base/dicom
@@ -86,7 +86,7 @@ while IFS=',' read -r sub ses _; do
     [[ -z "$sub" || -z "$ses" ]] && continue
 
     echo "### CONVERTING TO NIFTI: sub-${sub} ses-${ses} ###"
-    now=$(date +"%H;%M")
+    now=$(date +"%H_%M")
     log_file="${logdir}/local_${sub}_${ses}_${now}.o"
     error_file="${logdir}/local_${sub}_${ses}_${now}.e"
 

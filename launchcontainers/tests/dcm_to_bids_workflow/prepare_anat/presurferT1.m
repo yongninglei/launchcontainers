@@ -80,7 +80,7 @@ function  presurferT1(tbPath,src_dir, output_dir, sub, ses, force)
     disp(num_runs)
     runs = arrayfun(@(x) sprintf('%02d', x), 1:num_runs, 'UniformOutput', false);
     sprintf('Number of runs are %s', num_runs)
-    sprintf('Forse is %s', force)
+    sprintf('Force is %s', force)
     for runI=1:length(runs)
         run = ['run-',runs{runI}];
         %% first run presurfer to denoise mp2rage images
@@ -136,12 +136,12 @@ function  presurferT1(tbPath,src_dir, output_dir, sub, ses, force)
     end
     % cp the T2w to target place
     % T2w we only have 1 run so runI=1
-    runI=1
-    T2w_in = fullfile(src_sesP, 'anat', [sub,'_',ses,'_',run,'_T2w.nii.gz']);
+    runT2='run-01';
+    T2w_in = fullfile(src_sesP, 'anat', [sub,'_',ses,'_',runT2,'_T2w.nii.gz']);
     T2w_json_in = strrep(T2w_in,'.nii.gz','.json');
-    T2w_out = fullfile(out_sesP, 'anat', [sub,'_',ses,'_',run,'_T2w.nii.gz']);
+    T2w_out = fullfile(out_sesP, 'anat', [sub,'_',ses,'_',runT2,'_T2w.nii.gz']);
     T2w_json_out = strrep(T2w_out,'.nii.gz','.json');
-    if ~exist(T2w_out, 'file') || force    
+    if ~exist(T2w_out, 'file') || force
         try
             % move, rename, clean up
             system(['cp ', T2w_in, ' ', T2w_out]);
@@ -150,7 +150,7 @@ function  presurferT1(tbPath,src_dir, output_dir, sub, ses, force)
             warning("T2w is NOT being copied correctly")
         end
     end
-    if ~exist(T2w_json_out, 'file') || force    
+    if ~exist(T2w_json_out, 'file') || force
         try
             % move, rename, clean up
             system(['cp ', T2w_json_in, ' ', T2w_json_out]);
@@ -158,5 +158,5 @@ function  presurferT1(tbPath,src_dir, output_dir, sub, ses, force)
         catch
             warning("T2w json is NOT being copied correctly")
         end
-    end    
+    end
 end

@@ -35,7 +35,7 @@ from nilearn.glm.contrasts import compute_contrast
 from nilearn.glm.first_level import first_level_from_bids
 from nilearn.glm.first_level import make_first_level_design_matrix
 from nilearn.glm.first_level.first_level import run_glm
-from nilearn.plotting import plot_design_matrix
+from nilearn.plotting import plot_design_matrix, plot_contrast_matrix
 from nilearn.surface import load_surf_data
 from rich import box
 from rich.console import Console
@@ -145,13 +145,46 @@ def load_contrasts(yaml_file, design_matrix):
 
 
 # ---------------------------------------------------------------------------
+# Plotting helpers
+# ---------------------------------------------------------------------------
+
+def plot_design_matrix_to_file(design_matrix, outdir, subject, session, task):
+    """Save the design matrix plot to <outdir>/design_matrix_{task}.png."""
+    fig, ax = plt.subplots(figsize=(10, 6))
+    plot_design_matrix(design_matrix, ax=ax)
+    fig.suptitle(f"sub-{subject}  ses-{session}  task-{task}")
+    outpath = op.join(outdir, f"design_matrix_{task}.png")
+    fig.savefig(outpath, bbox_inches="tight")
+    plt.close(fig)
+    console.print(f"  [dim]Design matrix saved → {outpath}[/dim]")
+    return outpath
+
+
+def plot_contrast_matrices(contrasts, design_matrix, outdir, subject, session, task):
+    """Save a single figure with one panel per contrast, showing each contrast vector."""
+    n = len(contrasts)
+    fig, axes = plt.subplots(1, n, figsize=(4 * n, 4))
+    if n == 1:
+        axes = [axes]
+    for ax, (key, values) in zip(axes, contrasts.items()):
+        plot_contrast_matrix(values, design_matrix=design_matrix, ax=ax)
+        ax.set_title(key, fontsize=8)
+    fig.suptitle(f"sub-{subject}  ses-{session}  task-{task}")
+    outpath = op.join(outdir, f"contrast_matrices_{task}.png")
+    fig.savefig(outpath, bbox_inches="tight")
+    plt.close(fig)
+    console.print(f"  [dim]Contrast matrices saved → {outpath}[/dim]")
+    return outpath
+
+
+# ---------------------------------------------------------------------------
 # Core processing
 # ---------------------------------------------------------------------------
 
 def glm_l1(
     conc_data_std, design_matrix_std, contrasts,
     bids_dir, task, space, subject, session,
-    output_name, use_smoothed=False, sm=None, randrun_idx=None, hemi=None,
+    analysis_name, use_smoothed=False, sm=None, randrun_idx=None, hemi=None,
 ) -> dict[str, float]:
     """
     Fit the GLM and compute contrasts.
@@ -165,17 +198,26 @@ def glm_l1(
 
     outdir = op.join(
         bids_dir, "derivatives", "l1_surface",
-        f"analysis-{output_name}", f"sub-{subject}", f"ses-{session}",
+        f"analysis-{analysis_name}", f"sub-{subject}", f"ses-{session}",
     )
     if not op.exists(outdir):
         makedirs(outdir)
 
-    plot_design_matrix(design_matrix_std)
-    plt.savefig(os.path.join(outdir, "design_matrix.png"))
-    plt.close()
+    plot_design_matrix_to_file(design_matrix_std, outdir, subject, session, task)
+    plot_contrast_matrices(contrasts, design_matrix_std, outdir, subject, session, task)
 
     Y = np.transpose(conc_data_std)
     X = np.asarray(design_matrix_std)
+
+    console.print(
+        f"  [DIAG] Y (vertices × timepoints): shape={Y.shape}  "
+        f"min={np.nanmin(Y):.4f}  max={np.nanmax(Y):.4f}  std={np.nanstd(Y):.4f}"
+    )
+    console.print(
+        f"  [DIAG] Design matrix: shape={X.shape}  "
+        f"rank={np.linalg.matrix_rank(X)}  (expected full rank={X.shape[1]})"
+    )
+
     labels, estimates = run_glm(Y, X, n_jobs=1)
 
     timing: dict[str, float] = {}
@@ -210,6 +252,12 @@ def glm_l1(
         p_value   = contrast_obj.p_value()
         variance  = contrast_obj.effect_variance()
 
+        console.print(
+            f"  [DIAG] contrast={contrast_id}  "
+            f"z: min={np.nanmin(z_score):.4f}  max={np.nanmax(z_score):.4f}  "
+            f"std={np.nanstd(z_score):.4f}  n_nan={np.sum(np.isnan(z_score))}"
+        )
+
         if hemi:
             save_statmap_to_gifti(betas,   outname_base.replace("stat-X", "stat-effect"))
             save_statmap_to_gifti(t_value, outname_base.replace("stat-X", "stat-t"))
@@ -231,7 +279,7 @@ def glm_l1(
 
 def prepare_glm_input(
     bids_dir, fmriprep_dir, fp_layout, label_dir, contrast_fpath,
-    subject, session, output_name, task, start_scans, space,
+    subject, session, analysis_name, task, start_scans, space,
     slice_time_ref, run_list, use_smoothed, sm, apply_label_as_mask, hemi=None,
 ):
     """
@@ -276,7 +324,7 @@ def prepare_glm_input(
         elif not is_surface:
             query_params["desc"] = "preproc"
 
-        func_files = fp_layout.get(**query_params)
+        func_files = fp_layout.get(**query_params, invalid_filters="allow")
         if not func_files:
             console.print(
                 f"  [yellow]WARNING[/yellow]: no functional file for run {run_num} "
@@ -524,7 +572,7 @@ def generate_run_groups(
 
 def process_run_list(
     bids_dir, fmriprep_dir, fp_layout, label_dir, contrast_fpath,
-    subject, session, output_name, task, start_scans, space, slice_time_ref,
+    subject, session, analysis_name, task, start_scans, space, slice_time_ref,
     run_list, use_smoothed, sm, apply_label_as_mask, dry_run,
     randrun_idx=None, hemi=None,
 ) -> dict[str, float]:
@@ -541,7 +589,7 @@ def process_run_list(
 
     conc_data_std, design_matrix_std, contrasts = prepare_glm_input(
         bids_dir, fmriprep_dir, fp_layout, label_dir, contrast_fpath,
-        subject, session, output_name, task, start_scans, space, slice_time_ref,
+        subject, session, analysis_name, task, start_scans, space, slice_time_ref,
         run_list, use_smoothed, sm, apply_label_as_mask, hemi,
     )
     console.print(f"  Contrasts: {list(contrasts.keys())}")
@@ -553,13 +601,13 @@ def process_run_list(
     return glm_l1(
         conc_data_std, design_matrix_std, contrasts,
         bids_dir, task, space, subject, session,
-        output_name, use_smoothed, sm, randrun_idx, hemi,
+        analysis_name, use_smoothed, sm, randrun_idx, hemi,
     )
 
 
 def run_power_analysis(
     bids_dir, fmriprep_dir, fp_layout, label_dir, contrast_fpath,
-    subject, session, base_output_name, task, start_scans, space, slice_time_ref,
+    subject, session, base_analysis_name, task, start_scans, space, slice_time_ref,
     use_smoothed, sm, apply_label_as_mask, dry_run,
     total_runs, n_iterations, seed, hemi=None,
 ) -> None:
@@ -584,7 +632,7 @@ def run_power_analysis(
         for iter_num, selected_runs in enumerate(combinations, start=1):
             run_list    = [f"{r:02d}" for r in selected_runs]
             randrun_idx = f"_run-{''.join(map(str, selected_runs))}"
-            iter_output = f"{base_output_name}/power_analysis_{num_of_runs}_run/iter_{iter_num:02d}"
+            iter_output = f"{base_analysis_name}/power_analysis_{num_of_runs}_run/iter_{iter_num:02d}"
 
             console.print(f"  Iteration {iter_num}/{n_iterations}: runs {selected_runs}")
             t_iter = time.time()
@@ -739,7 +787,7 @@ def main(
     start_scans: int = typer.Option(..., "--start-scans", help="Number of non-steady-state TRs to drop"),
     space: str = typer.Option(..., "--space", help="Space: T1w | fsnative | fsaverage | MNI152NLin2009cAsym"),
     contrast: str = typer.Option(..., "--contrast", help="Path to YAML contrast definition file"),
-    output_name: str = typer.Option(..., "--output-name", help="Output folder name label"),
+    analysis_name: str = typer.Option(..., "--analysis-name", help="Analysis name (output folder label)"),
     input_dirname: str = typer.Option("BIDS", "--input-dir", "-i", help="Input BIDS dir name under base"),
     slice_time_ref: float = typer.Option(0.5, "--slice-time-ref", help="Slice timing reference (fMRIPrep default 0.5)"),
     use_smoothed: bool = typer.Option(False, "--use-smoothed", help="Use smoothed functional files"),
@@ -803,7 +851,7 @@ def main(
     tbl_launch.add_row("Task",              task)
     tbl_launch.add_row("Space",             space)
     tbl_launch.add_row("fMRIPrep",          fp_ana_name)
-    tbl_launch.add_row("Output name",       output_name)
+    tbl_launch.add_row("Analysis name",      analysis_name)
     tbl_launch.add_row("Runs",              runs_str)
     tbl_launch.add_row("Contrasts",         f"{n_contrasts}  ({contrast})")
     tbl_launch.add_row("Start scans",       str(start_scans))
@@ -846,7 +894,7 @@ def main(
             for hemi in hemis:
                 run_power_analysis(
                     bids_dir, fmriprep_dir, fp_layout, label_dir, contrast,
-                    sub, ses, output_name, task, start_scans, space, slice_time_ref,
+                    sub, ses, analysis_name, task, start_scans, space, slice_time_ref,
                     use_smoothed, sm, mask, dry_run,
                     total_runs, n_iterations, seed, hemi,
                 )
@@ -865,7 +913,7 @@ def main(
                 console.rule(f"[bold]Hemisphere {hemi}[/bold]", style="dim")
                 timing = process_run_list(
                     bids_dir, fmriprep_dir, fp_layout, label_dir, contrast,
-                    sub, ses, output_name, task, start_scans, space, slice_time_ref,
+                    sub, ses, analysis_name, task, start_scans, space, slice_time_ref,
                     run_list, use_smoothed, sm, mask, dry_run,
                     randrun_idx, hemi,
                 )
@@ -874,7 +922,7 @@ def main(
             console.rule("[bold]Volumetric[/bold]", style="dim")
             timing = process_run_list(
                 bids_dir, fmriprep_dir, fp_layout, label_dir, contrast,
-                sub, ses, output_name, task, start_scans, space, slice_time_ref,
+                sub, ses, analysis_name, task, start_scans, space, slice_time_ref,
                 run_list, use_smoothed, sm, mask, dry_run,
                 randrun_idx, hemi=None,
             )

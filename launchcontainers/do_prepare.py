@@ -26,7 +26,7 @@ from launchcontainers.log_setup import console
 from launchcontainers.prepare import dwi_prepare as dwi_prepare
 from launchcontainers.prepare.glm_prepare import run_glm_prepare
 
-_GLM_PIPELINES = {"fMRI-GLM"}
+_GLM_PIPELINES = {"l1_surface"}
 _DWI_PIPELINES = {
     "anatrois",
     "rtppreproc",
@@ -55,22 +55,26 @@ def _create_analysis_dir(lc_config: dict) -> str:
     bidsdir_name = lc_config["general"]["bidsdir_name"]
     deriv_layout = lc_config["general"]["deriv_layout"]
     container = lc_config["general"]["container"]
-    version = lc_config["container_specific"][container]["version"]
     analysis_name = lc_config["general"]["analysis_name"]
 
-    if deriv_layout == "legacy":
+    if container == "l1_surface":
+        analysis_dir = op.join(
+            basedir, bidsdir_name, "derivatives", "l1_surface", f"analysis-{analysis_name}"
+        )
+    elif deriv_layout == "legacy":
+        version = lc_config["container_specific"][container]["version"]
         container_folder = op.join(
             basedir, bidsdir_name, "derivatives", f"{container}_{version}"
         )
         analysis_dir = op.join(container_folder, f"analysis-{analysis_name}")
     else:
-        container_folder = op.join(
+        version = lc_config["container_specific"][container]["version"]
+        analysis_dir = op.join(
             basedir,
             bidsdir_name,
             "derivatives",
             f"{container}-{version}_{analysis_name}",
         )
-        analysis_dir = container_folder
 
     os.makedirs(analysis_dir, exist_ok=True)
     console.print(
