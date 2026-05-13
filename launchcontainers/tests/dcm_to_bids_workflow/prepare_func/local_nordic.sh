@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 
+# ---------------------------------------------------------------------------
 # Configuration
-script_dir=/export/home/tlei/tlei/soft/launchcontainers/MR_pipelines/01_prepare_nifti/prepare_func
+# ---------------------------------------------------------------------------
+script_dir=$(dirname "$(realpath "$0")")
 TB_PATH="/export/home/tlei/tlei/toolboxes"
-SRC_DIR="/bcbl/home/public/Gari/VOTCLOC/main_exp/raw_nifti"
-OUTPUT_DIR="/bcbl/home/public/Gari/VOTCLOC/main_exp/BIDS"
-codedir=/bcbl/home/public/Gari/VOTCLOC/main_exp/code
 
 # nordic parameters (must match your MATLAB signature)
 NORDIC_END=1
@@ -18,25 +17,42 @@ DOTSNR=false
 # ---------------------------------------------------------------------------
 usage() {
     echo "Usage:"
-    echo "  $0 -s <sub>,<ses>          # run a single sub/ses pair"
-    echo "  $0 -f <full_path_to_subseslist>    # batch mode"
+    echo "  $0 -b <basedir> -i <src_dir> -s <sub>,<ses>"
+    echo "  $0 -b <basedir> -i <src_dir> -f <full_path_to_subseslist>"
+    echo ""
+    echo "  -b  project base directory (logs go to <basedir>/logs/)"
+    echo "  -i  input raw nifti directory (relative to basedir)"
+    echo "  -s  single sub,ses pair"
+    echo "  -f  batch mode: path to subseslist file"
     exit 1
 }
 
+BASEDIR=""
+SRC_DIR=""
 subses_arg=""
 file_arg=""
 
-while getopts ":s:f:" opt; do
+while getopts ":b:i:s:f:" opt; do
     case $opt in
+        b) BASEDIR="$OPTARG" ;;
+        i) SRC_DIR="$OPTARG" ;;
         s) subses_arg="$OPTARG" ;;
         f) file_arg="$OPTARG" ;;
         *) usage ;;
     esac
 done
 
+if [[ -z "$BASEDIR" || -z "$SRC_DIR" ]]; then
+    echo "Error: -b <basedir> and -i <src_dir> are required."
+    usage
+fi
+
 if [[ -z "$subses_arg" && -z "$file_arg" ]]; then
     usage
 fi
+
+SRC_DIR="${BASEDIR}/${SRC_DIR}"
+OUTPUT_DIR="${BASEDIR}/BIDS"
 
 # Build a temporary list of "sub,ses" lines to process
 tmpfile=$(mktemp)
@@ -69,7 +85,7 @@ fi
 # Ensure output dir and log dir exist
 # ---------------------------------------------------------------------------
 mkdir -p "${OUTPUT_DIR}"
-logdir="${OUTPUT_DIR}/log_nordic_fmri/${analysis_name}_$(date +"%Y-%m-%d")"
+logdir="${BASEDIR}/logs/log_nordic_fmri/${analysis_name}_$(date +"%Y-%m-%d")"
 echo "The logdir is $logdir"
 echo "The outputdir is $OUTPUT_DIR"
 mkdir -p "$logdir"

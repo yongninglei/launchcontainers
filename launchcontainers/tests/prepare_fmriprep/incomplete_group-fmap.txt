@@ -1,3 +1,0 @@
-sub,ses,RUN
-05,08,True
-08,04,True
