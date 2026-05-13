@@ -210,7 +210,7 @@ host_options:
       manager: slurm
       system: scratch
       tmpdir: /scratch/tlei/tmp
-      mount_options: ['/scratch']
+      mount_options: ['/scratch', '/data']
       # config the cluster
       # job name is very important
       job_name: fsrator
