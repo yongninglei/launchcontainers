@@ -54,7 +54,7 @@ from rich.text import Text
 # ---------------------------------------------------------------------------
 _BIDS_DIR = Path("/scratch/tlei/VOTCLOC/BIDS")
 _RERUN_MAP_DEFAULT = Path("sourcedata/qc/rerun_check.tsv")  # relative to bids_dir
-_TASK = "fLoc"
+_TASK = "BfLocVideo"
 
 # Regexes for validating the onset directory name
 # e.g. sub-07_ses-01_task-fLoc_14-Mar-2025_CN_Stimset1_1back_10runs
@@ -104,13 +104,13 @@ def _find_onset_dir(sourcedata_dir: Path, sub: str, ses: str) -> tuple[Path | No
             name = onset_dir.name
             if (
                 name.startswith(prefix)
-                and "1back" in name
+                and "oddball" in name
                 and not name.lower().startswith("backup")
             ):
                 candidates.append(onset_dir)
 
     if not candidates:
-        return None, f"no onset dir found matching sub-{sub}_ses-{ses}*_1back_*"
+        return None, f"no onset dir found matching sub-{sub}_ses-{ses}*_*_*"
 
     if len(candidates) == 1:
         return candidates[0], "ok"
