@@ -150,8 +150,8 @@ def load_contrasts(yaml_file, design_matrix):
 
 def plot_design_matrix_to_file(design_matrix, outdir, subject, session, task):
     """Save the design matrix plot to <outdir>/design_matrix_{task}.png."""
-    fig, ax = plt.subplots(figsize=(10, 6))
-    plot_design_matrix(design_matrix, ax=ax)
+    ax = plot_design_matrix(design_matrix)
+    fig = ax.get_figure()
     fig.suptitle(f"sub-{subject}  ses-{session}  task-{task}")
     outpath = op.join(outdir, f"design_matrix_{task}.png")
     fig.savefig(outpath, bbox_inches="tight")
@@ -161,18 +161,14 @@ def plot_design_matrix_to_file(design_matrix, outdir, subject, session, task):
 
 
 def plot_contrast_matrices(contrasts, design_matrix, outdir, subject, session, task):
-    """Save a single figure with one panel per contrast, showing each contrast vector."""
-    n = len(contrasts)
-    fig, axes = plt.subplots(1, n, figsize=(4 * n, 4))
-    if n == 1:
-        axes = [axes]
-    for ax, (key, values) in zip(axes, contrasts.items()):
-        plot_contrast_matrix(values, design_matrix=design_matrix, ax=ax)
-        ax.set_title(key, fontsize=8)
-    fig.suptitle(f"sub-{subject}  ses-{session}  task-{task}")
-    outpath = op.join(outdir, f"contrast_matrices_{task}.png")
-    fig.savefig(outpath, bbox_inches="tight")
-    plt.close(fig)
+    """Save one contrast-matrix plot per contrast."""
+    for key, values in contrasts.items():
+        ax = plot_contrast_matrix(values, design_matrix=design_matrix)
+        fig = ax.get_figure()
+        fig.suptitle(f"sub-{subject}  ses-{session}  task-{task}  {key}")
+        outpath = op.join(outdir, f"contrast_matrix_{task}_{key}.png")
+        fig.savefig(outpath, bbox_inches="tight")
+        plt.close(fig)
     console.print(f"  [dim]Contrast matrices saved → {outpath}[/dim]")
     return outpath
 
@@ -420,7 +416,9 @@ def prepare_glm_input(
         a_compcor_keys     = [k for k in confounds.keys() if "a_comp_cor"  in k]
         non_steady_keys    = [k for k in confounds.keys() if "non_steady"  in k]
         cosine_keys        = [k for k in confounds.keys() if "cosine"      in k]
-        confound_keys_keep = motion_keys + a_compcor_keys + cosine_keys + non_steady_keys
+        # new we add motion outliers to model
+        motion_outlier_keys = [k for k in confounds.keys() if "motion_outlier" in k]
+        confound_keys_keep = motion_keys + a_compcor_keys + cosine_keys + non_steady_keys + motion_outlier_keys
         confounds_keep = confounds[confound_keys_keep]
 
         confounds_keep["framewise_displacement"][0] = np.nanmean(

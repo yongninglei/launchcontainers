@@ -127,10 +127,8 @@ echo ""
 # ---------------------------------------------------------------------------
 job_num=1
 for pair in "${PAIRS[@]}"; do
-    SUB_RAW=$(echo "$pair" | cut -d',' -f1 | tr -d ' ')
-    SES_RAW=$(echo "$pair" | cut -d',' -f2 | tr -d ' ')
-    SUB=$(printf "%02d" "$((10#$SUB_RAW))")
-    SES=$(printf "%02d" "$((10#$SES_RAW))")
+    SUB=$(echo "$pair" | cut -d',' -f1 | tr -d ' ')
+    SES=$(echo "$pair" | cut -d',' -f2 | tr -d ' ')
 
     # Build the python command
     PY_CMD="python ${PYTHON_SCRIPT} --base ${BASE} -s ${SUB},${SES} --fp-ana-name ${FP_ANA_NAME} --task ${TASK} --space ${SPACE} --start-scans ${START_SCANS} --contrast ${CONTRAST} --analysis-name ${analysis_name}"
