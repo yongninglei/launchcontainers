@@ -98,6 +98,18 @@ def _run_fmt(mod: str, run_int: int) -> str:
     return str(run_int) if mod == "fmap" else f"{run_int:02d}"
 
 
+def _read_nii_dims(nii_path: str) -> tuple | None:
+    """Return (dim1, dim2, dim3) from NIfTI header, or None on failure."""
+    if not op.exists(nii_path):
+        return None
+    try:
+        import nibabel as nib
+        shape = nib.load(nii_path).shape
+        return tuple(int(shape[i]) for i in range(min(3, len(shape))))
+    except Exception:
+        return None
+
+
 def _find_ses_dirs(bidsdir: str, sub: str, ses: str) -> list[str]:
     """Return all session dirs matching ses-{ses}*, sorted by name."""
     sub_dir = op.join(bidsdir, f"sub-{sub}")
@@ -128,6 +140,7 @@ def _collect_all_files(bidsdir: str, sub: str, ses: str) -> list[dict]:
       acq_sec    — seconds since midnight (float)
       run_int    — integer run number from filename (None if no run entity)
       task       — task label (func only, else None)
+      echo       — echo index string if multi-echo (e.g. "1", "2"), else None
     """
     ses_dirs = _find_ses_dirs(bidsdir, sub, ses)
     rows: list[dict] = []
@@ -144,6 +157,7 @@ def _collect_all_files(bidsdir: str, sub: str, ses: str) -> list[dict]:
                 run_m = re.search(r"_run-(\d+)_", stem)
                 task_m = re.search(r"_task-(\w+)_", stem)
                 acq_m = re.search(r"_acq-(\w+)_", stem)
+                echo_m = re.search(r"_echo-(\w+)_", stem)
 
                 # Companion files
                 extra: list[str] = []
@@ -173,6 +187,8 @@ def _collect_all_files(bidsdir: str, sub: str, ses: str) -> list[dict]:
                         "run_int": int(run_m.group(1)) if run_m else None,
                         "task": task_m.group(1) if task_m else None,
                         "acq": acq_m.group(1) if acq_m else None,
+                        "echo": echo_m.group(1) if echo_m else None,
+                        "dims": _read_nii_dims(op.join(mod_dir, stem + ".nii.gz")),
                     }
                 )
 
@@ -180,8 +196,8 @@ def _collect_all_files(bidsdir: str, sub: str, ses: str) -> list[dict]:
     # Build acq_time lookup from JSON-backed rows so gfactor inherits timing.
     acq_lookup: dict[tuple, tuple[str, float]] = {}
     for r in rows:
-        if r["run_int"] is not None and r.get("task"):
-            key = (r["ses_label"], r["mod"], r["task"], r["run_int"])
+        if r["run_int"] is not None:
+            key = (r["ses_label"], r["mod"], r["task"], r["acq"], r["run_int"])
             acq_lookup.setdefault(key, (r["acq_time"], r["acq_sec"]))
 
     json_stems = {r["stem"] for r in rows}
@@ -200,10 +216,12 @@ def _collect_all_files(bidsdir: str, sub: str, ses: str) -> list[dict]:
                 run_m = re.search(r"_run-(\d+)_", stem_nii)
                 task_m = re.search(r"_task-(\w+)_", stem_nii)
                 acq_m = re.search(r"_acq-(\w+)_", stem_nii)
+                echo_m = re.search(r"_echo-(\w+)_", stem_nii)
                 run_int = int(run_m.group(1)) if run_m else None
                 task = task_m.group(1) if task_m else None
+                acq = acq_m.group(1) if acq_m else None
                 suffix = stem_nii.split("_")[-1]
-                key = (ses_label, mod, task, run_int)
+                key = (ses_label, mod, task, acq, run_int)
                 acq_time, acq_sec = acq_lookup.get(key, ("", float("inf")))
                 rows.append(
                     {
@@ -220,7 +238,9 @@ def _collect_all_files(bidsdir: str, sub: str, ses: str) -> list[dict]:
                         "acq_sec": acq_sec,
                         "run_int": run_int,
                         "task": task,
-                        "acq": acq_m.group(1) if acq_m else None,
+                        "acq": acq,
+                        "echo": echo_m.group(1) if echo_m else None,
+                        "dims": _read_nii_dims(nii),
                     }
                 )
 
@@ -241,17 +261,22 @@ def _group_key(r: dict) -> tuple:
     """
     Grouping key for sequential run renumbering.
 
-    func  → (mod, task, suffix)  — sbref / magnitude / phase counted separately
-    fmap  → (mod, None, None)    — AP+PA share the same run; paired by (ses_label, run_int)
-    dwi   → (mod, acq, None)     — AP+PA share the same run; different acq- labels
-                                   (e.g. acq-b0 vs acq-b1000) are independent sequences;
-                                   pairs resolved by (ses_label, run_int) inside the group
+    func  → (mod, task, acq, suffix)  — sbref / magnitude / phase counted separately;
+                                        acq-ME and acq-SE are independent sequences;
+                                        echo- is intentionally excluded so all echos
+                                        of the same run share the same new run number
+    fmap  → (mod, acq, None)          — AP+PA share the same run; acq-ME and acq-SE
+                                        are independent sequences; pairs resolved by
+                                        (ses_label, run_int) inside the group
+    dwi   → (mod, acq, None)          — AP+PA share the same run; different acq- labels
+                                        (e.g. acq-b0 vs acq-b1000) are independent sequences;
+                                        pairs resolved by (ses_label, run_int) inside the group
     anat  → (mod, None, suffix)
     """
     if r["mod"] == "func" and r["task"]:
-        return (r["mod"], r["task"], r["suffix"])
+        return (r["mod"], r["task"], r["acq"], r["suffix"])
     if r["mod"] == "fmap":
-        return (r["mod"], None, None)
+        return (r["mod"], r["acq"], None)
     if r["mod"] == "dwi":
         return (r["mod"], r["acq"], None)
     return (r["mod"], None, r["suffix"])
@@ -329,10 +354,24 @@ def _build_rename_plan(
                 for r in run_files:
                     _maybe_add(plan, r, new_run_int, primary_label, primary_dir)
         else:
-            # Sort by acq_time; for files without acq_time fall back to run_int
-            files_sorted = sorted(files, key=lambda r: (r["acq_sec"], r["run_int"]))
-            for new_run_int, r in enumerate(files_sorted, start=1):
-                _maybe_add(plan, r, new_run_int, primary_label, primary_dir)
+            # Group by (ses_label, run_int) so that multi-echo files (different
+            # echo- entities, same run_int) all receive the same new run number.
+            # For single-echo runs each bucket has one file — behaviour is identical
+            # to the old sort-and-enumerate approach.
+            run_to_files: dict[tuple, list[dict]] = defaultdict(list)
+            for r in files:
+                run_to_files[(r["ses_label"], r["run_int"])].append(r)
+
+            sorted_runs = sorted(
+                run_to_files.items(),
+                key=lambda kv: min(r["acq_sec"] for r in kv[1]),
+            )
+
+            for new_run_int, ((_ses, _old_run), run_files) in enumerate(
+                sorted_runs, start=1
+            ):
+                for r in run_files:
+                    _maybe_add(plan, r, new_run_int, primary_label, primary_dir)
 
     # ── files WITHOUT run numbers (just need ses-label update if secondary) ─
     for r in all_files:
@@ -633,6 +672,7 @@ def _print_timeline(
     t.add_column("acq_time", justify="right", style="cyan")
     t.add_column("ses_part", justify="center", style="dim")
     t.add_column("mod", justify="center", style="dim")
+    t.add_column("dims", justify="center", style="green")
     t.add_column("name")
     t.add_column("run change", justify="center")
 
@@ -658,10 +698,14 @@ def _print_timeline(
             run_change = ""
             name_col = name_short
 
+        dims = r.get("dims")
+        dims_str = "×".join(str(d) for d in dims) if dims else "[dim]—[/]"
+
         t.add_row(
             _fmt_time(r["acq_time"]) or "[dim]—[/]",
             f"[{part_style}]{r['ses_label']}[/]",
             r["mod"],
+            dims_str,
             name_col,
             run_change,
         )

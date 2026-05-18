@@ -59,6 +59,46 @@ app = typer.Typer(pretty_exceptions_show_locals=False)
 
 DEFAULT_MAX_GAP = 30  # seconds — sbrefs farther than this from any func are orphans
 
+_ECHO_ENTITY_RE = re.compile(r"_echo-(\d+)_")
+
+
+def _is_me(basename: str) -> bool:
+    return bool(_ECHO_ENTITY_RE.search(basename))
+
+
+def _echo_canonical(basename: str) -> str:
+    """Strip the echo entity so all echoes of the same run share one key."""
+    return _ECHO_ENTITY_RE.sub("_", basename)
+
+
+def _dedup_me_by_run(entries: list[dict]) -> list[dict]:
+    """
+    Collapse multi-echo files for the same run into one representative entry.
+
+    The representative stores every echo entry (including itself) in
+    ``me_echoes`` so rename/drop can act on the whole group atomically.
+    Non-ME entries pass through unchanged with an empty ``me_echoes`` list.
+    """
+    result: list[dict] = []
+    seen: dict[str, dict] = {}
+
+    for e in entries:
+        if not _is_me(e["basename"]):
+            e.setdefault("me_echoes", [])
+            result.append(e)
+            continue
+
+        canonical = _echo_canonical(e["basename"])
+        if canonical not in seen:
+            rep = dict(e)
+            rep["me_echoes"] = [e]
+            seen[canonical] = rep
+            result.append(rep)
+        else:
+            seen[canonical]["me_echoes"].append(e)
+
+    return result
+
 
 # ---------------------------------------------------------------------------
 # Generic helpers  (shared pattern with show_bids_acqtimes.py)
@@ -160,6 +200,11 @@ def _collect_func_and_sbref(bidsdir: str, sub: str, ses: str) -> dict:
     funcs.sort(key=lambda r: r["acq_sec"])
     sbrefs.sort(key=lambda r: r["acq_sec"])
 
+    # For ME sequences each run produces N echo files; collapse them so that
+    # matching and renaming operate at the run level, not the echo level.
+    funcs  = _dedup_me_by_run(funcs)
+    sbrefs = _dedup_me_by_run(sbrefs)
+
     return {"funcs": funcs, "sbrefs": sbrefs, "ses_dirs": ses_dirs}
 
 
@@ -222,17 +267,20 @@ def _match_sbrefs(funcs: list[dict], sbrefs: list[dict], max_gap: int) -> list[d
             }
         )
 
-    # Renumber kept sbrefs sequentially PER TASK, in time order.
-    # e.g. retRW sbrefs get run-01, run-02 independently of retFF sbrefs.
-    task_counters: dict[str, int] = {}  # task_label → next run number
+    # Renumber kept sbrefs sequentially PER (task, acq) sequence, in time order.
+    # acq-SE and acq-ME are different sequences with independent run counters.
+    task_counters: dict[tuple[str, str], int] = {}  # (task, acq) → next run number
     kept = [r for r in results if r["action"] == "keep_pending"]
     for r in kept:
         sbref = r["sbref"]
         task_m = re.search(r"_task-(\w+)_", sbref["basename"])
-        task = task_m.group(1) if task_m else "_notask_"
+        task   = task_m.group(1) if task_m else "_notask_"
+        acq_m  = re.search(r"_acq-(\w+)_", sbref["basename"])
+        acq    = acq_m.group(1) if acq_m else ""
 
-        task_counters[task] = task_counters.get(task, 0) + 1
-        new_run_int = task_counters[task]
+        seq_key = (task, acq)
+        task_counters[seq_key] = task_counters.get(seq_key, 0) + 1
+        new_run_int = task_counters[seq_key]
 
         run_m = re.search(r"_run-(\d+)_", sbref["basename"])
         old_run_int = int(run_m.group(1)) if run_m else None
@@ -242,6 +290,8 @@ def _match_sbrefs(funcs: list[dict], sbrefs: list[dict], max_gap: int) -> list[d
             new_tag = f"_run-{new_run_int:02d}_"
             r["action"] = "rename"
             r["new_name"] = sbref["basename"].replace(old_tag, new_tag, 1)
+            r["_old_run_tag"] = old_tag   # used by _execute to rename ME companions
+            r["_new_run_tag"] = new_tag
         else:
             r["action"] = "ok"
 
@@ -255,23 +305,28 @@ def _match_sbrefs(funcs: list[dict], sbrefs: list[dict], max_gap: int) -> list[d
 
 def _execute(matches: list[dict], dry_run: bool) -> dict:
     """
-    Apply renames and drops.  Returns counts dict.
+    Apply renames and drops.  Returns counts dict (at sbref-group level, not echo level).
+
+    For ME sequences, each sbref group may have N echo companions stored in
+    ``sbref["me_echoes"]``; all are dropped/renamed together.
+    All phase-1 moves happen before all phase-2 moves to avoid collisions
+    (e.g. run-03→run-02 must not clobber the original run-02 before it moves).
     """
     to_rename = [m for m in matches if m["action"] == "rename"]
-    to_drop = [m for m in matches if m["action"] == "drop"]
+    to_drop   = [m for m in matches if m["action"] == "drop"]
 
     counts = {"renamed": 0, "dropped": 0, "errors": 0}
 
     # ---- Drop orphan sbrefs FIRST (before any renames) ----
-    # Must drop before renaming so that a renamed file (e.g. run-02 → run-01)
-    # is not immediately deleted by the drop of the original run-01 path.
     for m in to_drop:
         sbref = m["sbref"]
+        me_echoes = sbref.get("me_echoes") or [sbref]
         if not dry_run:
             try:
-                for path in (sbref["nii_path"], sbref["json_path"]):
-                    if op.exists(path):
-                        os.remove(path)
+                for echo in me_echoes:
+                    for path in (echo["nii_path"], echo["json_path"]):
+                        if op.exists(path):
+                            os.remove(path)
                 counts["dropped"] += 1
             except Exception as exc:
                 console.print(f"  [red][ERROR] drop: {exc}[/]")
@@ -280,58 +335,76 @@ def _execute(matches: list[dict], dry_run: bool) -> dict:
             counts["dropped"] += 1
 
     # ---- Phase 1 + 2: rename ----
-    # Phase 1: move to temp names
-    temp_records = []
-    for m in to_rename:
-        sbref = m["sbref"]
-        temp_id = uuid.uuid4().hex[:8]
-        func_dir = sbref["func_dir"]
-        temp_base = f"._tmp_{temp_id}_sbref"
+    # Expand each sbref-group into per-echo tasks; all phase-1s before phase-2s.
+    # task tuple: (nii_src, json_src, new_base, func_dir, group_idx)
+    rename_tasks: list[tuple[str, str, str, str, int]] = []
+    for group_idx, m in enumerate(to_rename):
+        sbref     = m["sbref"]
+        me_echoes = sbref.get("me_echoes") or [sbref]
+        old_tag   = m.get("_old_run_tag", "")
+        new_tag   = m.get("_new_run_tag", "")
+        for echo in me_echoes:
+            if old_tag and echo["basename"] != sbref["basename"]:
+                new_base = echo["basename"].replace(old_tag, new_tag, 1)
+            else:
+                new_base = m["new_name"]
+            rename_tasks.append((
+                echo["nii_path"], echo["json_path"],
+                new_base, echo["func_dir"], group_idx,
+            ))
 
-        temp_nii = op.join(func_dir, temp_base + ".nii.gz")
-        temp_json = op.join(func_dir, temp_base + ".json")
+    # Phase 1: src → temp
+    group_ok: dict[int, bool] = {i: True for i in range(len(to_rename))}
+    temp_records: list[tuple | None] = []
+    for nii_src, json_src, new_base, func_dir, group_idx in rename_tasks:
+        if not group_ok[group_idx]:
+            temp_records.append(None)
+            continue
+
+        temp_id  = uuid.uuid4().hex[:8]
+        tmp_nii  = op.join(func_dir, f"._tmp_{temp_id}.nii.gz")
+        tmp_json = op.join(func_dir, f"._tmp_{temp_id}.json")
 
         if not dry_run:
             try:
-                if op.exists(sbref["nii_path"]):
-                    os.rename(sbref["nii_path"], temp_nii)
-                if op.exists(sbref["json_path"]):
-                    os.rename(sbref["json_path"], temp_json)
+                if op.exists(nii_src):
+                    os.rename(nii_src, tmp_nii)
+                if op.exists(json_src):
+                    os.rename(json_src, tmp_json)
             except Exception as exc:
                 console.print(f"  [red][ERROR] phase-1 rename: {exc}[/]")
                 counts["errors"] += 1
+                group_ok[group_idx] = False
                 temp_records.append(None)
                 continue
 
-        temp_records.append(
-            {
-                "temp_nii": temp_nii,
-                "temp_json": temp_json,
-                "new_base": m["new_name"],
-                "func_dir": func_dir,
-            }
-        )
+        temp_records.append((tmp_nii, tmp_json, new_base, func_dir, group_idx))
 
-    # Phase 2: move from temp to final
+    # Phase 2: temp → final
+    groups_done: set[int] = set()
     for rec in temp_records:
         if rec is None:
             continue
-        final_nii = op.join(rec["func_dir"], rec["new_base"] + ".nii.gz")
-        final_json = op.join(rec["func_dir"], rec["new_base"] + ".json")
+        tmp_nii, tmp_json, new_base, func_dir, group_idx = rec
+        if not group_ok[group_idx]:
+            continue
+        final_nii  = op.join(func_dir, new_base + ".nii.gz")
+        final_json = op.join(func_dir, new_base + ".json")
 
         if not dry_run:
             try:
-                if op.exists(rec["temp_nii"]):
-                    os.rename(rec["temp_nii"], final_nii)
-                if op.exists(rec["temp_json"]):
-                    os.rename(rec["temp_json"], final_json)
-                counts["renamed"] += 1
+                if op.exists(tmp_nii):
+                    os.rename(tmp_nii, final_nii)
+                if op.exists(tmp_json):
+                    os.rename(tmp_json, final_json)
+                groups_done.add(group_idx)
             except Exception as exc:
                 console.print(f"  [red][ERROR] phase-2 rename: {exc}[/]")
                 counts["errors"] += 1
         else:
-            counts["renamed"] += 1
+            groups_done.add(group_idx)
 
+    counts["renamed"] = len(groups_done)
     return counts
 
 
@@ -360,10 +433,10 @@ def _print_session_table(
 
     all_rows = []
     for r in funcs:
-        all_rows.append(("func", r["acq_sec"], r["acq_time"], r["name"], None))
+        all_rows.append(("func", r["acq_sec"], r["acq_time"], r["name"], None, r))
     for r in sbrefs:
         m = sbref_match.get(r["name"])
-        all_rows.append(("sbref", r["acq_sec"], r["acq_time"], r["name"], m))
+        all_rows.append(("sbref", r["acq_sec"], r["acq_time"], r["name"], m, r))
     all_rows.sort(key=lambda x: x[1])
 
     n_sb_drop = sum(1 for m in matches if m["action"] == "drop")
@@ -386,9 +459,12 @@ def _print_session_table(
     t.add_column("Δs", justify="right")
     t.add_column("note", style="dim")
 
-    for mod, _, acq_time, name, ann in all_rows:
+    for mod, _, acq_time, name, ann, entry in all_rows:
+        n_echoes = len(entry.get("me_echoes", []))
+        me_lbl = f" [dim](ME×{n_echoes})[/dim]" if n_echoes > 1 else ""
+
         if ann is None:
-            t.add_row(_fmt_time(acq_time) or "[dim]—[/]", mod, name, "", "", "")
+            t.add_row(_fmt_time(acq_time) or "[dim]—[/]", mod, name + me_lbl, "", "", "")
             continue
 
         action = ann["action"]
@@ -405,7 +481,7 @@ def _print_session_table(
         t.add_row(
             _fmt_time(acq_time) or "[dim]—[/]",
             mod,
-            name_str,
+            name_str + me_lbl,
             action_str,
             delta_str,
             note_str,
