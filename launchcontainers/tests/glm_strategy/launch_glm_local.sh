@@ -143,7 +143,7 @@ for pair in "${PAIRS[@]}"; do
         --analysis-name ${analysis_name} \
         --input-dir ${INPUT_DIR} \
         --strategy-yaml ${STRATEGY_YAML} \
-        --n-workers 9"
+        --n-workers 20"
 
     [[ -n "${STRATEGY}" ]]  && PY_CMD="${PY_CMD} --strategy ${STRATEGY}"
     [[ -n "${RERUN_MAP}" ]] && PY_CMD="${PY_CMD} --rerun-map ${RERUN_MAP}"

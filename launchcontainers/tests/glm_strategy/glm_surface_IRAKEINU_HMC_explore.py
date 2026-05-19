@@ -306,7 +306,7 @@ def _resolve_confound_columns(cs: dict, available_cols: list) -> list[str]:
     if cfg.get("demean", False):
         patterns.extend(regex_groups.get("non_steady_state", []))
 
-    if cfg.get("scrub", False):
+    if cfg.get("model_spiking", False) or cfg.get("scrub", False):  # scrub kept for back-compat
         prefix = cfg.get("scrub_regressor_prefix", "motion_outlier")
         patterns.extend(regex_groups.get(prefix, [f"^{prefix}"]))
 
@@ -628,12 +628,13 @@ def _load_nilearn_confounds(func_file: str, cfg: dict, start_scans: int):
         )
 
     if sample_mask is not None:
-        # sample_mask: integer TR indices (into the full run) that are kept.
-        # confounds has already been filtered to len(sample_mask) rows by nilearn.
-        # We additionally drop TRs before start_scans.
-        keep = sample_mask >= start_scans
-        confounds = confounds.iloc[keep].reset_index(drop=True)
-        rel_sample_mask = sample_mask[keep] - start_scans
+        # sample_mask: integer indices of kept TRs in the FULL run (not pre-filtered).
+        # confounds has the full run length; use sample_mask as integer row selector,
+        # then additionally drop TRs before start_scans.
+        keep = sample_mask >= start_scans          # boolean mask over sample_mask
+        kept_indices = sample_mask[keep]           # integer indices into full confounds
+        confounds = confounds.iloc[kept_indices].reset_index(drop=True)
+        rel_sample_mask = kept_indices - start_scans
     else:
         confounds = confounds.iloc[start_scans:].reset_index(drop=True)
         rel_sample_mask = None

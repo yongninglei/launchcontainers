@@ -3,77 +3,125 @@ strategies:
   # ── Custom yaml-backed strategies ──────────────────────────────────────────
   # Confound columns are resolved manually from fMRIPrep output using the
   # column_groups and regex_groups tables below.
-  basic:
+  #
+  # Factors considered:
+  #   motion         : basic (6 params) | full (24 params = 6 + derivatives + quadratics)
+  #                    model_spiking: motion_outlier_XX spike regressors (bad TRs modeled, NOT removed)
+  #                    scrubbing (nilearn only): bad TRs physically removed via sample_mask
+  #   wm_csf         : none | basic (WM + CSF) | full (+ derivatives + quadratics)
+  #   global_signal  : none | basic (GS) | full (+ derivatives + quadratics) (this is controversial mentioned in paper Wang et al 2024 PloS Comp Biol)
+  #   compcor        : anat_combined → all retained ^a_comp_cor_ columns from fMRIPrep
+  #   high_pass      : cosine DCT regressors from fMRIPrep (drift removal) (We take it from fMRIprep not the nilearn built-in)
+  #   demean         : non-steady-state outlier regressors
+
+  basic_MC:
+    # motion(basic) + aCompCor + cosine high-pass
+    # minimal model: 6 motion params, tissue noise via compcor, no WM/CSF, no spiking
     backend: yaml
     high_pass: true
     motion: basic
     wm_csf: none
     global_signal: none
-    scrub: false
+    model_spiking: false
     compcor: anat_combined
     n_compcor: all
     demean: false
 
-  basic_scrub:
+  basic_MC_no_acompcor_wm_csf:
+    # motion(basic) + WM/CSF(basic) + aCompCor + cosine high-pass
+    # adds explicit WM and CSF regressors on top of basic
+    backend: yaml
+    high_pass: true
+    motion: basic
+    wm_csf: basic
+    global_signal: none
+    model_spiking: false
+    compcor: none
+    n_compcor: all
+    demean: false
+
+  basic_MC_no_acompcor_gs:
+    # motion(basic) + global signal + aCompCor + cosine high-pass
+    # includes global signal regression instead of WM/CSF
+    backend: yaml
+    high_pass: true
+    motion: basic
+    wm_csf: none
+    global_signal: basic
+    model_spiking: false
+    compcor: none
+    n_compcor: all
+    demean: false
+
+  MC_spiking:
+    # motion(basic) + aCompCor + cosine high-pass + spike regressors
+    # bad TRs (fMRIPrep motion_outlier_XX) modeled out; volumes kept in timeseries
     backend: yaml
     high_pass: true
     motion: basic
     wm_csf: none
     global_signal: none
-    scrub: true
+    model_spiking: true
     compcor: anat_combined
     n_compcor: all
     demean: false
 
-  basic_full_MC:
+  full_MC:
+    # motion(full=24 params) + aCompCor + cosine high-pass
+    # extended motion model: adds derivatives and quadratics to basic 6
     backend: yaml
     high_pass: true
     motion: full
     wm_csf: none
     global_signal: none
-    scrub: false
+    model_spiking: false
     compcor: anat_combined
     n_compcor: all
     demean: false
 
-  basic_full_MC_scrub:
+  full_MC_spiking:
+    # motion(full=24 params) + aCompCor + cosine high-pass + spike regressors
+    # extended motion model + bad TRs modeled out; volumes kept in timeseries
     backend: yaml
     high_pass: true
     motion: full
     wm_csf: none
     global_signal: none
-    scrub: true
+    model_spiking: true
     compcor: anat_combined
     n_compcor: all
     demean: false
 
   # ── nilearn built-in strategies ────────────────────────────────────────────
-  # Confounds are loaded via nilearn.interfaces.fmriprep.load_confounds_strategy.
-  # For scrubbing, nilearn returns a sample_mask; those volumes are removed from
-  # the data and frame_times before fitting the GLM (true volume censoring).
+  # Confounds loaded via nilearn.interfaces.fmriprep.load_confounds_strategy.
+  # For scrubbing strategies, nilearn returns a sample_mask: bad TRs (+ neighbours)
+  # are physically removed from data and frame_times before GLM (true censoring).
 
   simple:
-    # motion=full (24 params) + WM/CSF basic + cosine high-pass + demean
+    # motion(full=24) + WM/CSF(basic) + cosine high-pass + demean
+    # nilearn preset: standard simple denoising, no scrubbing, no compcor
     backend: nilearn
     nilearn_strategy: simple
 
   scrubbing:
-    # FD/DVARS censoring + motion=full + WM/CSF full + cosine high-pass + demean
+    # motion(full=24) + WM/CSF(full=8) + cosine high-pass + demean + volume censoring
+    # nilearn preset: FD/DVARS thresholding, ±scrub neighbour volumes removed
     backend: nilearn
     nilearn_strategy: scrubbing
     fd_threshold: 0.5
     std_dvars_threshold: 1.5
-    scrub: 3  # number of neighbour volumes to also censor around each bad TR
+    scrub: 3  # neighbour volumes to censor around each bad TR
 
   compcor:
-    # aCompCor (all components) + motion=full + cosine high-pass + demean
+    # motion(full=24) + aCompCor(all retained) + cosine high-pass + demean
+    # nilearn preset: replaces WM/CSF with compcor, no scrubbing
     backend: nilearn
     nilearn_strategy: compcor
     n_compcor: all
 
   scrubbing_basic_compcor:
-    # FD/DVARS volume censoring (±scrub neighbours) + aCompCor + motion=full
-    # + cosine high-pass + demean.  No WM/CSF signals.
+    # motion(basic=6) + aCompCor(all retained) + cosine high-pass + volume censoring
+    # custom: scrubbing with minimal motion model, compcor instead of WM/CSF
     backend: nilearn
     strategy: [motion, high_pass, compcor, scrub]
     motion: basic
@@ -84,8 +132,8 @@ strategies:
     scrub: 3
 
   scrubbing_full_compcor:
-    # FD/DVARS volume censoring (±scrub neighbours) + aCompCor + motion=full
-    # + cosine high-pass + demean.  No WM/CSF signals.
+    # motion(full=24) + aCompCor(all retained) + cosine high-pass + volume censoring
+    # custom: scrubbing with full motion model, compcor instead of WM/CSF
     backend: nilearn
     strategy: [motion, high_pass, compcor, scrub]
     motion: full
