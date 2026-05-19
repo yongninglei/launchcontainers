@@ -1,4 +1,4 @@
-function nordic_fmri(tbPath, src_dir, output_dir, sub, ses, nordic_scans_end, doNORDIC, dotsnr, force)
+function nordic_fmri(tbPath, src_dir, output_dir, sub, ses, number_of_echos, doNORDIC, dotsnr, force, num_workers)
 % MIT License
 % Copyright (c) 2024-2025 Yongning Lei
 %
@@ -17,8 +17,12 @@ function nordic_fmri(tbPath, src_dir, output_dir, sub, ses, nordic_scans_end, do
     fprintf('\n');
     fprintf('==========================================================\n');
     fprintf('  nordic_fmri  sub=%s  ses=%s\n', sub, ses);
-    fprintf('  doNORDIC=%d  dotsnr=%d  nordic_scans_end=%d  force=%d\n', ...
-            doNORDIC, dotsnr, nordic_scans_end, force);
+    if nargin < 10 || isempty(num_workers)
+        num_workers = feature('numcores');
+    end
+    fprintf('  doNORDIC=%d  dotsnr=%d  number_of_echos=%d  force=%d  num_workers=%d\n', ...
+            doNORDIC, dotsnr, number_of_echos, force, num_workers);
+    fprintf('  Detection: filename contains "echo" → ME (%d noise scans); no "echo" → SE (1 noise scan)\n', number_of_echos);
     fprintf('==========================================================\n');
 
     sub = ['sub-' sub];
@@ -57,6 +61,21 @@ function nordic_fmri(tbPath, src_dir, output_dir, sub, ses, nordic_scans_end, do
     end
 
     % -----------------------------------------------------------------------
+    % Parallel pool
+    % -----------------------------------------------------------------------
+    pool = gcp('nocreate');
+    if isempty(pool)
+        parpool('local', num_workers);
+        fprintf('  Parallel pool started: %d workers\n', num_workers);
+    elseif pool.NumWorkers ~= num_workers
+        delete(pool);
+        parpool('local', num_workers);
+        fprintf('  Parallel pool restarted: %d workers\n', num_workers);
+    else
+        fprintf('  Parallel pool already running: %d workers\n', pool.NumWorkers);
+    end
+
+    % -----------------------------------------------------------------------
     %% STEP 1 — prepare mag/phase for NORDIC (backup + trim + dtype)
     % -----------------------------------------------------------------------
     fprintf('\n----------------------------------------------------------\n');
@@ -68,12 +87,20 @@ function nordic_fmri(tbPath, src_dir, output_dir, sub, ses, nordic_scans_end, do
     parfor src_magI = 1:num_runs
         mag_in = fullfile(src_mags(src_magI).folder, src_mags(src_magI).name);
         orig   = strrep(mag_in, '.nii.gz', '_orig.nii.gz');
+        if ~isempty(regexpi(src_mags(src_magI).name, 'echo', 'once'))
+            nordic_scans_end_run = number_of_echos;
+            echo_tag = sprintf('ME (%d echos)', number_of_echos);
+        else
+            nordic_scans_end_run = 1;
+            echo_tag = 'SE (1 echo)';
+        end
         msgs = {};
         msgs{end+1} = sprintf('  [run %d/%d] %s', src_magI, num_runs, src_mags(src_magI).name);
         msgs{end+1} = sprintf('    IN  : %s', mag_in);
         msgs{end+1} = sprintf('    ORIG: %s  (backup)', orig);
-        prepare_nordic_bold_nifti(mag_in, nordic_scans_end, force);
-        msgs{end+1} = sprintf('    DONE: dtype→float, noise scans trimmed (nordic_scans_end=%d)', nordic_scans_end);
+        msgs{end+1} = sprintf('    ECHO: %s → noise_scans_end=%d', echo_tag, nordic_scans_end_run);
+        prepare_nordic_bold_nifti(mag_in, nordic_scans_end_run, 1, force);
+        msgs{end+1} = sprintf('    DONE: dtype→float, trimmed to 1 noise scan (was %d)', nordic_scans_end_run);
         step1_logs{src_magI} = strjoin(msgs, '\n');
     end
     for k = 1:num_runs; fprintf('%s\n', step1_logs{k}); end
@@ -93,6 +120,12 @@ function nordic_fmri(tbPath, src_dir, output_dir, sub, ses, nordic_scans_end, do
         fn_magn_in  = fullfile(src_mags(src_magI).folder, src_mags(src_magI).name);
         fn_phase_in = strrep(fn_magn_in, '_magnitude', '_phase');
         fn_out      = fullfile(out_sesP, strrep(src_mags(src_magI).name, '_magnitude', '_bold'));
+
+        if ~isempty(regexpi(src_mags(src_magI).name, 'echo', 'once'))
+            nordic_scans_end_run = number_of_echos;
+        else
+            nordic_scans_end_run = 1;
+        end
 
         if ~(exist(strrep(fn_out, '.nii.gz', 'magn.nii'), 'file') || exist(fn_out, 'file')) && doNORDIC
             ARG(I).temporal_phase    = 1;
@@ -157,6 +190,11 @@ function nordic_fmri(tbPath, src_dir, output_dir, sub, ses, nordic_scans_end, do
         fn_phase_in  = strrep(fn_magn_in, '_magnitude', '_phase');  %#ok<NASGU>
         fn_out       = fullfile(out_sesP, strrep(src_mags(src_magI).name, '_magnitude', '_bold'));
         gfactorFile  = strrep(strrep(fn_out, '.nii.gz', '.nii'), [sub '_ses'], ['gfactor_' sub '_ses']);
+        if ~isempty(regexpi(src_mags(src_magI).name, 'echo', 'once'))
+            nordic_scans_end_run = number_of_echos;
+        else
+            nordic_scans_end_run = 1;
+        end
 
         msgs = {};
         msgs{end+1} = sprintf('  [run %d/%d] %s', src_magI, num_runs, src_mags(src_magI).name);
@@ -169,7 +207,7 @@ function nordic_fmri(tbPath, src_dir, output_dir, sub, ses, nordic_scans_end, do
             info = niftiinfo(magn_nii);
             n_vols_out = info.ImageSize(end) - 1;
             system(['fslroi ', magn_nii, ' ', fn_out, ' 0 -1 0 -1 0 -1 0 ', num2str(n_vols_out)]);
-            msgs{end+1} = sprintf('    NORDIC  : fslroi %s → %s  (vols: %d→%d)', ...
+            msgs{end+1} = sprintf('    NORDIC  : fslroi %s → %s  (vols: %d→%d, removed 1 noise)', ...
                 magn_nii, fn_out, info.ImageSize(end), n_vols_out);
             gzip(gfactorFile);
             gfactor_gz  = strrep(gfactorFile, '.nii', '.nii.gz');
@@ -185,11 +223,11 @@ function nordic_fmri(tbPath, src_dir, output_dir, sub, ses, nordic_scans_end, do
         elseif ~doNORDIC
             if ~exist(fn_out, 'file') || force
                 info = niftiinfo(fn_magn_in);
-                n_vols_out = info.ImageSize(end) - nordic_scans_end;
+                n_vols_out = info.ImageSize(end) - 1;
                 system(['cp ', fn_magn_in, ' ', fn_out]);
                 system(['chmod 755 ', fn_out]);
                 system(['fslroi ', fn_out, ' ', fn_out, ' 0 -1 0 -1 0 -1 0 ', num2str(n_vols_out)]);
-                msgs{end+1} = sprintf('    NO-NORDIC: cp+fslroi mag→bold  (vols: %d→%d)', ...
+                msgs{end+1} = sprintf('    NO-NORDIC: cp+fslroi mag→bold  (vols: %d→%d, removed 1 noise)', ...
                     info.ImageSize(end), n_vols_out);
             else
                 msgs{end+1} = sprintf('    NO-NORDIC: bold already exists, skipped');

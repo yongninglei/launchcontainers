@@ -17,7 +17,6 @@
 from __future__ import annotations
 
 import logging
-import os
 import os.path as op
 import random
 import time
@@ -50,6 +49,7 @@ logger = logging.getLogger("GENERAL")
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def generate_random_run_combinations(total_runs, num_runs, n_iterations, seed=None):
     """
@@ -114,25 +114,33 @@ def save_timeseries_to_gifti(data: np.ndarray, outname: str) -> None:
 
 
 def _reconstruct_vertex_array(
-    n_tp: int, n_vtx: int,
-    labels: np.ndarray, estimates: dict, attr: str,
+    n_tp: int,
+    n_vtx: int,
+    labels: np.ndarray,
+    estimates: dict,
+    attr: str,
 ) -> np.ndarray:
     """
     Rebuild a (n_vertices, n_timepoints) array from nilearn run_glm output.
 
-    ``attr`` is "resid" (ε = y − Ŷ) or "predicted" (Ŷ = Xθ).
-    result.resid / result.predicted have shape (n_timepoints, n_verts_for_label).
+    ``attr`` is "resid"/"residuals" (ε = y − Ŷ) or "predicted" (Ŷ = Xθ).
+    Handles nilearn versions that renamed the attribute from 'resid' to 'residuals'.
     """
     out = np.zeros((n_vtx, n_tp), dtype=np.float32)
     for label, result in estimates.items():
         mask = labels == label
-        out[mask, :] = getattr(result, attr).T.astype(np.float32)
+        val = getattr(result, attr, None)
+        if val is None:  # nilearn renamed 'resid' → 'residuals' across versions
+            val = getattr(result, "residuals" if attr == "resid" else attr)
+        out[mask, :] = val.T.astype(np.float32)
     return out
 
 
 def _reconstruct_betas(
-    n_reg: int, n_vtx: int,
-    labels: np.ndarray, estimates: dict,
+    n_reg: int,
+    n_vtx: int,
+    labels: np.ndarray,
+    estimates: dict,
 ) -> np.ndarray:
     """
     Rebuild a (n_vertices, n_regressors) beta array from nilearn run_glm output.
@@ -165,7 +173,11 @@ def save_array_as_dataframe(
     The gzip extension is detected from ``outname`` automatically.
     """
     df = pd.DataFrame(data, index=row_labels, columns=col_labels)
-    kw = {"sep": "\t", "compression": "gzip"} if outname.endswith(".gz") else {"sep": "\t"}
+    kw = (
+        {"sep": "\t", "compression": "gzip"}
+        if outname.endswith(".gz")
+        else {"sep": "\t"}
+    )
     df.to_csv(outname, **kw)
     console.print(f"  [dim]  → {op.basename(outname)}[/dim]")
 
@@ -174,7 +186,15 @@ def replace_prefix_and_suffix(val):
     if isinstance(val, str) and (val.endswith("1") or val.endswith("2")):
         val = val[:-1]
     if isinstance(val, str) and val[:3] in {
-        "EU_", "ES_", "AT_", "EN_", "FR_", "IT_", "CN_", "ZH_", "JP_",
+        "EU_",
+        "ES_",
+        "AT_",
+        "EN_",
+        "FR_",
+        "IT_",
+        "CN_",
+        "ZH_",
+        "JP_",
     }:
         return val[3:]
     return val
@@ -222,9 +242,114 @@ def load_contrasts(yaml_file, design_matrix):
     return contrasts
 
 
+def load_confound_strategy(strategy_yaml: str, strategy_name: str) -> dict:
+    """
+    Load the confound strategy YAML and return a bundle dict with keys:
+    ``name``, ``cfg``, ``col_groups``, ``regex_groups``.
+
+    The YAML has three top-level keys: ``strategies``, ``column_groups``,
+    ``regex_groups``.  ``strategy_name`` selects which entry under
+    ``strategies`` to use.
+    """
+    with open(strategy_yaml) as f:
+        raw = yaml.safe_load(f)
+    strategies = raw["strategies"]
+    col_groups = raw.get("column_groups", {})
+    regex_groups = raw.get("regex_groups", {})
+    if strategy_name not in strategies:
+        raise ValueError(
+            f"Strategy '{strategy_name}' not defined in YAML. "
+            f"Available: {list(strategies.keys())}"
+        )
+    return {
+        "name": strategy_name,
+        "cfg": strategies[strategy_name],
+        "col_groups": col_groups,
+        "regex_groups": regex_groups,
+    }
+
+
+def _resolve_confound_columns(cs: dict, available_cols: list) -> list[str]:
+    """
+    Return the ordered subset of fMRIPrep confound columns to keep, driven
+    by the active confound strategy bundle ``cs`` from ``load_confound_strategy``.
+
+    ``framewise_displacement`` is always included so the first-TR NaN fix
+    runs regardless of strategy.
+    """
+    import re as _re
+
+    cfg = cs["cfg"]
+    col_groups = cs["col_groups"]
+    regex_groups = cs["regex_groups"]
+
+    explicit: list[str] = ["framewise_displacement"]
+    patterns: list[str] = []
+
+    # ── Explicit column groups ─────────────────────────────────────────────
+    motion_level = cfg.get("motion", "none")
+    if motion_level != "none":
+        explicit.extend(col_groups.get(f"motion_{motion_level}", []))
+
+    wm_csf_level = cfg.get("wm_csf", "none")
+    if wm_csf_level != "none":
+        explicit.extend(col_groups.get(f"wm_csf_{wm_csf_level}", []))
+
+    gs_level = cfg.get("global_signal", "none")
+    if gs_level != "none":
+        explicit.extend(col_groups.get(f"global_signal_{gs_level}", []))
+
+    # ── Regex-matched groups ───────────────────────────────────────────────
+    if cfg.get("high_pass", False):
+        patterns.extend(regex_groups.get("cosine", []))
+
+    if cfg.get("demean", False):
+        patterns.extend(regex_groups.get("non_steady_state", []))
+
+    if cfg.get("scrub", False):
+        prefix = cfg.get("scrub_regressor_prefix", "motion_outlier")
+        patterns.extend(regex_groups.get(prefix, [f"^{prefix}"]))
+
+    # ── CompCor ───────────────────────────────────────────────────────────
+    compcor_type = cfg.get("compcor", "none")
+    if compcor_type != "none":
+        comp_pats = regex_groups.get(f"compcor_{compcor_type}", [])
+        n_compcor = cfg.get("n_compcor", "all")
+        if n_compcor == "all":
+            patterns.extend(comp_pats)
+        else:
+            matched = [
+                col
+                for col in available_cols
+                if any(_re.search(p, col) for p in comp_pats)
+            ]
+            explicit.extend(matched[: int(n_compcor)])
+
+    # ── ICA-AROMA ─────────────────────────────────────────────────────────
+    aroma_type = cfg.get("ica_aroma", "none")
+    if aroma_type != "none":
+        patterns.extend(regex_groups.get("ica_aroma", []))
+
+    # ── Resolve regex patterns against available columns ───────────────────
+    regex_matched = [
+        col for col in available_cols if any(_re.search(p, col) for p in patterns)
+    ]
+
+    # ── Merge, deduplicate, filter to available ────────────────────────────
+    avail_set = set(available_cols)
+    seen: set[str] = set()
+    result: list[str] = []
+    for col in explicit + regex_matched:
+        if col not in seen and col in avail_set:
+            seen.add(col)
+            result.append(col)
+    return result
+
+
 # ---------------------------------------------------------------------------
 # Plotting helpers
 # ---------------------------------------------------------------------------
+
 
 def plot_design_matrix_to_file(design_matrix, outdir, subject, session, task):
     """Save the design matrix plot to <outdir>/design_matrix_{task}.png."""
@@ -255,10 +380,23 @@ def plot_contrast_matrices(contrasts, design_matrix, outdir, subject, session, t
 # Core processing
 # ---------------------------------------------------------------------------
 
+
 def glm_l1(
-    conc_data_std, design_matrix_std, contrasts,
-    bids_dir, task, space, subject, session,
-    analysis_name, use_smoothed=False, sm=None, randrun_idx=None, hemi=None,
+    conc_data_std,
+    design_matrix_std,
+    contrasts,
+    bids_dir,
+    task,
+    space,
+    subject,
+    session,
+    analysis_name,
+    confounds_df,
+    strategy_name,
+    use_smoothed=False,
+    sm=None,
+    randrun_idx=None,
+    hemi=None,
 ) -> dict[str, float]:
     """
     Fit the GLM and compute contrasts.
@@ -271,16 +409,27 @@ def glm_l1(
     console.print("[bold]------- GLM start running[/bold]")
 
     outdir = op.join(
-        bids_dir, "derivatives", "l1_surface",
-        f"analysis-{analysis_name}", f"sub-{subject}", f"ses-{session}",
+        bids_dir,
+        "derivatives",
+        "l1_surface",
+        f"analysis-{analysis_name}",
+        f"sub-{subject}",
+        f"ses-{session}",
     )
     if not op.exists(outdir):
         makedirs(outdir)
 
+    confounds_tsv = op.join(
+        outdir,
+        f"sub-{subject}_ses-{session}_task-{task}_desc-confounds_timeseries.tsv",
+    )
+    confounds_df.to_csv(confounds_tsv, sep="\t")
+    console.print(f"  [dim]Confounds TSV → {op.basename(confounds_tsv)}[/dim]")
+
     plot_design_matrix_to_file(design_matrix_std, outdir, subject, session, task)
     plot_contrast_matrices(contrasts, design_matrix_std, outdir, subject, session, task)
 
-    dm_csv = op.join(outdir, f"design_matrix_{task}.csv")
+    dm_csv = op.join(outdir, f"design_matrix_{task}_strategy-{strategy_name}.csv")
     design_matrix_std.to_csv(dm_csv)
     console.print(f"  [dim]Design matrix CSV → {op.basename(dm_csv)}[/dim]")
 
@@ -296,7 +445,7 @@ def glm_l1(
         f"rank={np.linalg.matrix_rank(X)}  (expected full rank={X.shape[1]})"
     )
 
-    labels, estimates = run_glm(Y, X, n_jobs=1)
+    labels, estimates = run_glm(Y, X, n_jobs=4)
 
     # ── Save GLM components ────────────────────────────────────────────────────
     # Y = Xθ + ε   (fitted = Xθ,  residuals = ε,  betas = θ per regressor)
@@ -305,9 +454,9 @@ def glm_l1(
     # desc-betas_regressornames.txt for the column order).
     if hemi:
         n_tp, n_vtx = Y.shape
-        resid  = _reconstruct_vertex_array(n_tp, n_vtx, labels, estimates, "resid")
+        resid = _reconstruct_vertex_array(n_tp, n_vtx, labels, estimates, "resid")
         fitted = _reconstruct_vertex_array(n_tp, n_vtx, labels, estimates, "predicted")
-        betas  = _reconstruct_betas(X.shape[1], n_vtx, labels, estimates)
+        betas = _reconstruct_betas(X.shape[1], n_vtx, labels, estimates)
 
         def _component_name(desc: str) -> str:
             base = (
@@ -320,7 +469,9 @@ def glm_l1(
                 base = base.replace("_timeseries", f"{randrun_idx}_timeseries")
             return op.join(outdir, base)
 
-        console.print("  [dim]Saving GLM components (residuals / fitted / betas)…[/dim]")
+        console.print(
+            "  [dim]Saving GLM components (residuals / fitted / betas)…[/dim]"
+        )
 
         # residuals — GIFTI + DataFrame (rows=timepoints, cols=vertex index)
         save_timeseries_to_gifti(resid, _component_name("residuals"))
@@ -363,18 +514,20 @@ def glm_l1(
                 f"_stat-X_statmap.nii.gz"
             )
         if use_smoothed:
-            outname_base = outname_base.replace("_statmap", f"_desc-smoothed{sm}_statmap")
+            outname_base = outname_base.replace(
+                "_statmap", f"_desc-smoothed{sm}_statmap"
+            )
         if randrun_idx:
             outname_base = outname_base.replace("_statmap", f"{randrun_idx}_statmap")
         outname_base = op.join(outdir, outname_base)
 
         contrast_obj = compute_contrast(labels, estimates, contrast_val)
 
-        betas     = contrast_obj.effect_size()
-        t_value   = contrast_obj.stat()
-        z_score   = contrast_obj.z_score()
-        p_value   = contrast_obj.p_value()
-        variance  = contrast_obj.effect_variance()
+        betas = contrast_obj.effect_size()
+        t_value = contrast_obj.stat()
+        z_score = contrast_obj.z_score()
+        p_value = contrast_obj.p_value()
+        variance = contrast_obj.effect_variance()
 
         console.print(
             f"  [DIAG] contrast={contrast_id}  "
@@ -383,12 +536,14 @@ def glm_l1(
         )
 
         if hemi:
-            save_statmap_to_gifti(betas,   outname_base.replace("stat-X", "stat-effect"))
+            save_statmap_to_gifti(betas, outname_base.replace("stat-X", "stat-effect"))
             save_statmap_to_gifti(t_value, outname_base.replace("stat-X", "stat-t"))
             if not randrun_idx:
-                save_statmap_to_gifti(z_score,  outname_base.replace("stat-X", "stat-z"))
-                save_statmap_to_gifti(p_value,  outname_base.replace("stat-X", "stat-p"))
-                save_statmap_to_gifti(variance, outname_base.replace("stat-X", "stat-variance"))
+                save_statmap_to_gifti(z_score, outname_base.replace("stat-X", "stat-z"))
+                save_statmap_to_gifti(p_value, outname_base.replace("stat-X", "stat-p"))
+                save_statmap_to_gifti(
+                    variance, outname_base.replace("stat-X", "stat-variance")
+                )
         else:
             console.print(
                 f"  [yellow]WARNING[/yellow]: volumetric output not implemented, skipping {outname_base}"
@@ -402,9 +557,24 @@ def glm_l1(
 
 
 def prepare_glm_input(
-    bids_dir, fmriprep_dir, fp_layout, label_dir, contrast_fpath,
-    subject, session, analysis_name, task, start_scans, space,
-    slice_time_ref, run_list, use_smoothed, sm, apply_label_as_mask, hemi=None,
+    bids_dir,
+    fmriprep_dir,
+    fp_layout,
+    label_dir,
+    contrast_fpath,
+    subject,
+    session,
+    analysis_name,
+    task,
+    start_scans,
+    space,
+    slice_time_ref,
+    run_list,
+    use_smoothed,
+    sm,
+    apply_label_as_mask,
+    confound_strategy,
+    hemi=None,
 ):
     """
     Gather per-run timeseries, events, and confounds; build concatenated
@@ -417,11 +587,11 @@ def prepare_glm_input(
     """
     is_surface = space in ["fsnative", "fsaverage"]
 
-    data_allrun      = []
+    data_allrun = []
     frame_time_allrun = []
-    events_allrun    = []
+    events_allrun = []
     confounds_allrun = []
-    store_l1         = []
+    store_l1 = []
 
     # Per-run step timing: {run_num: {step: seconds}}
     run_step_times: dict[str, dict[str, float]] = {}
@@ -433,12 +603,12 @@ def prepare_glm_input(
         # ── Step 1: find + load functional data ─────────────────────────────
         _t = time.time()
         query_params = {
-            "subject":   subject,
-            "session":   session,
-            "task":      task,
-            "run":       run_num,
-            "space":     space,
-            "suffix":    "bold",
+            "subject": subject,
+            "session": session,
+            "task": task,
+            "run": run_num,
+            "space": space,
+            "suffix": "bold",
             "extension": ".func.gii" if is_surface else ".nii.gz",
         }
         if is_surface and hemi:
@@ -480,21 +650,25 @@ def prepare_glm_input(
         # ── Step 2: z-score + trim ────────────────────────────────────────────
         _t = time.time()
         data_remove_first = data_float[:, start_scans:]
-        console.print(f"  Length after removing {start_scans} prescan TRs: {np.shape(data_remove_first)[1]}")
+        console.print(
+            f"  Length after removing {start_scans} prescan TRs: {np.shape(data_remove_first)[1]}"
+        )
 
-        data_std  = stats.zscore(data_remove_first, axis=1)
+        data_std = stats.zscore(data_remove_first, axis=1)
         n_features = np.shape(data_std)[0]
 
         if apply_label_as_mask:
             if is_surface:
                 label_path = f"{label_dir}/{apply_label_as_mask}"
-                surf_mask  = load_surf_data(label_path)
+                surf_mask = load_surf_data(label_path)
                 mask = np.zeros((n_features, 1))
                 mask[surf_mask] = 1
-                data_std   = data_std * mask
+                data_std = data_std * mask
                 data_float = data_float * mask
             else:
-                console.print("  [yellow]WARNING[/yellow]: volumetric masking not implemented")
+                console.print(
+                    "  [yellow]WARNING[/yellow]: volumetric masking not implemented"
+                )
 
         n_scans = np.shape(data_std)[1]
         data_allrun.append(data_std)
@@ -518,7 +692,9 @@ def prepare_glm_input(
                 derivatives_folder=fmriprep_dir,
             )
         except (TypeError, FileNotFoundError, IndexError) as e:
-            console.print(f"  [yellow]WARNING[/yellow]: error processing run {run_num}: {e} — skipping")
+            console.print(
+                f"  [yellow]WARNING[/yellow]: error processing run {run_num}: {e} — skipping"
+            )
             continue
         run_step_times[run_num]["first_level_from_bids"] = time.time() - _t
         console.print(
@@ -527,8 +703,8 @@ def prepare_glm_input(
 
         # ── Step 4: confound processing ───────────────────────────────────────
         _t = time.time()
-        t_r      = l1[0][0].t_r
-        events   = l1[2][0][0]
+        t_r = l1[0][0].t_r
+        events = l1[2][0][0]
         confounds = l1[3][0][0]
         events.loc[:, "onset"] = events["onset"] + idx * n_scans * t_r
 
@@ -536,15 +712,13 @@ def prepare_glm_input(
         events_allrun.append(events_nobaseline)
         store_l1.append(l1)
 
-        motion_keys = [
-            "framewise_displacement",
-            "rot_x", "rot_y", "rot_z",
-            "trans_x", "trans_y", "trans_z",
-        ]
-        a_compcor_keys     = [k for k in confounds.keys() if "a_comp_cor"  in k]
-        non_steady_keys    = [k for k in confounds.keys() if "non_steady"  in k]
-        cosine_keys        = [k for k in confounds.keys() if "cosine"      in k]
-        confound_keys_keep = motion_keys + a_compcor_keys + cosine_keys + non_steady_keys
+        confound_keys_keep = _resolve_confound_columns(
+            confound_strategy, list(confounds.columns)
+        )
+        console.print(
+            f"  [dim]Strategy [cyan]{confound_strategy['name']}[/cyan]: "
+            f"selected {len(confound_keys_keep)} confound cols[/dim]"
+        )
         confounds_keep = confounds[confound_keys_keep]
 
         confounds_keep["framewise_displacement"][0] = np.nanmean(
@@ -580,10 +754,9 @@ def prepare_glm_input(
 
     # ── Step 5: build design matrix ───────────────────────────────────────────
     _t = time.time()
-    conc_data_std   = np.concatenate(data_allrun, axis=1)
+    conc_data_std = np.concatenate(data_allrun, axis=1)
     concat_frame_times = np.concatenate(frame_time_allrun, axis=0)
-    concat_events   = pd.concat(events_allrun, axis=0)
-    concat_events   = concat_events.applymap(replace_prefix_and_suffix)
+    concat_events = pd.concat(events_allrun, axis=0)
     concat_confounds = pd.concat(confounds_allrun, axis=0)
 
     console.print(f"\n  Confound columns:\n  {list(concat_confounds.columns)}")
@@ -608,7 +781,7 @@ def prepare_glm_input(
         f"  [dim]design_matrix build: {t_design:.2f} s[/dim]"
     )
 
-    return conc_data_std, design_matrix_std, contrasts
+    return conc_data_std, design_matrix_std, contrasts, nonan_confounds
 
 
 def _load_rerun_exclusions(rerun_tsv: str) -> dict[tuple[str, str, str], set[str]]:
@@ -635,8 +808,8 @@ def _load_rerun_exclusions(rerun_tsv: str) -> dict[tuple[str, str, str], set[str
         for row in _csv.DictReader(fh, delimiter="\t"):
             if str(row.get("found_in_bids", "")).strip() != "True":
                 continue
-            sub  = str(row["sub"]).strip().zfill(2)
-            ses  = str(row["ses"]).strip().zfill(2)
+            sub = str(row["sub"]).strip().zfill(2)
+            ses = str(row["ses"]).strip().zfill(2)
             task = str(row["task"]).strip()
             crun = str(row["compensates_run"]).strip().zfill(2)
             excl.setdefault((sub, ses, task), set()).add(crun)
@@ -644,7 +817,10 @@ def _load_rerun_exclusions(rerun_tsv: str) -> dict[tuple[str, str, str], set[str
 
 
 def generate_run_groups(
-    layout, subject, session, task,
+    layout,
+    subject,
+    session,
+    task,
     selected_runs=None,
     excl_runs: set[str] | None = None,
 ):
@@ -676,9 +852,9 @@ def generate_run_groups(
 
     # Filter out compensated (aborted) runs — only when not using explicit selected_runs
     if excl_runs and not selected_runs:
-        before     = set(run_list)
-        run_list   = [r for r in run_list if r not in excl_runs]
-        excluded   = sorted(before - set(run_list))
+        before = set(run_list)
+        run_list = [r for r in run_list if r not in excl_runs]
+        excluded = sorted(before - set(run_list))
         kept_extra = sorted(excl_runs - before)  # extra_runs already in list
         if excluded:
             console.print(
@@ -695,10 +871,26 @@ def generate_run_groups(
 
 
 def process_run_list(
-    bids_dir, fmriprep_dir, fp_layout, label_dir, contrast_fpath,
-    subject, session, analysis_name, task, start_scans, space, slice_time_ref,
-    run_list, use_smoothed, sm, apply_label_as_mask, dry_run,
-    randrun_idx=None, hemi=None,
+    bids_dir,
+    fmriprep_dir,
+    fp_layout,
+    label_dir,
+    contrast_fpath,
+    subject,
+    session,
+    analysis_name,
+    task,
+    start_scans,
+    space,
+    slice_time_ref,
+    run_list,
+    use_smoothed,
+    sm,
+    apply_label_as_mask,
+    dry_run,
+    confound_strategy,
+    randrun_idx=None,
+    hemi=None,
 ) -> dict[str, float]:
     """
     Build GLM inputs and run the GLM for one run-list / hemisphere combination.
@@ -711,29 +903,75 @@ def process_run_list(
     label = f"hemi-{hemi}" if hemi else "volumetric"
     console.print(f"\n[bold]Processing {label}[/bold]  runs: {run_list}")
 
-    conc_data_std, design_matrix_std, contrasts = prepare_glm_input(
-        bids_dir, fmriprep_dir, fp_layout, label_dir, contrast_fpath,
-        subject, session, analysis_name, task, start_scans, space, slice_time_ref,
-        run_list, use_smoothed, sm, apply_label_as_mask, hemi,
+    conc_data_std, design_matrix_std, contrasts, nonan_confounds = prepare_glm_input(
+        bids_dir,
+        fmriprep_dir,
+        fp_layout,
+        label_dir,
+        contrast_fpath,
+        subject,
+        session,
+        analysis_name,
+        task,
+        start_scans,
+        space,
+        slice_time_ref,
+        run_list,
+        use_smoothed,
+        sm,
+        apply_label_as_mask,
+        confound_strategy,
+        hemi,
     )
     console.print(f"  Contrasts: {list(contrasts.keys())}")
 
     if dry_run:
-        console.print("  [dim]Dry-run — design matrix and confounds printed above, nothing written.[/dim]")
+        console.print(
+            "  [dim]Dry-run — design matrix and confounds printed above, nothing written.[/dim]"
+        )
         return {}
 
     return glm_l1(
-        conc_data_std, design_matrix_std, contrasts,
-        bids_dir, task, space, subject, session,
-        analysis_name, use_smoothed, sm, randrun_idx, hemi,
+        conc_data_std,
+        design_matrix_std,
+        contrasts,
+        bids_dir,
+        task,
+        space,
+        subject,
+        session,
+        analysis_name,
+        nonan_confounds,
+        confound_strategy["name"],
+        use_smoothed,
+        sm,
+        randrun_idx,
+        hemi,
     )
 
 
 def run_power_analysis(
-    bids_dir, fmriprep_dir, fp_layout, label_dir, contrast_fpath,
-    subject, session, base_analysis_name, task, start_scans, space, slice_time_ref,
-    use_smoothed, sm, apply_label_as_mask, dry_run,
-    total_runs, n_iterations, seed, hemi=None,
+    bids_dir,
+    fmriprep_dir,
+    fp_layout,
+    label_dir,
+    contrast_fpath,
+    subject,
+    session,
+    base_analysis_name,
+    task,
+    start_scans,
+    space,
+    slice_time_ref,
+    use_smoothed,
+    sm,
+    apply_label_as_mask,
+    dry_run,
+    total_runs,
+    n_iterations,
+    seed,
+    confound_strategy,
+    hemi=None,
 ) -> None:
     """Run power analysis: total_runs × n_iterations GLMs."""
     label = f"hemi-{hemi}" if hemi else "volumetric"
@@ -745,28 +983,47 @@ def run_power_analysis(
         f"  Seed: {seed}"
     )
 
-    total_glms       = total_runs * n_iterations
-    glms_done        = 0
+    total_glms = total_runs * n_iterations
+    glms_done = 0
     iter_times: list[float] = []
 
     for num_of_runs in range(1, total_runs + 1):
         console.rule(f"[cyan]Configuration: {num_of_runs} run(s)[/cyan]", style="dim")
-        combinations = generate_random_run_combinations(total_runs, num_of_runs, n_iterations, seed)
+        combinations = generate_random_run_combinations(
+            total_runs, num_of_runs, n_iterations, seed
+        )
 
         for iter_num, selected_runs in enumerate(combinations, start=1):
-            run_list    = [f"{r:02d}" for r in selected_runs]
+            run_list = [f"{r:02d}" for r in selected_runs]
             randrun_idx = f"_run-{''.join(map(str, selected_runs))}"
             iter_output = f"{base_analysis_name}/power_analysis_{num_of_runs}_run/iter_{iter_num:02d}"
 
-            console.print(f"  Iteration {iter_num}/{n_iterations}: runs {selected_runs}")
+            console.print(
+                f"  Iteration {iter_num}/{n_iterations}: runs {selected_runs}"
+            )
             t_iter = time.time()
 
             process_run_list(
-                bids_dir, fmriprep_dir, fp_layout, label_dir, contrast_fpath,
-                subject, session, iter_output, task, start_scans,
-                space, slice_time_ref,
-                run_list, use_smoothed, sm, apply_label_as_mask, dry_run,
-                randrun_idx, hemi,
+                bids_dir,
+                fmriprep_dir,
+                fp_layout,
+                label_dir,
+                contrast_fpath,
+                subject,
+                session,
+                iter_output,
+                task,
+                start_scans,
+                space,
+                slice_time_ref,
+                run_list,
+                use_smoothed,
+                sm,
+                apply_label_as_mask,
+                dry_run,
+                confound_strategy,
+                randrun_idx,
+                hemi,
             )
 
             elapsed = time.time() - t_iter
@@ -783,13 +1040,14 @@ def run_power_analysis(
     console.print(
         f"  GLMs completed : {glms_done}\n"
         f"  Total time     : {sum(iter_times):.1f} s\n"
-        f"  Avg / GLM      : {sum(iter_times)/len(iter_times):.1f} s"
+        f"  Avg / GLM      : {sum(iter_times) / len(iter_times):.1f} s"
     )
 
 
 # ---------------------------------------------------------------------------
 # Timing summary table
 # ---------------------------------------------------------------------------
+
 
 def _print_timing_table(
     timing_per_hemi: dict[str, dict[str, float]],
@@ -806,7 +1064,7 @@ def _print_timing_table(
     total_elapsed : float
         Total program wall-clock time in seconds.
     """
-    hemi_labels  = list(timing_per_hemi.keys())
+    hemi_labels = list(timing_per_hemi.keys())
     # Collect all contrast IDs in insertion order
     all_contrasts: list[str] = []
     for timing in timing_per_hemi.values():
@@ -838,13 +1096,13 @@ def _print_timing_table(
 
     for c in all_contrasts:
         row_vals = [timing_per_hemi[hl].get(c, 0.0) for hl in hemi_labels]
-        row_sum  = sum(row_vals)
+        row_sum = sum(row_vals)
         tbl.add_row(c, *[f"{v:.2f}" for v in row_vals], f"{row_sum:.2f}")
 
     console.print(tbl)
     console.print(
         f"  [bold]Total program time:[/bold]  {total_elapsed:.1f} s  "
-        f"({total_elapsed/60:.1f} min)"
+        f"({total_elapsed / 60:.1f} min)"
     )
 
 
@@ -852,7 +1110,10 @@ def _print_timing_table(
 # Helpers: sub/ses pair parsing
 # ---------------------------------------------------------------------------
 
-def _parse_pairs(subses_arg: Optional[str], file_arg: Optional[str]) -> list[tuple[str, str]]:
+
+def _parse_pairs(
+    subses_arg: Optional[str], file_arg: Optional[str]
+) -> list[tuple[str, str]]:
     """
     Parse sub/ses pairs from either a single ``sub,ses`` string or a TSV/CSV file.
 
@@ -871,7 +1132,9 @@ def _parse_pairs(subses_arg: Optional[str], file_arg: Optional[str]) -> list[tup
     if subses_arg:
         parts = subses_arg.split(",")
         if len(parts) != 2:
-            console.print(f"[red]ERROR[/red]: -s expects 'sub,ses' (e.g. 01,09), got: {subses_arg!r}")
+            console.print(
+                f"[red]ERROR[/red]: -s expects 'sub,ses' (e.g. 01,09), got: {subses_arg!r}"
+            )
             raise typer.Exit(1)
         sub = parts[0].strip().zfill(2)
         ses = parts[1].strip().zfill(2)
@@ -901,38 +1164,79 @@ def _parse_pairs(subses_arg: Optional[str], file_arg: Optional[str]) -> list[tup
 # CLI
 # ---------------------------------------------------------------------------
 
+
 @app.command()
 def main(
-    base: str = typer.Option(..., "--base", help="Base directory, e.g. /scratch/tlei/VOTCLOC"),
-    subses_arg: Optional[str] = typer.Option(None, "-s", help="Single sub,ses pair, e.g. 01,09"),
-    file_arg: Optional[str] = typer.Option(None, "-f", help="Path to subseslist TSV/CSV file"),
-    fp_ana_name: str = typer.Option(..., "--fp-ana-name", help="fMRIPrep analysis name"),
+    base: str = typer.Option(
+        ..., "--base", help="Base directory, e.g. /scratch/tlei/VOTCLOC"
+    ),
+    subses_arg: Optional[str] = typer.Option(
+        None, "-s", help="Single sub,ses pair, e.g. 01,09"
+    ),
+    file_arg: Optional[str] = typer.Option(
+        None, "-f", help="Path to subseslist TSV/CSV file"
+    ),
+    fp_ana_name: str = typer.Option(
+        ..., "--fp-ana-name", help="fMRIPrep analysis name"
+    ),
     task: str = typer.Option(..., "--task", help="Task name, e.g. fLoc"),
-    start_scans: int = typer.Option(..., "--start-scans", help="Number of non-steady-state TRs to drop"),
-    space: str = typer.Option(..., "--space", help="Space: T1w | fsnative | fsaverage | MNI152NLin2009cAsym"),
-    contrast: str = typer.Option(..., "--contrast", help="Path to YAML contrast definition file"),
-    analysis_name: str = typer.Option(..., "--analysis-name", help="Analysis name (output folder label)"),
-    input_dirname: str = typer.Option("BIDS", "--input-dir", "-i", help="Input BIDS dir name under base"),
-    slice_time_ref: float = typer.Option(0.5, "--slice-time-ref", help="Slice timing reference (fMRIPrep default 0.5)"),
-    use_smoothed: bool = typer.Option(False, "--use-smoothed", help="Use smoothed functional files"),
-    dry_run: bool = typer.Option(False, "--dry-run", help="Print design matrix / confounds; do not write outputs"),
+    start_scans: int = typer.Option(
+        ..., "--start-scans", help="Number of non-steady-state TRs to drop"
+    ),
+    space: str = typer.Option(
+        ..., "--space", help="Space: T1w | fsnative | fsaverage | MNI152NLin2009cAsym"
+    ),
+    contrast: str = typer.Option(
+        ..., "--contrast", help="Path to YAML contrast definition file"
+    ),
+    analysis_name: str = typer.Option(
+        ..., "--analysis-name", help="Analysis name (output folder label)"
+    ),
+    input_dirname: str = typer.Option(
+        "BIDS", "--input-dir", "-i", help="Input BIDS dir name under base"
+    ),
+    slice_time_ref: float = typer.Option(
+        0.5, "--slice-time-ref", help="Slice timing reference (fMRIPrep default 0.5)"
+    ),
+    use_smoothed: bool = typer.Option(
+        False, "--use-smoothed", help="Use smoothed functional files"
+    ),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Print design matrix / confounds; do not write outputs"
+    ),
     sm: str = typer.Option("", "--sm", help="FreeSurfer FWHM smoothing label, e.g. 05"),
-    mask: str = typer.Option("", "--mask", help="FreeSurfer label file to apply as mask"),
+    mask: str = typer.Option(
+        "", "--mask", help="FreeSurfer label file to apply as mask"
+    ),
     selected_runs: Optional[str] = typer.Option(
-        None, "--selected-runs",
+        None,
+        "--selected-runs",
         help="Comma-separated run numbers to use, e.g. '1,3,5'. Default: all runs.",
     ),
-    power_analysis: bool = typer.Option(False, "--power-analysis", help="Run power analysis mode"),
-    n_iterations: int = typer.Option(10, "--n-iterations", help="Iterations per run count in power analysis"),
+    power_analysis: bool = typer.Option(
+        False, "--power-analysis", help="Run power analysis mode"
+    ),
+    n_iterations: int = typer.Option(
+        10, "--n-iterations", help="Iterations per run count in power analysis"
+    ),
     seed: int = typer.Option(42, "--seed", help="Random seed for power analysis"),
-    total_runs: int = typer.Option(10, "--total-runs", help="Total runs available (power analysis)"),
+    total_runs: int = typer.Option(
+        10, "--total-runs", help="Total runs available (power analysis)"
+    ),
     rerun_map: Optional[str] = typer.Option(
-        None, "--rerun-map",
+        None,
+        "--rerun-map",
         help=(
             "Path to rerun_check.tsv.  Compensated (aborted) runs are automatically "
             "excluded from the run list; their replacement extra runs are kept.  "
             "Ignored when --selected-runs is given."
         ),
+    ),
+    strategy_yaml: str = typer.Option(
+        ..., "--strategy-yaml", help="Path to confound strategy YAML file"
+    ),
+    strategy: str = typer.Option(
+        ..., "--strategy", help="Name of the strategy to use from the YAML"
     ),
 ) -> None:
     t0 = time.time()
@@ -945,15 +1249,18 @@ def main(
         selected_runs_list = [int(r.strip()) for r in selected_runs.split(",")]
 
     # Shared directories (layout-level, not per-subject)
-    bids_dir     = op.join(base, input_dirname)
-    fsdir        = op.join(bids_dir, "derivatives", "freesurfer")
+    bids_dir = op.join(base, input_dirname)
+    fsdir = op.join(bids_dir, "derivatives", "freesurfer")
     fmriprep_dir = op.join(bids_dir, "derivatives", f"fmriprep-{fp_ana_name}")
-    is_surface   = space in ["fsnative", "fsaverage"]
+    is_surface = space in ["fsnative", "fsaverage"]
 
     # Count contrasts early (YAML only, no design matrix needed)
     with open(contrast) as _f:
         _contrast_defs = yaml.safe_load(_f)
     n_contrasts = len(_contrast_defs)
+
+    # Load confound strategy (once, shared across all sessions)
+    confound_strategy = load_confound_strategy(strategy_yaml, strategy)
 
     # Load rerun exclusion map (once, shared across all sessions)
     rerun_excl: dict[tuple[str, str, str], set[str]] = {}
@@ -963,30 +1270,34 @@ def main(
     # ── Launch summary ───────────────────────────────────────────────────────
     console.rule("[bold cyan]GLM Launch[/bold cyan]")
     tbl_launch = Table(box=box.SIMPLE, show_header=False, padding=(0, 1))
-    tbl_launch.add_column("key",   style="dim")
+    tbl_launch.add_column("key", style="dim")
     tbl_launch.add_column("value", style="bold")
 
     mode_str = "[yellow]DRY-RUN[/yellow]" if dry_run else "[green]EXECUTE[/green]"
     runs_str = (
-        ", ".join(map(str, selected_runs_list)) if selected_runs_list else "all (from BIDS layout)"
+        ", ".join(map(str, selected_runs_list))
+        if selected_runs_list
+        else "all (from BIDS layout)"
     )
     pairs_str = "  ".join(f"sub-{s} ses-{e}" for s, e in pairs)
     tbl_launch.add_row("Subjects/Sessions", f"({len(pairs)})  {pairs_str}")
-    tbl_launch.add_row("Task",              task)
-    tbl_launch.add_row("Space",             space)
-    tbl_launch.add_row("fMRIPrep",          fp_ana_name)
-    tbl_launch.add_row("Analysis name",      analysis_name)
-    tbl_launch.add_row("Runs",              runs_str)
-    tbl_launch.add_row("Contrasts",         f"{n_contrasts}  ({contrast})")
-    tbl_launch.add_row("Start scans",       str(start_scans))
-    tbl_launch.add_row("Slice time ref",    str(slice_time_ref))
-    tbl_launch.add_row("Smoothed",          f"Yes (sm={sm})" if use_smoothed else "No")
-    tbl_launch.add_row("Mask",              mask or "—")
+    tbl_launch.add_row("Task", task)
+    tbl_launch.add_row("Space", space)
+    tbl_launch.add_row("fMRIPrep", fp_ana_name)
+    tbl_launch.add_row("Analysis name", analysis_name)
+    tbl_launch.add_row("Runs", runs_str)
+    tbl_launch.add_row("Contrasts", f"{n_contrasts}  ({contrast})")
+    tbl_launch.add_row("Start scans", str(start_scans))
+    tbl_launch.add_row("Slice time ref", str(slice_time_ref))
+    tbl_launch.add_row("Smoothed", f"Yes (sm={sm})" if use_smoothed else "No")
+    tbl_launch.add_row("Mask", mask or "—")
+    tbl_launch.add_row("Strategy YAML", strategy_yaml)
+    tbl_launch.add_row("Confound strategy", confound_strategy["name"])
     tbl_launch.add_row(
         "Rerun map",
         rerun_map if rerun_map else "[dim]— (no exclusions)[/dim]",
     )
-    tbl_launch.add_row("Mode",              mode_str)
+    tbl_launch.add_row("Mode", mode_str)
     if power_analysis:
         tbl_launch.add_row(
             "Power analysis",
@@ -1017,10 +1328,27 @@ def main(
             hemis = ["L", "R"] if is_surface else [None]
             for hemi in hemis:
                 run_power_analysis(
-                    bids_dir, fmriprep_dir, fp_layout, label_dir, contrast,
-                    sub, ses, analysis_name, task, start_scans, space, slice_time_ref,
-                    use_smoothed, sm, mask, dry_run,
-                    total_runs, n_iterations, seed, hemi,
+                    bids_dir,
+                    fmriprep_dir,
+                    fp_layout,
+                    label_dir,
+                    contrast,
+                    sub,
+                    ses,
+                    analysis_name,
+                    task,
+                    start_scans,
+                    space,
+                    slice_time_ref,
+                    use_smoothed,
+                    sm,
+                    mask,
+                    dry_run,
+                    total_runs,
+                    n_iterations,
+                    seed,
+                    confound_strategy,
+                    hemi,
                 )
             session_times[(sub, ses)] = time.time() - t_ses
             continue
@@ -1028,7 +1356,12 @@ def main(
         # ── Regular mode ─────────────────────────────────────────────────────
         excl_runs = rerun_excl.get((sub, ses, task), set())
         run_list, randrun_idx = generate_run_groups(
-            layout, sub, ses, task, selected_runs_list, excl_runs or None,
+            layout,
+            sub,
+            ses,
+            task,
+            selected_runs_list,
+            excl_runs or None,
         )
         timing_per_hemi: dict[str, dict[str, float]] = {}
 
@@ -1036,19 +1369,51 @@ def main(
             for hemi in ["L", "R"]:
                 console.rule(f"[bold]Hemisphere {hemi}[/bold]", style="dim")
                 timing = process_run_list(
-                    bids_dir, fmriprep_dir, fp_layout, label_dir, contrast,
-                    sub, ses, analysis_name, task, start_scans, space, slice_time_ref,
-                    run_list, use_smoothed, sm, mask, dry_run,
-                    randrun_idx, hemi,
+                    bids_dir,
+                    fmriprep_dir,
+                    fp_layout,
+                    label_dir,
+                    contrast,
+                    sub,
+                    ses,
+                    analysis_name,
+                    task,
+                    start_scans,
+                    space,
+                    slice_time_ref,
+                    run_list,
+                    use_smoothed,
+                    sm,
+                    mask,
+                    dry_run,
+                    confound_strategy,
+                    randrun_idx,
+                    hemi,
                 )
                 timing_per_hemi[f"hemi-{hemi}"] = timing
         else:
             console.rule("[bold]Volumetric[/bold]", style="dim")
             timing = process_run_list(
-                bids_dir, fmriprep_dir, fp_layout, label_dir, contrast,
-                sub, ses, analysis_name, task, start_scans, space, slice_time_ref,
-                run_list, use_smoothed, sm, mask, dry_run,
-                randrun_idx, hemi=None,
+                bids_dir,
+                fmriprep_dir,
+                fp_layout,
+                label_dir,
+                contrast,
+                sub,
+                ses,
+                analysis_name,
+                task,
+                start_scans,
+                space,
+                slice_time_ref,
+                run_list,
+                use_smoothed,
+                sm,
+                mask,
+                dry_run,
+                confound_strategy,
+                randrun_idx,
+                hemi=None,
             )
             timing_per_hemi["volumetric"] = timing
 
@@ -1067,19 +1432,25 @@ def main(
     # ── Final summary across all sessions ────────────────────────────────────
     console.rule("[bold cyan]Run Summary[/bold cyan]")
     tbl_sum = Table(box=box.SIMPLE_HEAD, show_footer=True)
-    tbl_sum.add_column("sub",     style="bold", footer="[bold]Total[/bold]")
-    tbl_sum.add_column("ses",     style="bold")
-    tbl_sum.add_column("time (s)", justify="right",
-                       footer=f"[bold]{sum(session_times.values()):.1f}[/bold]")
-    tbl_sum.add_column("time (min)", justify="right",
-                       footer=f"[bold]{sum(session_times.values())/60:.1f}[/bold]")
+    tbl_sum.add_column("sub", style="bold", footer="[bold]Total[/bold]")
+    tbl_sum.add_column("ses", style="bold")
+    tbl_sum.add_column(
+        "time (s)",
+        justify="right",
+        footer=f"[bold]{sum(session_times.values()):.1f}[/bold]",
+    )
+    tbl_sum.add_column(
+        "time (min)",
+        justify="right",
+        footer=f"[bold]{sum(session_times.values()) / 60:.1f}[/bold]",
+    )
     for (s, e), t in session_times.items():
-        tbl_sum.add_row(s, e, f"{t:.1f}", f"{t/60:.1f}")
+        tbl_sum.add_row(s, e, f"{t:.1f}", f"{t / 60:.1f}")
     console.print(tbl_sum)
 
     total_elapsed = time.time() - t0
     console.print(
-        f"  [bold]Total program time:[/bold]  {total_elapsed:.1f} s  ({total_elapsed/60:.1f} min)"
+        f"  [bold]Total program time:[/bold]  {total_elapsed:.1f} s  ({total_elapsed / 60:.1f} min)"
     )
 
 

@@ -1,7 +1,0 @@
-RWvsbaseline:
-  positive: ["RW"]
-  negative: ["baseline"]
-
-RWvsNull:
-  positive: ["RW"]
-  negative: []

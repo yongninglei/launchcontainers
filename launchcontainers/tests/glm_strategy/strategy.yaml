@@ -1,0 +1,154 @@
+strategies:
+  basic:
+    # high_pass are taking the fMRIprep output cosine
+    high_pass: true
+    motion: basic
+    wm_csf: none
+    global_signal: none
+    scrub: false
+    compcor: true
+    demean: false
+
+  basic_scrub:
+    # high_pass are taking the fMRIprep output cosine
+    high_pass: true
+    motion: basic
+    wm_csf: none
+    global_signal: none
+    scrub: true
+    compcor: true
+    demean: false
+
+  basic_full_MC:
+    # high_pass are taking the fMRIprep output cosine
+    high_pass: true
+    motion: full
+    wm_csf: none
+    global_signal: none
+    scrub: false
+    compcor: true
+    demean: false
+
+  basic_full_MC_scrub:
+    # high_pass are taking the fMRIprep output cosine
+    high_pass: true
+    motion: full
+    wm_csf: none
+    global_signal: none
+    scrub: true
+    compcor: true
+    demean: false
+
+  basic_full_MC_demean:
+    # high_pass are taking the fMRIprep output cosine
+    high_pass: true
+    motion: full
+    wm_csf: none
+    global_signal: none
+    scrub: false
+    compcor: true
+    demean: true
+
+  simple:
+    high_pass: true
+    motion: full
+    wm_csf: basic
+    global_signal: none
+    scrub: false
+    compcor: none
+    demean: true
+
+  scrubbing:
+    high_pass: true
+    motion: full
+    wm_csf: full
+    global_signal: none
+    scrub: true
+    fd_threshold: 0.3
+    std_dvars_threshold: 3.0
+    scrub_regressor_prefix: motion_outlier
+    demean: true
+
+  compcor:
+    high_pass: true
+    motion: full
+    wm_csf: none
+    global_signal: none
+    scrub: false
+    compcor: anat_combined
+    n_compcor: all
+    demean: true
+
+column_groups:
+  motion_basic:
+    - trans_x
+    - trans_y
+    - trans_z
+    - rot_x
+    - rot_y
+    - rot_z
+
+  motion_full:
+    - trans_x
+    - trans_y
+    - trans_z
+    - rot_x
+    - rot_y
+    - rot_z
+    - trans_x_derivative1
+    - trans_y_derivative1
+    - trans_z_derivative1
+    - rot_x_derivative1
+    - rot_y_derivative1
+    - rot_z_derivative1
+    - trans_x_power2
+    - trans_y_power2
+    - trans_z_power2
+    - rot_x_power2
+    - rot_y_power2
+    - rot_z_power2
+    - trans_x_derivative1_power2
+    - trans_y_derivative1_power2
+    - trans_z_derivative1_power2
+    - rot_x_derivative1_power2
+    - rot_y_derivative1_power2
+    - rot_z_derivative1_power2
+
+  wm_csf_basic:
+    - white_matter
+    - csf
+
+  wm_csf_full:
+    - white_matter
+    - csf
+    - white_matter_derivative1
+    - csf_derivative1
+    - white_matter_power2
+    - csf_power2
+    - white_matter_derivative1_power2
+    - csf_derivative1_power2
+
+  global_signal_basic:
+    - global_signal
+
+  global_signal_full:
+    - global_signal
+    - global_signal_derivative1
+    - global_signal_power2
+    - global_signal_derivative1_power2
+
+regex_groups:
+  compcor_anat_combined:
+    - "^a_comp_cor_"
+
+  compcor_temporal:
+    - "^t_comp_cor_"
+
+  cosine:
+    - "^cosine"
+
+  non_steady_state:
+    - "^non_steady_state_outlier"
+
+  motion_outlier:
+    - "^motion_outlier"

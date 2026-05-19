@@ -1,4 +1,4 @@
-function prepare_nordic_bold_nifti(src_magnitude,nordic_scans_end ,force)
+function prepare_nordic_bold_nifti(src_magnitude, nordic_scans_end, n_to_keep, force)
 % MIT License
 
 % Copyright (c) 2024-2025 Yongning Lei
@@ -56,10 +56,12 @@ function prepare_nordic_bold_nifti(src_magnitude,nordic_scans_end ,force)
     fprintf('The dtype of magnitude_orig is %s \n ', mag_backup_info.Datatype);
     if strcmp(mag_backup_info.Datatype, 'uint16')
         fprintf('backup file of %s is in original datatype, we are safe \n', src_magnitude)
-        if nordic_scans_end > 1
-            system(['fslroi ', src_magnitude, ' ', src_magnitude, ' 0 -1 0 -1 0 -1 0 ', num2str(mag_info.ImageSize(end)-(nordic_scans_end-1))]);
-            system(['fslroi ', src_phase, ' ', src_phase, ' 0 -1 0 -1 0 -1 0 ', num2str(mag_info.ImageSize(end)-(nordic_scans_end-1))]);
-            fprintf('** Extra noise scans of %s removed \n', src_magnitude);
+        if nordic_scans_end > n_to_keep
+            keep_vols = mag_info.ImageSize(end) - (nordic_scans_end - n_to_keep);
+            system(['fslroi ', src_magnitude, ' ', src_magnitude, ' 0 -1 0 -1 0 -1 0 ', num2str(keep_vols)]);
+            system(['fslroi ', src_phase,     ' ', src_phase,     ' 0 -1 0 -1 0 -1 0 ', num2str(keep_vols)]);
+            fprintf('** Trimmed to %d noise scan(s) (kept %d of %d) for %s\n', ...
+                n_to_keep, keep_vols, mag_info.ImageSize(end), src_magnitude);
         end
         if ~(strcmp(mag_info.Datatype, 'single') && mag_info.BitsPerPixel==32) || force
             % might have filetype problems, so needs to check here

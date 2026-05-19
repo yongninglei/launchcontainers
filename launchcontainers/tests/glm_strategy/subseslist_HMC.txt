@@ -1,0 +1,11 @@
+sub,ses,RUN
+01,08,True
+01,09,True
+01,10,True
+02,01,True
+02,02,True
+03,08,True
+03,09,True
+03,10,True
+07,01,True
+07,02,True

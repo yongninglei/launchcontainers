@@ -7,7 +7,9 @@ script_dir=$(dirname "$(realpath "$0")")
 TB_PATH="/export/home/tlei/tlei/toolboxes"
 
 # nordic parameters (must match your MATLAB signature)
-NORDIC_END=1
+# NUMBER_OF_ECHOS: 1 for SE, N for ME (detected per-run from acq-ME in filename)
+NUMBER_OF_ECHOS=3
+NUM_WORKERS=40   # number of parallel MATLAB workers (parfor)
 FORCE=true
 DONORDIC=true
 DOTSNR=false
@@ -108,10 +110,11 @@ while IFS=',' read -r sub ses _; do
         ${OUTPUT_DIR} \
         ${sub} \
         ${ses} \
-        ${NORDIC_END} \
+        ${NUMBER_OF_ECHOS} \
         ${DONORDIC} \
         ${DOTSNR} \
         ${FORCE} \
+        ${NUM_WORKERS} \
         ${script_dir}"
     eval $cmd > "${log_file}" 2> "${error_file}"
 done < "$tmpfile"

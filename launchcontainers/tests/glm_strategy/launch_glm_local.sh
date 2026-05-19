@@ -1,40 +1,32 @@
 #!/usr/bin/env bash
 # =============================================================================
-# launch_glm_ips.sh  —  SGE (qsub) launcher for run_glm.py
+# launch_glm_local.sh  —  Local launcher for run_glm.py
 #
 # Usage:
-#   bash launch_glm_ips.sh -n <analysis_name> -s 01,10
-#   bash launch_glm_ips.sh -n <analysis_name> -f subseslist.txt
-#   bash launch_glm_ips.sh -n <analysis_name> -f subseslist.txt --dry-run
+#   bash launch_glm_local.sh -n <analysis_name> -s 01,10
+#   bash launch_glm_local.sh -n <analysis_name> -f subseslist.txt
+#   bash launch_glm_local.sh -n <analysis_name> -f subseslist.txt --dry-run
 # =============================================================================
+
 # ---------------------------------------------------------------------------
 # Edit these variables before running
 # ---------------------------------------------------------------------------
-PROJECT="VOTCLOC"
+PROJECT="IRAKEINU"
 analysis_space="surface"  # "volume" or "surface"; determines which run_glm script to use
-PYTHON_SCRIPT="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/run_glm/glm_surface_${PROJECT}.py"
-LOGBASE="/bcbl/home/public/Gari/VOTCLOC/main_exp/logs/glm/${analysis_space}"
+PYTHON_SCRIPT="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/glm_surface_${PROJECT}_HMC_explore.py"
+LOGBASE="/bcbl/home/public/Gari/${PROJECT}/logs/glm/${analysis_space}"
 
 # run_glm.py arguments
-BASE="/bcbl/home/public/Gari/VOTCLOC/main_exp"
-FP_ANA_NAME="25.1.4_t2w_fmapsbref_newest"
-TASK="WCblock"
+BASE="/bcbl/home/public/Gari/${PROJECT}"
+FP_ANA_NAME="25.1.4_IRpilot "
+TASK="BfLocVideo"
 SPACE="fsnative"
-START_SCANS="5"
-CONTRAST="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/run_glm/contrast_WCblock.yaml"
-RERUN_MAP="/bcbl/home/public/Gari/VOTCLOC/main_exp/BIDS/sourcedata/qc/rerun_check.tsv"   # leave empty "" to skip
-INPUT_DIR="BIDS_WC"           # input BIDS dir name under BASE; use BIDS_WC for WC runs
-
-# Python / micromamba environment
-# Set MAMBA_EXE to the full path of the micromamba binary.
-MAMBA_EXE="/export/home/tlei/tlei/soft/micromamba/micromamba"
-MAMBA_ENV="lc"
-
-# SGE / qsub settings
-QUEUE="short.q"
-MEM="16G"
-CPUS="4"
-TIME="02:00:00"
+START_SCANS="6"
+CONTRAST="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/contrast_${PROJECT}_all.yaml"
+STRATEGY_YAML="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/strategy.yaml"
+STRATEGY="basic"   # name of the strategy to use from the YAML
+RERUN_MAP=""   # leave empty "" to skip
+INPUT_DIR="BIDS"           # input BIDS dir name under BASE; use BIDS_WC for WC runs
 
 # ---------------------------------------------------------------------------
 # Parse arguments
@@ -46,7 +38,7 @@ usage() {
     echo ""
     echo "  Optional:"
     echo "    -i <input_dir>   BIDS dir name under BASE (default: BIDS, use BIDS_WC for WC)"
-    echo "    --dry-run        print qsub commands without submitting"
+    echo "    --dry-run        print commands without running"
     echo "    --use-smoothed"
     echo ""
     echo "Required:"
@@ -65,7 +57,7 @@ while [[ $# -gt 0 ]]; do
         -n) analysis_name="$2"; shift 2 ;;
         -s) subses_arg="$2";    shift 2 ;;
         -f) file_arg="$2";      shift 2 ;;
-        -i) INPUT_DIR="$2";     shift 2 ;;
+        -i) INPUT_DIR="$2"; shift 2 ;;
         --dry-run)      dry_run=1; extra_flags="${extra_flags} --dry-run"; shift ;;
         --use-smoothed) extra_flags="${extra_flags} --use-smoothed"; shift ;;
         *) echo "Unknown option: $1"; usage ;;
@@ -81,6 +73,7 @@ if [[ -z "$subses_arg" && -z "$file_arg" ]]; then
     usage
 fi
 
+analysis_name = ${analysis_name}_${STRATEGY}  # replace spaces with underscores
 # ---------------------------------------------------------------------------
 # Log directory
 # ---------------------------------------------------------------------------
@@ -114,7 +107,7 @@ cp "$0" "${LOG_DIR}/launcher_$(date +"%Y-%m-%d_%H-%M-%S").sh"
 
 SOURCE="${subses_arg:-$file_arg}"
 echo "============================================================"
-echo "  GLM SGE launcher"
+echo "  GLM local launcher"
 echo "  Analysis name : ${analysis_name}"
 echo "  Input         : ${SOURCE}"
 echo "  Sessions      : ${#PAIRS[@]}"
@@ -122,18 +115,15 @@ echo "  Task          : ${TASK}"
 echo "  Start scans   : ${START_SCANS}"
 echo "  Space         : ${SPACE}"
 echo "  Input dir     : ${INPUT_DIR}"
+echo "  Strategy YAML : ${STRATEGY_YAML}"
+echo "  Strategy      : ${STRATEGY}"
 echo "  Log dir       : ${LOG_DIR}"
-echo "  Mamba env     : ${MAMBA_ENV}  (exe: ${MAMBA_EXE})"
-echo "  Queue         : ${QUEUE}"
-echo "  Memory        : ${MEM}"
-echo "  CPUs          : ${CPUS}"
-echo "  Time limit    : ${TIME}"
 echo "  Dry run       : ${dry_run}"
 echo "============================================================"
 echo ""
 
 # ---------------------------------------------------------------------------
-# Submit one qsub job per session
+# Run sessions sequentially
 # ---------------------------------------------------------------------------
 job_num=1
 for pair in "${PAIRS[@]}"; do
@@ -142,7 +132,6 @@ for pair in "${PAIRS[@]}"; do
 
     LOG_OUT="${LOG_DIR}/$(date +"%H-%M")_sub-${SUB}_ses-${SES}.o"
     LOG_ERR="${LOG_DIR}/$(date +"%H-%M")_sub-${SUB}_ses-${SES}.e"
-    JOB_NAME="glm_${job_num}_sub${SUB}_ses${SES}"
 
     PY_CMD="python ${PYTHON_SCRIPT} \
         --base ${BASE} \
@@ -153,52 +142,34 @@ for pair in "${PAIRS[@]}"; do
         --start-scans ${START_SCANS} \
         --contrast ${CONTRAST} \
         --analysis-name ${analysis_name} \
-        --input-dir ${INPUT_DIR}"
+        --input-dir ${INPUT_DIR} \
+        --strategy-yaml ${STRATEGY_YAML} \
+        --strategy ${STRATEGY}"
 
-    [[ -n "${RERUN_MAP}" ]]   && PY_CMD="${PY_CMD} --rerun-map ${RERUN_MAP}"
+    [[ -n "${RERUN_MAP}" ]] && PY_CMD="${PY_CMD} --rerun-map ${RERUN_MAP}"
     [[ -n "${extra_flags}" ]] && PY_CMD="${PY_CMD} ${extra_flags}"
 
-    QSUB_CMD="qsub \
-        -N ${JOB_NAME} \
-        -S /bin/bash \
-        -q ${QUEUE} \
-        -l mem_free=${MEM} \
-        -pe smp ${CPUS} \
-        -o ${LOG_OUT} \
-        -e ${LOG_ERR}"
+    echo "  [${job_num}/${#PAIRS[@]}]  sub-${SUB} ses-${SES}  → log: ${LOG_OUT}"
 
-    echo "  [${job_num}/${#PAIRS[@]}]  sub-${SUB} ses-${SES}  → ${JOB_NAME}"
-
-    if [[ "$dry_run" -eq 1 ]]; then
-        echo "    [dry-run] ${QSUB_CMD} << SCRIPT"
-        echo "      source ~/.bashrc"
-        echo "      ${PY_CMD}"
-        echo "    SCRIPT"
-    else
-        eval "${QSUB_CMD}" << SCRIPT
-#!/bin/bash
-source ~/.bashrc
-eval "\$(${MAMBA_EXE} shell hook --shell bash)"
-micromamba activate ${MAMBA_ENV}
-echo "============================================================"
-echo "  sub         : ${SUB}"
-echo "  ses         : ${SES}"
-echo "  analysis    : ${analysis_name}"
-echo "  Start       : \$(date '+%Y-%m-%d %H:%M:%S')"
-echo "============================================================"
-echo ""
-time ${PY_CMD}
-EXIT_CODE=\$?
-echo ""
-echo "============================================================"
-echo "  End         : \$(date '+%Y-%m-%d %H:%M:%S')"
-echo "  Exit code   : \${EXIT_CODE}"
-echo "============================================================"
-SCRIPT
-    fi
+    {
+        echo "============================================================"
+        echo "  sub         : ${SUB}"
+        echo "  ses         : ${SES}"
+        echo "  analysis    : ${analysis_name}"
+        echo "  Start       : $(date '+%Y-%m-%d %H:%M:%S')"
+        echo "============================================================"
+        echo ""
+        time ${PY_CMD}
+        EXIT_CODE=$?
+        echo ""
+        echo "============================================================"
+        echo "  End         : $(date '+%Y-%m-%d %H:%M:%S')"
+        echo "  Exit code   : ${EXIT_CODE}"
+        echo "============================================================"
+    } >"${LOG_OUT}" 2>"${LOG_ERR}"
 
     ((job_num++))
 done
 
 echo ""
-echo "Submitted ${#PAIRS[@]} jobs to SGE queue '${QUEUE}'. Logs: ${LOG_DIR}"
+echo "All ${#PAIRS[@]} sessions done. Logs: ${LOG_DIR}"

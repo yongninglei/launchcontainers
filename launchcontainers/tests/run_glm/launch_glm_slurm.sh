@@ -10,8 +10,10 @@
 # ---------------------------------------------------------------------------
 # Edit these variables before running
 # ---------------------------------------------------------------------------
-PYTHON_SCRIPT="/scratch/tlei/lc/launchcontainers/tests/run_glm/run_glm.py"
-LOGBASE="/scratch/tlei/dipc_glm"
+PROJECT="VOTCLOC"
+analysis_space="surface"  # "volume" or "surface"; determines which run_glm script to use
+PYTHON_SCRIPT="/scratch/tlei/lc/launchcontainers/tests/run_glm/glm_surface_${PROJECT}.py"
+LOGBASE="/scratch/tlei/${PROJECT}/logs/glm/${analysis_space}"
 
 # Slurm resource settings
 CPUS="8"

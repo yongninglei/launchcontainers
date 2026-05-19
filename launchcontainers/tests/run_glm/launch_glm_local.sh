@@ -11,19 +11,20 @@
 # ---------------------------------------------------------------------------
 # Edit these variables before running
 # ---------------------------------------------------------------------------
-PROJECT="VOTCLOC"  
-PYTHON_SCRIPT="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/run_glm/run_glm_${PROJECT}_HMC_explore.py"
-LOGBASE="/bcbl/home/public/Gari/VOTCLOC/main_exp/logs/glm"
+PROJECT="VOTCLOC"
+analysis_space="surface"  # "volume" or "surface"; determines which run_glm script to use
+PYTHON_SCRIPT="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/run_glm/glm_surface_${PROJECT}.py"
+LOGBASE="/bcbl/home/public/Gari/VOTCLOC/main_exp/logs/glm/${analysis_space}"
 
 # run_glm.py arguments
-BASE="/bcbl/home/public/Gari/VOTCLOC"
-FP_ANA_NAME="25.1.4_t2w_fmapsbref"
-TASK="fLoc"
+BASE="/bcbl/home/public/Gari/VOTCLOC/main_exp"
+FP_ANA_NAME="25.1.4_t2w_fmapsbref_newest"
+TASK="WCblock"
 SPACE="fsnative"
-START_SCANS="6"
-CONTRAST="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/run_glm/contrast_${PROJECT}_all.yaml"
+START_SCANS="5"
+CONTRAST="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/run_glm/contrast_wcblock.yaml"
 RERUN_MAP="/bcbl/home/public/Gari/VOTCLOC/main_exp/BIDS/sourcedata/qc/rerun_check.tsv"   # leave empty "" to skip
-INPUT_DIR="BIDS"           # input BIDS dir name under BASE; use BIDS_WC for WC runs
+INPUT_DIR="BIDS_WC"           # input BIDS dir name under BASE; use BIDS_WC for WC runs
 
 # ---------------------------------------------------------------------------
 # Parse arguments

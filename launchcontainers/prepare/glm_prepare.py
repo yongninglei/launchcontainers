@@ -75,17 +75,25 @@ def _parse_events_from_stim_name(stim_basename: str, block_time: float):
     """
     parts = stim_basename.split("_")
     lgn = parts[0]
-    task = parts[1] if len(parts) > 1 else "unknown"
+    raw_task = parts[1] if len(parts) > 1 else "unknown"
 
     # Warn and skip if 'fix' not in task — unexpected stim naming convention
-    if "fix" not in task:
+    if "fix" not in raw_task:
         raise ValueError(
-            f"'fix' not found in task label '{task}' (stim: {stim_basename}). "
+            f"'fix' not found in task label '{raw_task}' (stim: {stim_basename}). "
             "Skipping this run."
         )
 
-    # Normalize task name
-    if "block" in task:
+    # Extract stimulus condition (RW / FF) from the raw task label before normalising
+    if "RW" in raw_task:
+        condition = "RW"
+    elif "FF" in raw_task:
+        condition = "FF"
+    else:
+        condition = raw_task.replace("fix", "").replace("block", "") or "unknown"
+
+    # Normalise task name (used for the BIDS filename, not the trial_type)
+    if "block" in raw_task:
         task = "WCblock"
     else:
         task = "WCnonestop"
@@ -104,13 +112,13 @@ def _parse_events_from_stim_name(stim_basename: str, block_time: float):
         onset = [float(block_time * i) for i in range(n_epochs)]
         duration = [float(block_time)] * n_epochs
         trial_type = [
-            "baseline" if i % 2 == 0 else f"{lgn}_{task}" for i in range(n_epochs)
+            "baseline" if i % 2 == 0 else f"{lgn}_{condition}" for i in range(n_epochs)
         ]
     else:
         # Event design: single event spanning the whole run
         onset = [0.0]
         duration = [float(total_duration)]
-        trial_type = [f"{lgn}_{task}"]
+        trial_type = [f"{lgn}_{condition}"]
 
     return onset, duration, trial_type, lgn, task
 
@@ -148,7 +156,9 @@ class GLMPrepare(BasePrepare):
 
     def __init__(self, lc_config: dict | None = None):
         super().__init__(lc_config)
-        self._glm_cfg = self.lc_config.get("container_specific", {}).get("l1_surface", {})
+        self._glm_cfg = self.lc_config.get("container_specific", {}).get(
+            "l1_surface", {}
+        )
 
     # ------------------------------------------------------------------
     # Convenience properties — from container_specific.l1_surface
@@ -546,9 +556,9 @@ class GLMPrepare(BasePrepare):
             )
         )
         bids_files = [
-            f for f in bids_files
-            if "task-fLoc" not in op.basename(f)
-            and not op.islink(f)
+            f
+            for f in bids_files
+            if "task-fLoc" not in op.basename(f) and not op.islink(f)
         ]
         if not bids_files:
             console.print(
@@ -728,7 +738,9 @@ class GLMPrepare(BasePrepare):
                     if fp_bold.endswith(bold_suffix):
                         fp_json = fp_bold[: -len(bold_suffix)] + ".json"
                         if op.exists(fp_json):
-                            new_json_basename = new_basename[: -len(bold_suffix)] + ".json"
+                            new_json_basename = (
+                                new_basename[: -len(bold_suffix)] + ".json"
+                            )
                             json_link_path = op.join(func_dir, new_json_basename)
                             if op.islink(json_link_path) or op.exists(json_link_path):
                                 os.remove(json_link_path)

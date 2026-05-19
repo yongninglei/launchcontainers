@@ -10,20 +10,22 @@
 # ---------------------------------------------------------------------------
 # Edit these variables before running
 # ---------------------------------------------------------------------------
-PROJECT="VOTCLOC"
+PROJECT="IRAKEINU"
 analysis_space="surface"  # "volume" or "surface"; determines which run_glm script to use
-PYTHON_SCRIPT="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/run_glm/glm_surface_${PROJECT}.py"
-LOGBASE="/bcbl/home/public/Gari/VOTCLOC/main_exp/logs/glm/${analysis_space}"
+PYTHON_SCRIPT="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/glm_surface_${PROJECT}_HMC_explore.py"
+LOGBASE="/bcbl/home/public/Gari/${PROJECT}/logs/glm/${analysis_space}"
 
 # run_glm.py arguments
-BASE="/bcbl/home/public/Gari/VOTCLOC/main_exp"
-FP_ANA_NAME="25.1.4_t2w_fmapsbref_newest"
-TASK="WCblock"
+BASE="/bcbl/home/public/Gari/${PROJECT}"
+FP_ANA_NAME="25.1.4_IRpilot "
+TASK="BfLocVideo"
 SPACE="fsnative"
-START_SCANS="5"
-CONTRAST="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/run_glm/contrast_WCblock.yaml"
-RERUN_MAP="/bcbl/home/public/Gari/VOTCLOC/main_exp/BIDS/sourcedata/qc/rerun_check.tsv"   # leave empty "" to skip
-INPUT_DIR="BIDS_WC"           # input BIDS dir name under BASE; use BIDS_WC for WC runs
+START_SCANS="6"
+CONTRAST="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/contrast_${PROJECT}_all.yaml"
+STRATEGY_YAML="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/strategy.yaml"
+STRATEGY="scrubbing"   # name of the strategy to use from the YAML
+RERUN_MAP=""   # leave empty "" to skip
+INPUT_DIR="BIDS"           # input BIDS dir name under BASE; use BIDS_WC for WC runs
 
 # Python / micromamba environment
 # Set MAMBA_EXE to the full path of the micromamba binary.
@@ -81,6 +83,7 @@ if [[ -z "$subses_arg" && -z "$file_arg" ]]; then
     usage
 fi
 
+analysis_name = ${analysis_name}_${STRATEGY}  # replace spaces with underscores
 # ---------------------------------------------------------------------------
 # Log directory
 # ---------------------------------------------------------------------------
@@ -122,6 +125,8 @@ echo "  Task          : ${TASK}"
 echo "  Start scans   : ${START_SCANS}"
 echo "  Space         : ${SPACE}"
 echo "  Input dir     : ${INPUT_DIR}"
+echo "  Strategy YAML : ${STRATEGY_YAML}"
+echo "  Strategy      : ${STRATEGY}"
 echo "  Log dir       : ${LOG_DIR}"
 echo "  Mamba env     : ${MAMBA_ENV}  (exe: ${MAMBA_EXE})"
 echo "  Queue         : ${QUEUE}"
@@ -153,7 +158,9 @@ for pair in "${PAIRS[@]}"; do
         --start-scans ${START_SCANS} \
         --contrast ${CONTRAST} \
         --analysis-name ${analysis_name} \
-        --input-dir ${INPUT_DIR}"
+        --input-dir ${INPUT_DIR} \
+        --strategy-yaml ${STRATEGY_YAML} \
+        --strategy ${STRATEGY}"
 
     [[ -n "${RERUN_MAP}" ]]   && PY_CMD="${PY_CMD} --rerun-map ${RERUN_MAP}"
     [[ -n "${extra_flags}" ]] && PY_CMD="${PY_CMD} ${extra_flags}"
