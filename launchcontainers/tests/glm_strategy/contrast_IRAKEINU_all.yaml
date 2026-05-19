@@ -75,3 +75,23 @@ IMG_RIvsIMG_SC:
 IMG_RIvsCH_SC:
   positive: ["IMG_RI"]
   negative: ["CH_SC"]
+
+IMG_SCvsCH_SC:
+  positive: ["IMG_SC"]
+  negative: ["CH_SC"]
+
+CH_RWvsCH_FF:
+  positive: ["CH_RW"]
+  negative: ["CH_FF"]
+
+CH_RWvsEN_FF:
+  positive: ["CH_RW"]
+  negative: ["EN_FF"]
+
+EN_RWvsCH_FF:
+  positive: ["EN_RW"]
+  negative: ["CH_FF"]
+
+EN_RWvsEN_FF:
+  positive: ["EN_RW"]
+  negative: ["EN_FF"]

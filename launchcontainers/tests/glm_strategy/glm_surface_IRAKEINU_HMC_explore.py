@@ -312,7 +312,9 @@ def _resolve_confound_columns(cs: dict, available_cols: list) -> list[str]:
 
     # ── CompCor ───────────────────────────────────────────────────────────
     compcor_type = cfg.get("compcor", "none")
-    if compcor_type != "none":
+    if compcor_type is True:  # YAML `compcor: true` → default to anat_combined
+        compcor_type = "anat_combined"
+    if compcor_type not in (False, "none", "false"):
         comp_pats = regex_groups.get(f"compcor_{compcor_type}", [])
         n_compcor = cfg.get("n_compcor", "all")
         if n_compcor == "all":
@@ -397,6 +399,7 @@ def glm_l1(
     sm=None,
     randrun_idx=None,
     hemi=None,
+    n_glm_jobs=1,
 ) -> dict[str, float]:
     """
     Fit the GLM and compute contrasts.
@@ -423,19 +426,19 @@ def glm_l1(
         outdir,
         f"sub-{subject}_ses-{session}_task-{task}_desc-confounds_timeseries.tsv",
     )
+    # ── Save metadata: confounds TSV + design matrix CSV + plots ─────────────
+    _t = time.time()
     confounds_df.to_csv(confounds_tsv, sep="\t")
     console.print(f"  [dim]Confounds TSV → {op.basename(confounds_tsv)}[/dim]")
-
     plot_design_matrix_to_file(design_matrix_std, outdir, subject, session, task)
     plot_contrast_matrices(contrasts, design_matrix_std, outdir, subject, session, task)
-
     dm_csv = op.join(outdir, f"design_matrix_{task}_strategy-{strategy_name}.csv")
     design_matrix_std.to_csv(dm_csv)
     console.print(f"  [dim]Design matrix CSV → {op.basename(dm_csv)}[/dim]")
+    t_save_meta = time.time() - _t
 
     Y = np.transpose(conc_data_std)
     X = np.asarray(design_matrix_std)
-
     console.print(
         f"  [DIAG] Y (vertices × timepoints): shape={Y.shape}  "
         f"min={np.nanmin(Y):.4f}  max={np.nanmax(Y):.4f}  std={np.nanstd(Y):.4f}"
@@ -445,18 +448,23 @@ def glm_l1(
         f"rank={np.linalg.matrix_rank(X)}  (expected full rank={X.shape[1]})"
     )
 
-    labels, estimates = run_glm(Y, X, n_jobs=4)
+    # ── GLM fitting ────────────────────────────────────────────────────────────
+    _t = time.time()
+    labels, estimates = run_glm(Y, X, n_jobs=n_glm_jobs)
+    t_glm_fit = time.time() - _t
+    console.print(f"  [dim]run_glm: {t_glm_fit:.2f} s[/dim]")
 
-    # ── Save GLM components ────────────────────────────────────────────────────
+    # ── Reconstruct vertex arrays + save components ────────────────────────────
     # Y = Xθ + ε   (fitted = Xθ,  residuals = ε,  betas = θ per regressor)
-    # All saved as multi-frame GIFTI: residuals/fitted have one frame per
-    # timepoint; betas have one frame per design-matrix column (see
-    # desc-betas_regressornames.txt for the column order).
+    t_reconstruct = 0.0
+    t_save_components = 0.0
     if hemi:
+        _t = time.time()
         n_tp, n_vtx = Y.shape
         resid = _reconstruct_vertex_array(n_tp, n_vtx, labels, estimates, "resid")
         fitted = _reconstruct_vertex_array(n_tp, n_vtx, labels, estimates, "predicted")
-        betas = _reconstruct_betas(X.shape[1], n_vtx, labels, estimates)
+        beta_arr = _reconstruct_betas(X.shape[1], n_vtx, labels, estimates)
+        t_reconstruct = time.time() - _t
 
         def _component_name(desc: str) -> str:
             base = (
@@ -469,49 +477,36 @@ def glm_l1(
                 base = base.replace("_timeseries", f"{randrun_idx}_timeseries")
             return op.join(outdir, base)
 
-        console.print(
-            "  [dim]Saving GLM components (residuals / fitted / betas)…[/dim]"
-        )
-
-        # residuals — GIFTI + DataFrame (rows=timepoints, cols=vertex index)
+        _t = time.time()
         save_timeseries_to_gifti(resid, _component_name("residuals"))
-        save_array_as_dataframe(
-            resid.T,
-            _component_name("residuals").replace(".func.gii", ".tsv.gz"),
-        )
-
-        # fitted values — GIFTI + DataFrame (rows=timepoints, cols=vertex index)
         save_timeseries_to_gifti(fitted, _component_name("fitted"))
+        save_timeseries_to_gifti(beta_arr, _component_name("betas"))
         save_array_as_dataframe(
-            fitted.T,
-            _component_name("fitted").replace(".func.gii", ".tsv.gz"),
-        )
-
-        # per-regressor betas — GIFTI + DataFrame (rows=vertex, cols=regressor name)
-        save_timeseries_to_gifti(betas, _component_name("betas"))
-        save_array_as_dataframe(
-            betas,
+            beta_arr,
             _component_name("betas").replace(".func.gii", ".tsv"),
             col_labels=design_matrix_std.columns.tolist(),
         )
+        t_save_components = time.time() - _t
 
+    # ── Contrasts: compute then save stat maps ─────────────────────────────────
     timing: dict[str, float] = {}
+    t_compute_total = 0.0
+    t_save_maps_total = 0.0
 
     for contrast_id, contrast_val in contrasts.items():
-        t_c = time.time()
-
-        # Build output filename template
         if hemi:
-            outname_base = (
+            outname_base = op.join(
+                outdir,
                 f"sub-{subject}_ses-{session}_task-{task}"
                 f"_hemi-{hemi}_space-{space}_contrast-{contrast_id}"
-                f"_stat-X_statmap.func.gii"
+                f"_stat-X_statmap.func.gii",
             )
         else:
-            outname_base = (
+            outname_base = op.join(
+                outdir,
                 f"sub-{subject}_ses-{session}_task-{task}"
                 f"_space-{space}_contrast-{contrast_id}"
-                f"_stat-X_statmap.nii.gz"
+                f"_stat-X_statmap.nii.gz",
             )
         if use_smoothed:
             outname_base = outname_base.replace(
@@ -519,15 +514,16 @@ def glm_l1(
             )
         if randrun_idx:
             outname_base = outname_base.replace("_statmap", f"{randrun_idx}_statmap")
-        outname_base = op.join(outdir, outname_base)
 
+        _t = time.time()
         contrast_obj = compute_contrast(labels, estimates, contrast_val)
-
-        betas = contrast_obj.effect_size()
+        effect = contrast_obj.effect_size()
         t_value = contrast_obj.stat()
         z_score = contrast_obj.z_score()
         p_value = contrast_obj.p_value()
         variance = contrast_obj.effect_variance()
+        t_compute = time.time() - _t
+        t_compute_total += t_compute
 
         console.print(
             f"  [DIAG] contrast={contrast_id}  "
@@ -535,8 +531,9 @@ def glm_l1(
             f"std={np.nanstd(z_score):.4f}  n_nan={np.sum(np.isnan(z_score))}"
         )
 
+        _t = time.time()
         if hemi:
-            save_statmap_to_gifti(betas, outname_base.replace("stat-X", "stat-effect"))
+            save_statmap_to_gifti(effect, outname_base.replace("stat-X", "stat-effect"))
             save_statmap_to_gifti(t_value, outname_base.replace("stat-X", "stat-t"))
             if not randrun_idx:
                 save_statmap_to_gifti(z_score, outname_base.replace("stat-X", "stat-z"))
@@ -546,14 +543,144 @@ def glm_l1(
                 )
         else:
             console.print(
-                f"  [yellow]WARNING[/yellow]: volumetric output not implemented, skipping {outname_base}"
+                f"  [yellow]WARNING[/yellow]: volumetric output not implemented, "
+                f"skipping {outname_base}"
             )
+        t_save = time.time() - _t
+        t_save_maps_total += t_save
 
-        timing[contrast_id] = time.time() - t_c
+        timing[contrast_id] = t_compute + t_save
 
-    label = f"hemi-{hemi}" if hemi else "volumetric"
-    console.print(f"  [green]GLM done[/green] ({label})")
+    # ── Step timing summary table ──────────────────────────────────────────────
+    hemi_label = f"hemi-{hemi}" if hemi else "volumetric"
+    tbl_steps = Table(
+        title=f"GLM step timing — {hemi_label}", box=box.SIMPLE_HEAD, show_footer=True
+    )
+    tbl_steps.add_column("step", footer="[bold]total[/bold]")
+    tbl_steps.add_column(
+        "time (s)",
+        justify="right",
+        footer=f"[bold]{t_save_meta + t_glm_fit + t_reconstruct + t_save_components + t_compute_total + t_save_maps_total:.2f}[/bold]",
+    )
+    for step, t in [
+        ("save_metadata  (confounds TSV + DM CSV + plots)", t_save_meta),
+        ("glm_fit        (run_glm, all vertices)", t_glm_fit),
+        ("reconstruct    (resid / fitted / beta arrays)", t_reconstruct),
+        ("save_components (residuals + fitted + betas GIFTI)", t_save_components),
+        ("compute_contrasts", t_compute_total),
+        ("save_maps      (stat-map GIFTIs)", t_save_maps_total),
+    ]:
+        tbl_steps.add_row(step, f"{t:.2f}")
+    console.print(tbl_steps)
+    console.print(f"  [green]GLM done[/green] ({hemi_label})")
     return timing
+
+
+def _load_nilearn_confounds(func_file: str, cfg: dict, start_scans: int):
+    """
+    Load confounds via nilearn.interfaces.fmriprep.load_confounds_strategy.
+
+    Returns
+    -------
+    confounds_df : pd.DataFrame
+        Confounds trimmed to the post-start_scans TRs (and scrubbed rows removed
+        for scrubbing strategies).
+    rel_sample_mask : np.ndarray | None
+        For scrubbing strategies: 0-based TR indices into the post-start_scans
+        data array that should be kept.  None when no scrubbing is applied.
+    """
+    _LOAD_CONFOUNDS_PARAMS = (
+        "motion",
+        "wm_csf",
+        "global_signal",
+        "compcor",
+        "n_compcor",
+        "fd_threshold",
+        "std_dvars_threshold",
+        "scrub",
+        "demean",
+    )
+
+    if "nilearn_strategy" in cfg:
+        # Preset strategy — load_confounds_strategy
+        from nilearn.interfaces.fmriprep import load_confounds_strategy
+
+        extra_kw = {
+            k: cfg[k]
+            for k in ("fd_threshold", "std_dvars_threshold", "n_compcor", "scrub")
+            if k in cfg
+        }
+        confounds, sample_mask = load_confounds_strategy(
+            func_file, denoise_strategy=cfg["nilearn_strategy"], **extra_kw
+        )
+    elif "strategy" in cfg:
+        # Custom strategy — load_confounds with explicit component tuple
+        from nilearn.interfaces.fmriprep import load_confounds
+
+        extra_kw = {k: cfg[k] for k in _LOAD_CONFOUNDS_PARAMS if k in cfg}
+        confounds, sample_mask = load_confounds(
+            func_file, strategy=tuple(cfg["strategy"]), **extra_kw
+        )
+    else:
+        raise ValueError(
+            "nilearn backend requires either 'nilearn_strategy' (preset) "
+            "or 'strategy' (custom component list) in the strategy config."
+        )
+
+    if sample_mask is not None:
+        # sample_mask: integer TR indices (into the full run) that are kept.
+        # confounds has already been filtered to len(sample_mask) rows by nilearn.
+        # We additionally drop TRs before start_scans.
+        keep = sample_mask >= start_scans
+        confounds = confounds.iloc[keep].reset_index(drop=True)
+        rel_sample_mask = sample_mask[keep] - start_scans
+    else:
+        confounds = confounds.iloc[start_scans:].reset_index(drop=True)
+        rel_sample_mask = None
+
+    return confounds, rel_sample_mask
+
+
+def _fetch_bids_run_metadata(
+    bids_dir,
+    fmriprep_dir,
+    task,
+    subject,
+    session,
+    run_list,
+    slice_time_ref,
+) -> dict:
+    """
+    Call first_level_from_bids once per run and return
+    {run_num: (t_r, events_df, confounds_df)}.
+
+    Runs that fail are omitted from the dict; the caller treats missing keys
+    as skipped runs (same behaviour as the previous per-hemisphere try/except).
+    """
+    meta: dict = {}
+    img_filters_base = [("desc", "preproc"), ("ses", session)]
+    for run_num in run_list:
+        img_filters = img_filters_base + [("run", run_num)]
+        try:
+            l1 = first_level_from_bids(
+                bids_dir,
+                task,
+                space_label="T1w",
+                sub_labels=[subject],
+                slice_time_ref=slice_time_ref,
+                hrf_model="spm",
+                drift_model=None,
+                drift_order=0,
+                high_pass=None,
+                img_filters=img_filters,
+                derivatives_folder=fmriprep_dir,
+            )
+            meta[run_num] = (l1[0][0].t_r, l1[2][0][0], l1[3][0][0])
+        except (TypeError, FileNotFoundError, IndexError) as e:
+            console.print(
+                f"  [yellow]WARNING[/yellow]: error fetching metadata for run {run_num}: {e} — skipping"
+            )
+    return meta
 
 
 def prepare_glm_input(
@@ -574,6 +701,7 @@ def prepare_glm_input(
     sm,
     apply_label_as_mask,
     confound_strategy,
+    run_metadata,
     hemi=None,
 ):
     """
@@ -591,7 +719,6 @@ def prepare_glm_input(
     frame_time_allrun = []
     events_allrun = []
     confounds_allrun = []
-    store_l1 = []
 
     # Per-run step timing: {run_num: {step: seconds}}
     run_step_times: dict[str, dict[str, float]] = {}
@@ -670,64 +797,72 @@ def prepare_glm_input(
                     "  [yellow]WARNING[/yellow]: volumetric masking not implemented"
                 )
 
-        n_scans = np.shape(data_std)[1]
-        data_allrun.append(data_std)
+        n_scans_full = np.shape(data_std)[1]
         run_step_times[run_num]["zscore_mask"] = time.time() - _t
 
-        # ── Step 3: first_level_from_bids (events + confounds + TR) ──────────
-        _t = time.time()
-        img_filters = [("desc", "preproc"), ("ses", session), ("run", run_num)]
-        try:
-            l1 = first_level_from_bids(
-                bids_dir,
-                task,
-                space_label="T1w",
-                sub_labels=[subject],
-                slice_time_ref=slice_time_ref,
-                hrf_model="spm",
-                drift_model=None,
-                drift_order=0,
-                high_pass=None,
-                img_filters=img_filters,
-                derivatives_folder=fmriprep_dir,
-            )
-        except (TypeError, FileNotFoundError, IndexError) as e:
+        # ── Step 3: look up prefetched events + confounds + TR ───────────────
+        if run_num not in run_metadata:
             console.print(
-                f"  [yellow]WARNING[/yellow]: error processing run {run_num}: {e} — skipping"
+                f"  [yellow]WARNING[/yellow]: no prefetched metadata for run {run_num} — skipping"
             )
             continue
-        run_step_times[run_num]["first_level_from_bids"] = time.time() - _t
-        console.print(
-            f"  [dim]first_level_from_bids: {run_step_times[run_num]['first_level_from_bids']:.1f} s[/dim]"
-        )
 
         # ── Step 4: confound processing ───────────────────────────────────────
         _t = time.time()
-        t_r = l1[0][0].t_r
-        events = l1[2][0][0]
-        confounds = l1[3][0][0]
-        events.loc[:, "onset"] = events["onset"] + idx * n_scans * t_r
+        t_r, events, confounds = run_metadata[run_num]
+        events = events.copy()  # don't mutate the shared cache (thread-safety)
+        # Use full (pre-scrub) run duration for onset offset so that events
+        # from later runs remain correctly timed even when volumes are censored.
+        events.loc[:, "onset"] = events["onset"] + idx * n_scans_full * t_r
 
         events_nobaseline = events[events.loc[:, "trial_type"] != "baseline"]
         events_allrun.append(events_nobaseline)
-        store_l1.append(l1)
 
-        confound_keys_keep = _resolve_confound_columns(
-            confound_strategy, list(confounds.columns)
-        )
-        console.print(
-            f"  [dim]Strategy [cyan]{confound_strategy['name']}[/cyan]: "
-            f"selected {len(confound_keys_keep)} confound cols[/dim]"
-        )
-        confounds_keep = confounds[confound_keys_keep]
+        backend = confound_strategy["cfg"].get("backend", "yaml")
+        if backend == "nilearn":
+            confounds_keep, rel_sample_mask = _load_nilearn_confounds(
+                func_file, confound_strategy["cfg"], start_scans
+            )
+            scrub_note = (
+                f", {len(confounds_keep)} vols kept after scrubbing"
+                if rel_sample_mask is not None
+                else ""
+            )
+            console.print(
+                f"  [dim]Strategy [cyan]{confound_strategy['name']}[/cyan] (nilearn): "
+                f"{len(confounds_keep.columns)} confound cols{scrub_note}[/dim]"
+            )
+        else:
+            confound_keys_keep = _resolve_confound_columns(
+                confound_strategy, list(confounds.columns)
+            )
+            confounds_keep = confounds[confound_keys_keep].copy()
+            if "framewise_displacement" in confounds_keep.columns:
+                confounds_keep.loc[
+                    confounds_keep.index[0], "framewise_displacement"
+                ] = np.nanmean(confounds_keep["framewise_displacement"])
+            confounds_keep = confounds_keep.iloc[start_scans:].reset_index(drop=True)
+            rel_sample_mask = None
+            console.print(
+                f"  [dim]Strategy [cyan]{confound_strategy['name']}[/cyan] (yaml): "
+                f"selected {len(confound_keys_keep)} confound cols[/dim]"
+            )
 
-        confounds_keep["framewise_displacement"][0] = np.nanmean(
-            confounds_keep["framewise_displacement"]
-        )
-        confounds_keep = confounds_keep.iloc[start_scans:]
+        # Apply scrubbing mask — censors volumes before appending to run list.
+        # Frame times use the kept TR indices so events stay correctly aligned.
+        if rel_sample_mask is not None:
+            data_final = data_std[:, rel_sample_mask]
+            frame_times = t_r * (
+                (rel_sample_mask + slice_time_ref) + idx * n_scans_full
+            )
+        else:
+            data_final = data_std
+            frame_times = t_r * (
+                (np.arange(n_scans_full) + slice_time_ref) + idx * n_scans_full
+            )
+
+        data_allrun.append(data_final)
         confounds_allrun.append(confounds_keep)
-
-        frame_times = t_r * ((np.arange(n_scans) + slice_time_ref) + idx * n_scans)
         frame_time_allrun.append(frame_times)
         run_step_times[run_num]["confounds"] = time.time() - _t
         console.print(
@@ -737,7 +872,7 @@ def prepare_glm_input(
 
     # ── Per-run timing summary table ──────────────────────────────────────────
     if run_step_times:
-        step_cols = ["load_func", "zscore_mask", "first_level_from_bids", "confounds"]
+        step_cols = ["load_func", "zscore_mask", "confounds"]
         tbl_run = Table(title="Per-run step timing (s)", box=box.SIMPLE_HEAD)
         tbl_run.add_column("run")
         for s in step_cols:
@@ -889,8 +1024,10 @@ def process_run_list(
     apply_label_as_mask,
     dry_run,
     confound_strategy,
+    run_metadata,
     randrun_idx=None,
     hemi=None,
+    n_glm_jobs=1,
 ) -> dict[str, float]:
     """
     Build GLM inputs and run the GLM for one run-list / hemisphere combination.
@@ -921,6 +1058,7 @@ def process_run_list(
         sm,
         apply_label_as_mask,
         confound_strategy,
+        run_metadata,
         hemi,
     )
     console.print(f"  Contrasts: {list(contrasts.keys())}")
@@ -947,6 +1085,7 @@ def process_run_list(
         sm,
         randrun_idx,
         hemi,
+        n_glm_jobs,
     )
 
 
@@ -971,6 +1110,7 @@ def run_power_analysis(
     n_iterations,
     seed,
     confound_strategy,
+    run_metadata,
     hemi=None,
 ) -> None:
     """Run power analysis: total_runs × n_iterations GLMs."""
@@ -1022,6 +1162,7 @@ def run_power_analysis(
                 apply_label_as_mask,
                 dry_run,
                 confound_strategy,
+                run_metadata,
                 randrun_idx,
                 hemi,
             )
@@ -1235,8 +1376,18 @@ def main(
     strategy_yaml: str = typer.Option(
         ..., "--strategy-yaml", help="Path to confound strategy YAML file"
     ),
-    strategy: str = typer.Option(
-        ..., "--strategy", help="Name of the strategy to use from the YAML"
+    strategy: Optional[str] = typer.Option(
+        None,
+        "--strategy",
+        help="Run a single named strategy from the YAML (default: run all strategies)",
+    ),
+    n_workers: int = typer.Option(
+        1,
+        "--n-workers",
+        help=(
+            "Number of strategies to run in parallel. "
+            "GLM per-vertex jobs are set to max(1, 4 // n_workers) automatically."
+        ),
     ),
 ) -> None:
     t0 = time.time()
@@ -1259,8 +1410,10 @@ def main(
         _contrast_defs = yaml.safe_load(_f)
     n_contrasts = len(_contrast_defs)
 
-    # Load confound strategy (once, shared across all sessions)
-    confound_strategy = load_confound_strategy(strategy_yaml, strategy)
+    # Resolve which strategies to run (all by default; one if --strategy is given)
+    with open(strategy_yaml) as _f:
+        all_strategy_names = list(yaml.safe_load(_f)["strategies"].keys())
+    strategy_names = [strategy] if strategy else all_strategy_names
 
     # Load rerun exclusion map (once, shared across all sessions)
     rerun_excl: dict[tuple[str, str, str], set[str]] = {}
@@ -1292,7 +1445,11 @@ def main(
     tbl_launch.add_row("Smoothed", f"Yes (sm={sm})" if use_smoothed else "No")
     tbl_launch.add_row("Mask", mask or "—")
     tbl_launch.add_row("Strategy YAML", strategy_yaml)
-    tbl_launch.add_row("Confound strategy", confound_strategy["name"])
+    tbl_launch.add_row(
+        "Strategies",
+        ", ".join(strategy_names)
+        + (f"  (all {len(all_strategy_names)})" if not strategy else ""),
+    )
     tbl_launch.add_row(
         "Rerun map",
         rerun_map if rerun_map else "[dim]— (no exclusions)[/dim]",
@@ -1308,9 +1465,13 @@ def main(
 
     # Build BIDS layouts ONCE — reused across all sub/ses pairs
     console.print("Creating BIDS layout …")
+    _t = time.time()
     layout = BIDSLayout(bids_dir, validate=False)
+    console.print(f"  [dim]BIDS layout ready in {time.time() - _t:.1f} s[/dim]")
     console.print("Creating fMRIPrep layout …")
+    _t = time.time()
     fp_layout = BIDSLayout(fmriprep_dir, validate=False)
+    console.print(f"  [dim]fMRIPrep layout ready in {time.time() - _t:.1f} s[/dim]")
     console.print("[green]Layouts ready.[/green]  (shared across all sessions)\n")
 
     # ── Loop over sub/ses pairs ───────────────────────────────────────────────
@@ -1325,31 +1486,47 @@ def main(
 
         # ── Power analysis mode ──────────────────────────────────────────────
         if power_analysis:
+            all_run_list = [f"{r:02d}" for r in range(1, total_runs + 1)]
+            console.print("  Prefetching BIDS run metadata for power analysis…")
+            _t_fetch = time.time()
+            run_metadata = _fetch_bids_run_metadata(
+                bids_dir, fmriprep_dir, task, sub, ses, all_run_list, slice_time_ref
+            )
+            console.print(
+                f"  [dim]Metadata prefetched in {time.time() - _t_fetch:.1f} s[/dim]"
+            )
             hemis = ["L", "R"] if is_surface else [None]
-            for hemi in hemis:
-                run_power_analysis(
-                    bids_dir,
-                    fmriprep_dir,
-                    fp_layout,
-                    label_dir,
-                    contrast,
-                    sub,
-                    ses,
-                    analysis_name,
-                    task,
-                    start_scans,
-                    space,
-                    slice_time_ref,
-                    use_smoothed,
-                    sm,
-                    mask,
-                    dry_run,
-                    total_runs,
-                    n_iterations,
-                    seed,
-                    confound_strategy,
-                    hemi,
+            for strategy_name in strategy_names:
+                confound_strategy = load_confound_strategy(strategy_yaml, strategy_name)
+                per_strategy_analysis_name = f"{analysis_name}_{strategy_name}"
+                console.rule(
+                    f"[bold yellow]Strategy: {strategy_name}[/bold yellow]", style="dim"
                 )
+                for hemi in hemis:
+                    run_power_analysis(
+                        bids_dir,
+                        fmriprep_dir,
+                        fp_layout,
+                        label_dir,
+                        contrast,
+                        sub,
+                        ses,
+                        per_strategy_analysis_name,
+                        task,
+                        start_scans,
+                        space,
+                        slice_time_ref,
+                        use_smoothed,
+                        sm,
+                        mask,
+                        dry_run,
+                        total_runs,
+                        n_iterations,
+                        seed,
+                        confound_strategy,
+                        run_metadata,
+                        hemi,
+                    )
             session_times[(sub, ses)] = time.time() - t_ses
             continue
 
@@ -1363,12 +1540,61 @@ def main(
             selected_runs_list,
             excl_runs or None,
         )
-        timing_per_hemi: dict[str, dict[str, float]] = {}
 
-        if is_surface:
-            for hemi in ["L", "R"]:
-                console.rule(f"[bold]Hemisphere {hemi}[/bold]", style="dim")
-                timing = process_run_list(
+        # Prefetch events/confounds/TR once — shared across ALL strategies and hemispheres
+        console.print("  Prefetching BIDS run metadata (once for all strategies)…")
+        _t_fetch = time.time()
+        run_metadata = _fetch_bids_run_metadata(
+            bids_dir, fmriprep_dir, task, sub, ses, run_list, slice_time_ref
+        )
+        console.print(
+            f"  [dim]Metadata prefetched in {time.time() - _t_fetch:.1f} s[/dim]"
+        )
+
+        # n_glm_jobs: split the vertex-level parallelism budget across concurrent strategies
+        n_glm_jobs = max(1, 4 // n_workers)
+
+        def _run_one_strategy(strategy_name: str):
+            """Run the full GLM pipeline for one strategy. Safe to call from a thread."""
+            _t = time.time()
+            cs = load_confound_strategy(strategy_yaml, strategy_name)
+            per_name = f"{analysis_name}_{strategy_name}"
+            console.rule(
+                f"[bold yellow]Strategy: {strategy_name}[/bold yellow]  "
+                f"→  analysis-{per_name}",
+                style="dim",
+            )
+            t_per_hemi: dict[str, dict[str, float]] = {}
+            if is_surface:
+                for hemi in ["L", "R"]:
+                    console.rule(f"[bold]Hemisphere {hemi}[/bold]", style="dim")
+                    t_per_hemi[f"hemi-{hemi}"] = process_run_list(
+                        bids_dir,
+                        fmriprep_dir,
+                        fp_layout,
+                        label_dir,
+                        contrast,
+                        sub,
+                        ses,
+                        per_name,
+                        task,
+                        start_scans,
+                        space,
+                        slice_time_ref,
+                        run_list,
+                        use_smoothed,
+                        sm,
+                        mask,
+                        dry_run,
+                        cs,
+                        run_metadata,
+                        randrun_idx,
+                        hemi,
+                        n_glm_jobs,
+                    )
+            else:
+                console.rule("[bold]Volumetric[/bold]", style="dim")
+                t_per_hemi["volumetric"] = process_run_list(
                     bids_dir,
                     fmriprep_dir,
                     fp_layout,
@@ -1376,7 +1602,7 @@ def main(
                     contrast,
                     sub,
                     ses,
-                    analysis_name,
+                    per_name,
                     task,
                     start_scans,
                     space,
@@ -1386,48 +1612,54 @@ def main(
                     sm,
                     mask,
                     dry_run,
-                    confound_strategy,
+                    cs,
+                    run_metadata,
                     randrun_idx,
-                    hemi,
+                    hemi=None,
+                    n_glm_jobs=n_glm_jobs,
                 )
-                timing_per_hemi[f"hemi-{hemi}"] = timing
-        else:
-            console.rule("[bold]Volumetric[/bold]", style="dim")
-            timing = process_run_list(
-                bids_dir,
-                fmriprep_dir,
-                fp_layout,
-                label_dir,
-                contrast,
-                sub,
-                ses,
-                analysis_name,
-                task,
-                start_scans,
-                space,
-                slice_time_ref,
-                run_list,
-                use_smoothed,
-                sm,
-                mask,
-                dry_run,
-                confound_strategy,
-                randrun_idx,
-                hemi=None,
+            return strategy_name, t_per_hemi, time.time() - _t
+
+        if n_workers > 1:
+            from concurrent.futures import ThreadPoolExecutor, as_completed
+
+            console.print(
+                f"  [dim]Running {len(strategy_names)} strategies in parallel "
+                f"(n_workers={n_workers}, n_glm_jobs={n_glm_jobs})[/dim]"
             )
-            timing_per_hemi["volumetric"] = timing
+            results: dict[str, tuple] = {}
+            with ThreadPoolExecutor(max_workers=n_workers) as pool:
+                futs = {pool.submit(_run_one_strategy, sn): sn for sn in strategy_names}
+                for fut in as_completed(futs):
+                    sn, tph, elapsed = fut.result()
+                    results[sn] = (tph, elapsed)
+            # Print timing tables in original order after all threads finish
+            for sn in strategy_names:
+                tph, elapsed = results[sn]
+                console.rule(
+                    f"[cyan]Strategy: {sn} — Contrast Timing[/cyan]", style="dim"
+                )
+                if any(v for v in tph.values()):
+                    _print_timing_table(tph, elapsed)
+                else:
+                    console.print(
+                        f"  [dim]Dry-run — no outputs written.[/dim]  ({elapsed:.1f} s)"
+                    )
+        else:
+            for sn in strategy_names:
+                _, tph, elapsed = _run_one_strategy(sn)
+                console.rule(
+                    f"[cyan]Strategy: {sn} — Contrast Timing[/cyan]", style="dim"
+                )
+                if any(v for v in tph.values()):
+                    _print_timing_table(tph, elapsed)
+                else:
+                    console.print(
+                        f"  [dim]Dry-run — no outputs written.[/dim]  ({elapsed:.1f} s)"
+                    )
 
         ses_elapsed = time.time() - t_ses
         session_times[(sub, ses)] = ses_elapsed
-
-        # Per-session contrast timing table
-        console.rule(f"[cyan]sub-{sub} ses-{ses} — Contrast Timing[/cyan]", style="dim")
-        if any(v for v in timing_per_hemi.values()):
-            _print_timing_table(timing_per_hemi, ses_elapsed)
-        else:
-            console.print(
-                f"  [dim]Dry-run — no outputs written.[/dim]  ({ses_elapsed:.1f} s)"
-            )
 
     # ── Final summary across all sessions ────────────────────────────────────
     console.rule("[bold cyan]Run Summary[/bold cyan]")

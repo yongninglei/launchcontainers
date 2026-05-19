@@ -1,75 +1,32 @@
 strategies:
+
+  # ── Custom yaml-backed strategies ──────────────────────────────────────────
+  # Confound columns are resolved manually from fMRIPrep output using the
+  # column_groups and regex_groups tables below.
   basic:
-    # high_pass are taking the fMRIprep output cosine
+    backend: yaml
     high_pass: true
     motion: basic
     wm_csf: none
     global_signal: none
     scrub: false
-    compcor: true
+    compcor: anat_combined
+    n_compcor: all
     demean: false
 
   basic_scrub:
-    # high_pass are taking the fMRIprep output cosine
+    backend: yaml
     high_pass: true
     motion: basic
     wm_csf: none
     global_signal: none
     scrub: true
-    compcor: true
+    compcor: anat_combined
+    n_compcor: all
     demean: false
 
   basic_full_MC:
-    # high_pass are taking the fMRIprep output cosine
-    high_pass: true
-    motion: full
-    wm_csf: none
-    global_signal: none
-    scrub: false
-    compcor: true
-    demean: false
-
-  basic_full_MC_scrub:
-    # high_pass are taking the fMRIprep output cosine
-    high_pass: true
-    motion: full
-    wm_csf: none
-    global_signal: none
-    scrub: true
-    compcor: true
-    demean: false
-
-  basic_full_MC_demean:
-    # high_pass are taking the fMRIprep output cosine
-    high_pass: true
-    motion: full
-    wm_csf: none
-    global_signal: none
-    scrub: false
-    compcor: true
-    demean: true
-
-  simple:
-    high_pass: true
-    motion: full
-    wm_csf: basic
-    global_signal: none
-    scrub: false
-    compcor: none
-    demean: true
-
-  scrubbing:
-    high_pass: true
-    motion: full
-    wm_csf: full
-    global_signal: none
-    scrub: true
-    fd_threshold: 0.3
-    std_dvars_threshold: 3.0
-    scrub_regressor_prefix: motion_outlier
-    demean: true
-
-  compcor:
+    backend: yaml
     high_pass: true
     motion: full
     wm_csf: none
@@ -77,7 +34,67 @@ strategies:
     scrub: false
     compcor: anat_combined
     n_compcor: all
-    demean: true
+    demean: false
+
+  basic_full_MC_scrub:
+    backend: yaml
+    high_pass: true
+    motion: full
+    wm_csf: none
+    global_signal: none
+    scrub: true
+    compcor: anat_combined
+    n_compcor: all
+    demean: false
+
+  # ── nilearn built-in strategies ────────────────────────────────────────────
+  # Confounds are loaded via nilearn.interfaces.fmriprep.load_confounds_strategy.
+  # For scrubbing, nilearn returns a sample_mask; those volumes are removed from
+  # the data and frame_times before fitting the GLM (true volume censoring).
+
+  simple:
+    # motion=full (24 params) + WM/CSF basic + cosine high-pass + demean
+    backend: nilearn
+    nilearn_strategy: simple
+
+  scrubbing:
+    # FD/DVARS censoring + motion=full + WM/CSF full + cosine high-pass + demean
+    backend: nilearn
+    nilearn_strategy: scrubbing
+    fd_threshold: 0.5
+    std_dvars_threshold: 1.5
+    scrub: 3  # number of neighbour volumes to also censor around each bad TR
+
+  compcor:
+    # aCompCor (all components) + motion=full + cosine high-pass + demean
+    backend: nilearn
+    nilearn_strategy: compcor
+    n_compcor: all
+
+  scrubbing_basic_compcor:
+    # FD/DVARS volume censoring (±scrub neighbours) + aCompCor + motion=full
+    # + cosine high-pass + demean.  No WM/CSF signals.
+    backend: nilearn
+    strategy: [motion, high_pass, compcor, scrub]
+    motion: basic
+    compcor: anat_combined
+    n_compcor: all
+    fd_threshold: 0.5
+    std_dvars_threshold: 1.5
+    scrub: 3
+
+  scrubbing_full_compcor:
+    # FD/DVARS volume censoring (±scrub neighbours) + aCompCor + motion=full
+    # + cosine high-pass + demean.  No WM/CSF signals.
+    backend: nilearn
+    strategy: [motion, high_pass, compcor, scrub]
+    motion: full
+    compcor: anat_combined
+    n_compcor: all
+    fd_threshold: 0.5
+    std_dvars_threshold: 1.5
+    scrub: 3
+
 
 column_groups:
   motion_basic:
