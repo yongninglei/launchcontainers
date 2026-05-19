@@ -168,7 +168,7 @@ def infotodict(seqinfo):
             if (
                 (s.dim1 == 120) and (s.dim3 == 68) and (s.series_files == 1)
             ):  # and (s.TR==14.956):
-                if "AP" in s.protocol_name:
+                if "AP" in s.protocol_name or "MultiE" in s.protocol_name:
                     info[fmap_ME_AP].append(s.series_id)
                 if "PA" in s.protocol_name:
                     info[fmap_ME_PA].append(s.series_id)

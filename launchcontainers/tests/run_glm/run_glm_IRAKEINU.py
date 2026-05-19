@@ -92,6 +92,84 @@ def save_statmap_to_gifti(data, outname):
     nib.save(gii, outname)
 
 
+def save_timeseries_to_gifti(data: np.ndarray, outname: str) -> None:
+    """
+    Save a (n_vertices, n_frames) array as a multi-frame GIFTI.
+
+    Used for residuals and fitted timeseries (frame = timepoint) and for
+    per-regressor beta maps (frame = regressor column).
+    """
+    gii = nib.gifti.gifti.GiftiImage()
+    intent = nib.nifti1.intent_codes["NIFTI_INTENT_TIME_SERIES"]
+    for i in range(data.shape[1]):
+        gii.add_gifti_data_array(
+            nib.gifti.gifti.GiftiDataArray(
+                data=data[:, i].astype(np.float32),
+                intent=intent,
+                datatype="NIFTI_TYPE_FLOAT32",
+            )
+        )
+    nib.save(gii, outname)
+    console.print(f"  [dim]  → {op.basename(outname)}[/dim]")
+
+
+def _reconstruct_vertex_array(
+    n_tp: int, n_vtx: int,
+    labels: np.ndarray, estimates: dict, attr: str,
+) -> np.ndarray:
+    """
+    Rebuild a (n_vertices, n_timepoints) array from nilearn run_glm output.
+
+    ``attr`` is "resid" (ε = y − Ŷ) or "predicted" (Ŷ = Xθ).
+    result.resid / result.predicted have shape (n_timepoints, n_verts_for_label).
+    """
+    out = np.zeros((n_vtx, n_tp), dtype=np.float32)
+    for label, result in estimates.items():
+        mask = labels == label
+        out[mask, :] = getattr(result, attr).T.astype(np.float32)
+    return out
+
+
+def _reconstruct_betas(
+    n_reg: int, n_vtx: int,
+    labels: np.ndarray, estimates: dict,
+) -> np.ndarray:
+    """
+    Rebuild a (n_vertices, n_regressors) beta array from nilearn run_glm output.
+
+    result.theta has shape (n_regressors, n_verts_for_label).
+    Frame order matches columns of the design matrix.
+    """
+    out = np.zeros((n_vtx, n_reg), dtype=np.float32)
+    for label, result in estimates.items():
+        mask = labels == label
+        out[mask, :] = result.theta.T.astype(np.float32)
+    return out
+
+
+def save_array_as_dataframe(
+    data: np.ndarray,
+    outname: str,
+    row_labels=None,
+    col_labels=None,
+) -> None:
+    """
+    Save a 2-D array as a tab-separated DataFrame.
+
+    Timeseries (residuals / fitted): shape (n_timepoints, n_vertices),
+    rows = timepoints, columns = vertex indices.  Saved as .tsv.gz.
+
+    Betas: shape (n_vertices, n_regressors), rows = vertices,
+    columns = regressor names.  Saved as plain .tsv.
+
+    The gzip extension is detected from ``outname`` automatically.
+    """
+    df = pd.DataFrame(data, index=row_labels, columns=col_labels)
+    kw = {"sep": "\t", "compression": "gzip"} if outname.endswith(".gz") else {"sep": "\t"}
+    df.to_csv(outname, **kw)
+    console.print(f"  [dim]  → {op.basename(outname)}[/dim]")
+
+
 def load_contrasts(yaml_file, design_matrix):
     """
     Load contrast definitions from a YAML file and convert to contrast vectors.
@@ -191,6 +269,10 @@ def glm_l1(
     plot_design_matrix_to_file(design_matrix_std, outdir, subject, session, task)
     plot_contrast_matrices(contrasts, design_matrix_std, outdir, subject, session, task)
 
+    dm_csv = op.join(outdir, f"design_matrix_{task}.csv")
+    design_matrix_std.to_csv(dm_csv)
+    console.print(f"  [dim]Design matrix CSV → {op.basename(dm_csv)}[/dim]")
+
     Y = np.transpose(conc_data_std)
     X = np.asarray(design_matrix_std)
 
@@ -204,6 +286,52 @@ def glm_l1(
     )
 
     labels, estimates = run_glm(Y, X, n_jobs=-1)
+
+    # ── Save GLM components ────────────────────────────────────────────────────
+    # Y = Xθ + ε   (fitted = Xθ,  residuals = ε,  betas = θ per regressor)
+    # All saved as multi-frame GIFTI: residuals/fitted have one frame per
+    # timepoint; betas have one frame per design-matrix column (see
+    # desc-betas_regressornames.txt for the column order).
+    if hemi:
+        n_tp, n_vtx = Y.shape
+        resid  = _reconstruct_vertex_array(n_tp, n_vtx, labels, estimates, "resid")
+        fitted = _reconstruct_vertex_array(n_tp, n_vtx, labels, estimates, "predicted")
+        betas  = _reconstruct_betas(X.shape[1], n_vtx, labels, estimates)
+
+        def _component_name(desc: str) -> str:
+            base = (
+                f"sub-{subject}_ses-{session}_task-{task}"
+                f"_hemi-{hemi}_space-{space}_desc-{desc}_timeseries.func.gii"
+            )
+            if use_smoothed:
+                base = base.replace(f"_desc-{desc}", f"_desc-{desc}sm{sm}")
+            if randrun_idx:
+                base = base.replace("_timeseries", f"{randrun_idx}_timeseries")
+            return op.join(outdir, base)
+
+        console.print("  [dim]Saving GLM components (residuals / fitted / betas)…[/dim]")
+
+        # residuals — GIFTI + DataFrame (rows=timepoints, cols=vertex index)
+        save_timeseries_to_gifti(resid, _component_name("residuals"))
+        save_array_as_dataframe(
+            resid.T,
+            _component_name("residuals").replace(".func.gii", ".tsv.gz"),
+        )
+
+        # fitted values — GIFTI + DataFrame (rows=timepoints, cols=vertex index)
+        save_timeseries_to_gifti(fitted, _component_name("fitted"))
+        save_array_as_dataframe(
+            fitted.T,
+            _component_name("fitted").replace(".func.gii", ".tsv.gz"),
+        )
+
+        # per-regressor betas — GIFTI + DataFrame (rows=vertex, cols=regressor name)
+        save_timeseries_to_gifti(betas, _component_name("betas"))
+        save_array_as_dataframe(
+            betas,
+            _component_name("betas").replace(".func.gii", ".tsv"),
+            col_labels=design_matrix_std.columns.tolist(),
+        )
 
     timing: dict[str, float] = {}
 

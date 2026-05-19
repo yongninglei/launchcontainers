@@ -108,6 +108,74 @@ Effect on execute:
 Display: the acq-time table appends `(ME×N)` to the name column so you can
 see at a glance which entries are multi-echo.
 
+### Phase 1 step 3 — `02_prepare_fmap_intendedfor.py` (acq- and ME-aware)
+
+This script populates `IntendedFor` in each fmap JSON sidecar.  It has been
+updated to handle sessions that mix SE and ME acquisitions.
+
+#### Why acq-aware grouping is required
+
+A session with both SE and ME func runs typically has two sets of fmaps:
+
+```
+fmap/  acq-SE_dir-AP_run-01_epi  ←  covers  acq-SE bold runs
+       acq-SE_dir-PA_run-01_epi
+       acq-ME_dir-AP_run-01_epi  ←  covers  acq-ME magnitude runs
+       acq-ME_dir-PA_run-01_epi
+```
+
+Without grouping, the time-window logic would assign SE funcs to the ME fmap
+(or vice-versa) whenever their acquisition times happen to fall inside the
+wrong window.
+
+#### ME magnitude files in IntendedFor
+
+`_read_func_files` previously matched only `_(bold|sbref)\.json$`.  The
+regex is now `_(bold|sbref|magnitude)\.json$`, so all echo-specific magnitude
+files appear in `IntendedFor`:
+
+```
+ses-01/func/sub-01_ses-01_task-..._acq-ME_run-01_echo-1_magnitude.nii.gz
+ses-01/func/sub-01_ses-01_task-..._acq-ME_run-01_echo-2_magnitude.nii.gz
+ses-01/func/sub-01_ses-01_task-..._acq-ME_run-01_echo-3_magnitude.nii.gz
+```
+
+Each echo is a separate NIfTI and must appear individually in the list.
+
+#### acq- grouping logic
+
+Both `_read_func_files` and `_read_fmap_files` now extract the `acq-` entity
+and store it as `entry["acq"]`.  `process_session` then groups files by this
+field and runs the full assign → prune → renumber pipeline independently for
+each group:
+
+```
+acq-SE group:  SE fmaps  ↔  SE bold + SE sbref files
+acq-ME group:  ME fmaps  ↔  ME magnitude + ME sbref files
+""   group:    unlabelled fmaps  ↔  unlabelled bold (legacy sessions)
+```
+
+Within each group the existing time-window logic is unchanged.
+
+#### FOV fingerprint fallback
+
+When a func group has no dedicated fmap with a matching `acq-` label,
+`(n_slices, recon_matrix_pe)` is read from the JSON sidecar
+(`SliceTiming` length + `ReconMatrixPE`).  A fmap with an identical FOV
+fingerprint and no other matching func group is assigned as fallback.  A
+`⚠ FOV FALLBACK` warning is printed when this path is taken.
+
+#### Per-acq fmap renumbering
+
+`_plan_renumber` now renumbers fmaps independently per `acq` group.
+Previously all fmaps in the session shared one counter, which caused ME fmaps
+to be incorrectly renumbered when SE fmaps were dropped:
+
+| before (wrong) | after (correct) |
+|----------------|-----------------|
+| SE run-01 → keep as run-01 | SE run-01 → keep as run-01 |
+| ME run-01 → rename to run-02 | ME run-01 → keep as run-01 |
+
 ---
 
 ## Phase 1 — BIDS preparation

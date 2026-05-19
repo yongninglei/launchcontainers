@@ -96,6 +96,28 @@ def _vprint(msg: str, level: int = 1) -> None:
         console.print(msg)
 
 
+def _read_fov(json_path: str) -> tuple[int | None, int | None]:
+    """
+    FOV fingerprint: (n_slices, recon_matrix_pe) from sidecar JSON.
+
+    Used as a fallback when func or fmap files carry no ``acq-`` entity:
+    files with matching (n_slices, matrix_pe) are assumed to share the same
+    geometry and therefore belong to the same fmap→func group.
+    """
+    try:
+        with open(json_path) as fh:
+            data = json.load(fh)
+        st = data.get("SliceTiming")
+        n_slices = len(st) if isinstance(st, list) else data.get("NumberOfSlices")
+        matrix_pe = data.get("ReconMatrixPE") or data.get("AcquisitionMatrixPESteps")
+        return (
+            int(n_slices) if n_slices is not None else None,
+            int(matrix_pe) if matrix_pe is not None else None,
+        )
+    except Exception:
+        return (None, None)
+
+
 # ---------------------------------------------------------------------------
 # Core: read func and fmap files
 # ---------------------------------------------------------------------------
@@ -103,7 +125,12 @@ def _vprint(msg: str, level: int = 1) -> None:
 
 def _read_func_files(bidsdir: str, sub: str, ses: str) -> list[dict]:
     """
-    Return one entry per func JSON sidecar (bold + sbref), sorted by AcquisitionTime.
+    Return one entry per func JSON sidecar, sorted by AcquisitionTime.
+
+    Covers bold, sbref, and ME magnitude files.  Each entry carries:
+      acq   — acq-* entity string (empty string if absent)
+      echo  — echo-* entity string (empty string if absent)
+      fov   — (n_slices, matrix_pe) fingerprint for fallback FOV matching
     """
     func_dir = op.join(bidsdir, f"sub-{sub}", f"ses-{ses}", "func")
     if not op.isdir(func_dir):
@@ -114,15 +141,20 @@ def _read_func_files(bidsdir: str, sub: str, ses: str) -> list[dict]:
         glob.glob(op.join(func_dir, f"sub-{sub}_ses-{ses}_task-*_run-*_*.json"))
     ):
         basename = op.basename(jf)
-        m = re.search(r"_(bold|sbref)\.json$", basename)
+        m = re.search(r"_(bold|sbref|magnitude)\.json$", basename)
         if not m:
             continue
+        acq_m  = re.search(r"_acq-(\w+)_", basename)
+        echo_m = re.search(r"_echo-(\w+)_", basename)
         nii_name = basename.replace(".json", ".nii.gz")
         acq_time = parse_hms(read_json_acqtime(jf))
         rows.append(
             {
                 "basename": basename,
                 "suffix": m.group(1),
+                "acq":  acq_m.group(1)  if acq_m  else "",
+                "echo": echo_m.group(1) if echo_m else "",
+                "fov":  _read_fov(jf),
                 "acq_time": acq_time,
                 "acq_sec": hms_to_sec(acq_time),
                 "intended_for_path": f"ses-{ses}/func/{nii_name}",
@@ -135,22 +167,32 @@ def _read_func_files(bidsdir: str, sub: str, ses: str) -> list[dict]:
 
 def _read_fmap_files(bidsdir: str, sub: str, ses: str) -> list[dict]:
     """
-    Return fmap entries grouped by run number, sorted by AcquisitionTime.
-    Tolerates optional acq-* entity in filename.
+    Return fmap entries grouped by (acq, run), sorted by AcquisitionTime.
+
+    AP and PA directions for the same (acq, run) are kept in one entry's
+    ``json_paths`` list so that IntendedFor is written to both at once.
+    Each entry carries:
+      acq  — acq-* entity string (empty if absent)
+      fov  — (n_slices, matrix_pe) fingerprint for fallback FOV matching
     """
     fmap_dir = op.join(bidsdir, f"sub-{sub}", f"ses-{ses}", "fmap")
     if not op.isdir(fmap_dir):
         return []
 
-    by_run: dict[str, list[str]] = {}
+    # Key: (acq_label, run_int) → [json_paths]  (AP + PA in same entry)
+    by_run: dict[tuple[str, int], list[str]] = {}
     for jf in sorted(glob.glob(op.join(fmap_dir, f"sub-{sub}_ses-{ses}_*_epi.json"))):
-        m = re.search(r"_run-(\d+)_epi\.json$", op.basename(jf))
-        if not m:
+        basename = op.basename(jf)
+        run_m = re.search(r"_run-(\d+)_epi\.json$", basename)
+        if not run_m:
             continue
-        by_run.setdefault(str(int(m.group(1))), []).append(jf)  # 1-digit fmap run IDs
+        acq_m = re.search(r"_acq-(\w+)_", basename)
+        acq   = acq_m.group(1) if acq_m else ""
+        key   = (acq, int(run_m.group(1)))
+        by_run.setdefault(key, []).append(jf)
 
     rows = []
-    for run, json_paths in by_run.items():
+    for (acq, run_int), json_paths in by_run.items():
         acq_time = ""
         for jf in json_paths:
             raw = read_json_acqtime(jf)
@@ -159,9 +201,11 @@ def _read_fmap_files(bidsdir: str, sub: str, ses: str) -> list[dict]:
                 break
         rows.append(
             {
-                "run": run,
-                "acq_time": acq_time,
-                "acq_sec": hms_to_sec(acq_time),
+                "run":        str(run_int),
+                "acq":        acq,
+                "fov":        _read_fov(json_paths[0]),
+                "acq_time":   acq_time,
+                "acq_sec":    hms_to_sec(acq_time),
                 "json_paths": json_paths,
             }
         )
@@ -442,18 +486,28 @@ def _fmap_all_paths(fm: dict) -> list[tuple[str, str]]:
 
 
 def _plan_renumber(kept_runs: list[dict]) -> list[tuple[str, str]]:
+    """
+    Renumber fmap runs sequentially per acq group.
+
+    acq-SE and acq-ME sequences are renumbered independently so that
+    acq-SE run-01,02 and acq-ME run-01,02 each start from 1.
+    """
     ops: list[tuple[str, str]] = []
-    for new_idx, fm in enumerate(kept_runs, start=1):
-        new_run = str(new_idx)
-        for jf, nii in _fmap_all_paths(fm):
-            jf_new = re.sub(r"_run-\d+_epi\.json$", f"_run-{new_run}_epi.json", jf)
-            nii_new = re.sub(
-                r"_run-\d+_epi\.nii\.gz$", f"_run-{new_run}_epi.nii.gz", nii
-            )
-            if jf != jf_new:
-                ops.append((jf, jf_new))
-            if nii != nii_new:
-                ops.append((nii, nii_new))
+    by_acq: dict[str, list[dict]] = {}
+    for fm in kept_runs:
+        by_acq.setdefault(fm.get("acq", ""), []).append(fm)
+
+    for acq_fmaps in by_acq.values():
+        acq_fmaps.sort(key=lambda r: r["acq_sec"])
+        for new_idx, fm in enumerate(acq_fmaps, start=1):
+            new_run = str(new_idx)
+            for jf, nii in _fmap_all_paths(fm):
+                jf_new  = re.sub(r"_run-\d+_epi\.json$",   f"_run-{new_run}_epi.json",   jf)
+                nii_new = re.sub(r"_run-\d+_epi\.nii\.gz$", f"_run-{new_run}_epi.nii.gz", nii)
+                if jf != jf_new:
+                    ops.append((jf, jf_new))
+                if nii != nii_new:
+                    ops.append((nii, nii_new))
     return ops
 
 
@@ -485,12 +539,13 @@ def _print_timeline_table(
                 if re.search(r"dir-(\w+)", op.basename(p))
             )
         )
+        acq_tag = f"acq-{fm['acq']}  " if fm.get("acq") else ""
         rows.append(
             {
                 "acq_sec": fm["acq_sec"],
                 "acq_time": fm["acq_time"],
                 "type": "fmap",
-                "label": f"run-{fm['run']}  ({'+'.join(dirs)})",
+                "label": f"{acq_tag}run-{fm['run']}  ({'+'.join(dirs)})",
             }
         )
     for f in func_files:
@@ -549,6 +604,7 @@ def _print_plan_table(
         box=None,
         title=f"sub-{sub}  ses-{ses}  fmap plan",
     )
+    t.add_column("acq", style="cyan")
     t.add_column("old_run", style="dim")
     t.add_column("new_run")
     t.add_column("action", justify="center")
@@ -556,7 +612,8 @@ def _print_plan_table(
     t.add_column("IntendedFor", justify="center")
 
     for fm in fmap_runs:
-        old_run = fm["run"]
+        old_run   = fm["run"]
+        acq_cell  = fm.get("acq") or "—"
         if id(fm) in kept_new_ids:
             new_run = kept_new_ids[id(fm)]
             action = (
@@ -575,10 +632,11 @@ def _print_plan_table(
             )
         else:
             new_run = "—"
-            action = "[red]delete (no func)[/]"
-            n_func = "0"
+            action  = "[red]delete (no func)[/]"
+            n_func  = "0"
             if_cell = "[dim]n/a[/]"
         t.add_row(
+            acq_cell,
             f"run-{old_run}",
             f"run-{new_run}" if new_run != "—" else "—",
             action,
@@ -694,61 +752,102 @@ def process_session(
 
     all_warnings: list[str] = []
 
-    # --- 1. Session gap check (> 45 min between any two consecutive scans) ---
-    gap_warns = _check_session_gap(func_files, fmap_runs)
-    if gap_warns:
-        all_warnings.extend(gap_warns)
-
-    # --- 2. Lab-note fmap count vs BIDS fmap count ---
+    # --- Lab-note fmap count check (total, acq-agnostic) ---
     if ln_fmap_counts is not None:
         expected = ln_fmap_counts.get((sub, ses))
         if expected is not None and expected != len(fmap_runs):
-            w = (
+            all_warnings.append(
                 f"  [yellow]⚠ FMAP COUNT[/]  sub-{sub} ses-{ses}  "
                 f"labnote={expected}  bids={len(fmap_runs)}"
             )
-            all_warnings.append(w)
 
-    # --- 3. debug: per-fmap timing detail ---
-    _vprint(f"\n  [bold cyan]sub-{sub}  ses-{ses}[/]  timing check", level=2)
-    _check_fmap_timing(func_files, fmap_runs)
+    # --- Group func and fmap files by acq entity ---
+    # acq-SE funcs go with acq-SE fmaps; acq-ME funcs go with acq-ME fmaps.
+    # Files with no acq- entity form their own "" group (legacy behaviour).
+    # When no fmap exists for a func's acq group, FOV fingerprint is tried as
+    # a fallback so sessions without explicit acq labels still work.
+    acq_func: dict[str, list[dict]] = {}
+    acq_fmap: dict[str, list[dict]] = {}
+    for f in func_files:
+        acq_func.setdefault(f.get("acq", ""), []).append(f)
+    for fm in fmap_runs:
+        acq_fmap.setdefault(fm.get("acq", ""), []).append(fm)
 
-    # --- 4. Check first-func coverage (ERROR if first func outside lookback window) ---
-    first_func_issues = _check_first_func_coverage(fmap_runs, func_files, lookback_sec)
-    has_coverage_error = any(
-        "NO FMAP BEFORE FIRST FUNC" in w for w in first_func_issues
-    )
-    if first_func_issues:
+    kept_runs:    list[dict] = []
+    removed_runs: list[dict] = []
+
+    for acq in sorted(set(acq_func) | set(acq_fmap)):
+        g_funcs = sorted(acq_func.get(acq, []), key=lambda r: r["acq_sec"])
+        g_fmaps = sorted(acq_fmap.get(acq, []), key=lambda r: r["acq_sec"])
+        acq_label = f"acq-{acq}" if acq else "no-acq"
+
+        # FOV fallback: func group has no dedicated fmap → match by geometry
+        if not g_fmaps and g_funcs:
+            fov_ref = g_funcs[0].get("fov")
+            if fov_ref and fov_ref != (None, None):
+                candidates = [
+                    fm for fm in fmap_runs
+                    if fm.get("fov") == fov_ref and fm.get("acq") not in acq_func
+                ]
+                if candidates:
+                    g_fmaps = sorted(candidates, key=lambda r: r["acq_sec"])
+                    all_warnings.append(
+                        f"  [yellow]⚠ FOV FALLBACK[/]  {acq_label}: no dedicated fmap; "
+                        f"matched {len(g_fmaps)} fmap(s) by FOV {fov_ref}"
+                    )
+
+        if not g_fmaps:
+            if g_funcs:
+                all_warnings.append(
+                    f"  [red]✗ NO FMAP[/]  {acq_label}: "
+                    f"{len(g_funcs)} func(s) with no matching fmap"
+                )
+            continue
+
+        # debug: per-fmap timing for this acq group
+        _vprint(
+            f"\n  [bold cyan]sub-{sub}  ses-{ses}[/]  [{acq_label}]  timing check",
+            level=2,
+        )
+        _check_fmap_timing(g_funcs, g_fmaps)
+
+        # session gap check
+        gap_warns = _check_session_gap(g_funcs, g_fmaps)
+        all_warnings.extend(gap_warns)
+
+        # first-func coverage check
+        first_func_issues = _check_first_func_coverage(g_fmaps, g_funcs, lookback_sec)
+        has_coverage_error = any(
+            "NO FMAP BEFORE FIRST FUNC" in w for w in first_func_issues
+        )
         all_warnings.extend(first_func_issues)
         if has_coverage_error and not dry_run:
             _vprint(
-                f"  [bold red]BLOCKED[/]  sub-{sub} ses-{ses}: "
+                f"  [bold red]BLOCKED[/]  {acq_label}: "
                 f"cannot write IntendedFor — no fmap before first func.",
                 level=0,
             )
-            return {
-                "sub": sub,
-                "ses": ses,
-                "n_fmaps_orig": len(fmap_runs),
-                "n_removed": 0,
-                "n_written": 0,
-                "intendedfor_status": "ERROR",
-                "warnings": all_warnings,
-            }
+            continue  # skip this acq group; others may still succeed
 
-    # --- 5. Assign IntendedFor windows, then prune ---
-    fmap_runs = _assign_intendedfor(func_files, fmap_runs, lookback_sec)
-    kept_runs, removed_runs = _prune_fmaps(fmap_runs)
-    kept_runs, removed_runs = _prune_session_gap_fmaps(kept_runs, removed_runs)
+        # assign IntendedFor windows, then prune
+        g_fmaps = _assign_intendedfor(g_funcs, g_fmaps, lookback_sec)
+        kept, removed = _prune_fmaps(g_fmaps)
+        kept, removed = _prune_session_gap_fmaps(kept, removed)
 
-    # --- 6. Warn if any kept fmap → func gap > 3 min ---
-    gap_func_warns = _warn_fmap_func_gap(kept_runs, func_files)
-    if gap_func_warns:
+        # fmap→func gap warning
+        gap_func_warns = _warn_fmap_func_gap(kept, g_funcs)
         all_warnings.extend(gap_func_warns)
+
+        kept_runs.extend(kept)
+        removed_runs.extend(removed)
+
+    # merge across acq groups, restore time order
+    kept_runs.sort(key=lambda r: r["acq_sec"])
+    removed_runs.sort(key=lambda r: r["acq_sec"])
 
     session_status, per_json_status = _check_existing_intendedfor(kept_runs)
     func_coverage_issues = _check_func_coverage(kept_runs, func_files)
-    if has_coverage_error or func_coverage_issues:
+    if func_coverage_issues:
         session_status = "ERROR"
     rename_ops = _plan_renumber(kept_runs)
 
@@ -838,7 +937,7 @@ def process_session(
                 except Exception as exc:
                     _vprint(f"    [red]ERROR[/] {op.basename(jf)}: {exc}", level=0)
 
-    # --- 7. Report uncovered func runs ---
+    # --- Report uncovered func runs ---
     if func_coverage_issues:
         all_warnings.extend(func_coverage_issues)
 
