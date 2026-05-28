@@ -12,8 +12,17 @@ strategies:
   #   global_signal  : none | basic (GS) | full (+ derivatives + quadratics) (this is controversial mentioned in paper Wang et al 2024 PloS Comp Biol)
   #   compcor        : anat_combined → all retained ^a_comp_cor_ columns from fMRIPrep
   #   high_pass      : cosine DCT regressors from fMRIPrep (drift removal) (We take it from fMRIprep not the nilearn built-in)
-  #   demean         : non-steady-state outlier regressors
-
+  #   include_non_steady_state : non-steady-state outlier regressors from fMRIPrep
+  ME:
+    backend: yaml
+    high_pass: true
+    motion: basic
+    wm_csf: true
+    global_signal: none
+    model_spiking: false
+    compcor: none
+    n_compcor: none
+    include_non_steady_state: false
   basic_MC:
     # motion(basic) + aCompCor + cosine high-pass
     # minimal model: 6 motion params, tissue noise via compcor, no WM/CSF, no spiking
@@ -25,7 +34,7 @@ strategies:
     model_spiking: false
     compcor: anat_combined
     n_compcor: all
-    demean: false
+    include_non_steady_state: false
 
   basic_MC_no_acompcor_wm_csf:
     # motion(basic) + WM/CSF(basic) + aCompCor + cosine high-pass
@@ -38,7 +47,7 @@ strategies:
     model_spiking: false
     compcor: none
     n_compcor: all
-    demean: false
+    include_non_steady_state: false
 
   basic_MC_no_acompcor_gs:
     # motion(basic) + global signal + aCompCor + cosine high-pass
@@ -51,7 +60,7 @@ strategies:
     model_spiking: false
     compcor: none
     n_compcor: all
-    demean: false
+    include_non_steady_state: false
 
   MC_spiking:
     # motion(basic) + aCompCor + cosine high-pass + spike regressors
@@ -64,7 +73,7 @@ strategies:
     model_spiking: true
     compcor: anat_combined
     n_compcor: all
-    demean: false
+    include_non_steady_state: false
 
   full_MC:
     # motion(full=24 params) + aCompCor + cosine high-pass
@@ -77,7 +86,7 @@ strategies:
     model_spiking: false
     compcor: anat_combined
     n_compcor: all
-    demean: false
+    include_non_steady_state: false
 
   full_MC_spiking:
     # motion(full=24 params) + aCompCor + cosine high-pass + spike regressors
@@ -90,7 +99,7 @@ strategies:
     model_spiking: true
     compcor: anat_combined
     n_compcor: all
-    demean: false
+    include_non_steady_state: false
 
   # ── nilearn built-in strategies ────────────────────────────────────────────
   # Confounds loaded via nilearn.interfaces.fmriprep.load_confounds_strategy.
@@ -98,13 +107,13 @@ strategies:
   # are physically removed from data and frame_times before GLM (true censoring).
 
   simple:
-    # motion(full=24) + WM/CSF(basic) + cosine high-pass + demean
+    # motion(full=24) + WM/CSF(basic) + cosine high-pass + non-steady-state
     # nilearn preset: standard simple denoising, no scrubbing, no compcor
     backend: nilearn
     nilearn_strategy: simple
 
   scrubbing:
-    # motion(full=24) + WM/CSF(full=8) + cosine high-pass + demean + volume censoring
+    # motion(full=24) + WM/CSF(full=8) + cosine high-pass + non-steady-state + volume censoring
     # nilearn preset: FD/DVARS thresholding, ±scrub neighbour volumes removed
     backend: nilearn
     nilearn_strategy: scrubbing
@@ -113,13 +122,13 @@ strategies:
     scrub: 3  # neighbour volumes to censor around each bad TR
 
   compcor:
-    # motion(full=24) + aCompCor(all retained) + cosine high-pass + demean
+    # motion(full=24) + aCompCor(all retained) + cosine high-pass + non-steady-state
     # nilearn preset: replaces WM/CSF with compcor, no scrubbing
     backend: nilearn
     nilearn_strategy: compcor
     n_compcor: all
 
-  scrubbing_basic_compcor:
+  scrubbing_MC_basic_compcor:
     # motion(basic=6) + aCompCor(all retained) + cosine high-pass + volume censoring
     # custom: scrubbing with minimal motion model, compcor instead of WM/CSF
     backend: nilearn
@@ -131,7 +140,7 @@ strategies:
     std_dvars_threshold: 1.5
     scrub: 3
 
-  scrubbing_full_compcor:
+  scrubbing_MC_full_compcor:
     # motion(full=24) + aCompCor(all retained) + cosine high-pass + volume censoring
     # custom: scrubbing with full motion model, compcor instead of WM/CSF
     backend: nilearn

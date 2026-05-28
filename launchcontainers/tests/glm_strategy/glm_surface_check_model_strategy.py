@@ -189,11 +189,9 @@ def replace_prefix_and_suffix(val):
         "EU_",
         "ES_",
         "AT_",
-        "EN_",
         "FR_",
         "IT_",
         "CN_",
-        "ZH_",
         "JP_",
     }:
         return val[3:]
@@ -303,10 +301,14 @@ def _resolve_confound_columns(cs: dict, available_cols: list) -> list[str]:
     if cfg.get("high_pass", False):
         patterns.extend(regex_groups.get("cosine", []))
 
-    if cfg.get("demean", False):
+    if cfg.get("include_non_steady_state", False) or cfg.get(
+        "demean", False
+    ):  # demean kept for back-compat
         patterns.extend(regex_groups.get("non_steady_state", []))
 
-    if cfg.get("model_spiking", False) or cfg.get("scrub", False):  # scrub kept for back-compat
+    if cfg.get("model_spiking", False) or cfg.get(
+        "scrub", False
+    ):  # scrub kept for back-compat
         prefix = cfg.get("scrub_regressor_prefix", "motion_outlier")
         patterns.extend(regex_groups.get(prefix, [f"^{prefix}"]))
 
@@ -454,39 +456,39 @@ def glm_l1(
     t_glm_fit = time.time() - _t
     console.print(f"  [dim]run_glm: {t_glm_fit:.2f} s[/dim]")
 
-    # ── Reconstruct vertex arrays + save components ────────────────────────────
-    # Y = Xθ + ε   (fitted = Xθ,  residuals = ε,  betas = θ per regressor)
-    t_reconstruct = 0.0
-    t_save_components = 0.0
-    if hemi:
-        _t = time.time()
-        n_tp, n_vtx = Y.shape
-        resid = _reconstruct_vertex_array(n_tp, n_vtx, labels, estimates, "resid")
-        fitted = _reconstruct_vertex_array(n_tp, n_vtx, labels, estimates, "predicted")
-        beta_arr = _reconstruct_betas(X.shape[1], n_vtx, labels, estimates)
-        t_reconstruct = time.time() - _t
+    # # ── Reconstruct vertex arrays + save components ────────────────────────────
+    # # Y = Xθ + ε   (fitted = Xθ,  residuals = ε,  betas = θ per regressor)
+    # t_reconstruct = 0.0
+    # t_save_components = 0.0
+    # if hemi:
+    #     _t = time.time()
+    #     n_tp, n_vtx = Y.shape
+    #     resid = _reconstruct_vertex_array(n_tp, n_vtx, labels, estimates, "resid")
+    #     fitted = _reconstruct_vertex_array(n_tp, n_vtx, labels, estimates, "predicted")
+    #     beta_arr = _reconstruct_betas(X.shape[1], n_vtx, labels, estimates)
+    #     t_reconstruct = time.time() - _t
 
-        def _component_name(desc: str) -> str:
-            base = (
-                f"sub-{subject}_ses-{session}_task-{task}"
-                f"_hemi-{hemi}_space-{space}_desc-{desc}_timeseries.func.gii"
-            )
-            if use_smoothed:
-                base = base.replace(f"_desc-{desc}", f"_desc-{desc}sm{sm}")
-            if randrun_idx:
-                base = base.replace("_timeseries", f"{randrun_idx}_timeseries")
-            return op.join(outdir, base)
+    #     def _component_name(desc: str) -> str:
+    #         base = (
+    #             f"sub-{subject}_ses-{session}_task-{task}"
+    #             f"_hemi-{hemi}_space-{space}_desc-{desc}_timeseries.func.gii"
+    #         )
+    #         if use_smoothed:
+    #             base = base.replace(f"_desc-{desc}", f"_desc-{desc}sm{sm}")
+    #         if randrun_idx:
+    #             base = base.replace("_timeseries", f"{randrun_idx}_timeseries")
+    #         return op.join(outdir, base)
 
-        _t = time.time()
-        save_timeseries_to_gifti(resid, _component_name("residuals"))
-        save_timeseries_to_gifti(fitted, _component_name("fitted"))
-        save_timeseries_to_gifti(beta_arr, _component_name("betas"))
-        save_array_as_dataframe(
-            beta_arr,
-            _component_name("betas").replace(".func.gii", ".tsv"),
-            col_labels=design_matrix_std.columns.tolist(),
-        )
-        t_save_components = time.time() - _t
+    #     _t = time.time()
+    #     save_timeseries_to_gifti(resid, _component_name("residuals"))
+    #     save_timeseries_to_gifti(fitted, _component_name("fitted"))
+    #     save_timeseries_to_gifti(beta_arr, _component_name("betas"))
+    #     save_array_as_dataframe(
+    #         beta_arr,
+    #         _component_name("betas").replace(".func.gii", ".tsv"),
+    #         col_labels=design_matrix_std.columns.tolist(),
+    #     )
+    #     t_save_components = time.time() - _t
 
     # ── Contrasts: compute then save stat maps ─────────────────────────────────
     timing: dict[str, float] = {}
@@ -557,22 +559,38 @@ def glm_l1(
         title=f"GLM step timing — {hemi_label}", box=box.SIMPLE_HEAD, show_footer=True
     )
     tbl_steps.add_column("step", footer="[bold]total[/bold]")
+    # tbl_steps.add_column(
+    #     "time (s)",
+    #     justify="right",
+    #     footer=f"[bold]{t_save_meta + t_glm_fit + t_reconstruct + t_save_components + t_compute_total + t_save_maps_total:.2f}[/bold]",
+    # )
     tbl_steps.add_column(
         "time (s)",
         justify="right",
-        footer=f"[bold]{t_save_meta + t_glm_fit + t_reconstruct + t_save_components + t_compute_total + t_save_maps_total:.2f}[/bold]",
+        footer=f"[bold]{t_save_meta + t_glm_fit + t_compute_total + t_save_maps_total:.2f}[/bold]",
     )
+    # for step, t in [
+    #     ("save_metadata  (confounds TSV + DM CSV + plots)", t_save_meta),
+    #     ("glm_fit        (run_glm, all vertices)", t_glm_fit),
+    #     ("reconstruct    (resid / fitted / beta arrays)", t_reconstruct),
+    #     ("save_components (residuals + fitted + betas GIFTI)", t_save_components),
+    #     ("compute_contrasts", t_compute_total),
+    #     ("save_maps      (stat-map GIFTIs)", t_save_maps_total),
+    # ]:
+    #     tbl_steps.add_row(step, f"{t:.2f}")
+    # console.print(tbl_steps)
+    # console.print(f"  [green]GLM done[/green] ({hemi_label})")
+
     for step, t in [
         ("save_metadata  (confounds TSV + DM CSV + plots)", t_save_meta),
         ("glm_fit        (run_glm, all vertices)", t_glm_fit),
-        ("reconstruct    (resid / fitted / beta arrays)", t_reconstruct),
-        ("save_components (residuals + fitted + betas GIFTI)", t_save_components),
         ("compute_contrasts", t_compute_total),
         ("save_maps      (stat-map GIFTIs)", t_save_maps_total),
     ]:
         tbl_steps.add_row(step, f"{t:.2f}")
     console.print(tbl_steps)
     console.print(f"  [green]GLM done[/green] ({hemi_label})")
+
     return timing
 
 
@@ -599,6 +617,7 @@ def _load_nilearn_confounds(func_file: str, cfg: dict, start_scans: int):
         "std_dvars_threshold",
         "scrub",
         "demean",
+        "include_non_steady_state",
     )
 
     if "nilearn_strategy" in cfg:
@@ -631,8 +650,8 @@ def _load_nilearn_confounds(func_file: str, cfg: dict, start_scans: int):
         # sample_mask: integer indices of kept TRs in the FULL run (not pre-filtered).
         # confounds has the full run length; use sample_mask as integer row selector,
         # then additionally drop TRs before start_scans.
-        keep = sample_mask >= start_scans          # boolean mask over sample_mask
-        kept_indices = sample_mask[keep]           # integer indices into full confounds
+        keep = sample_mask >= start_scans  # boolean mask over sample_mask
+        kept_indices = sample_mask[keep]  # integer indices into full confounds
         confounds = confounds.iloc[kept_indices].reset_index(drop=True)
         rel_sample_mask = kept_indices - start_scans
     else:
@@ -650,34 +669,131 @@ def _fetch_bids_run_metadata(
     session,
     run_list,
     slice_time_ref,
+    acq: str | None = None,
+    bold_desc: str | None = None,
+    bids_layout=None,
+    fp_bids_layout=None,
 ) -> dict:
     """
-    Call first_level_from_bids once per run and return
-    {run_num: (t_r, events_df, confounds_df)}.
+    Return {run_num: (t_r, events_df, confounds_df)} for each run.
 
-    Runs that fail are omitted from the dict; the caller treats missing keys
-    as skipped runs (same behaviour as the previous per-hemisphere try/except).
+    SE path (acq=None): uses ``first_level_from_bids`` with ``desc-preproc``
+    and ``space-T1w`` — the standard fmriprep output for single-echo data.
+
+    ME path (acq provided): fmriprep outputs per-echo T1w files
+    (``echo-N_desc-preproc``) *and* a native-BOLD-space optimal combination
+    (``desc-preproc``, no echo, no space entity).  ``first_level_from_bids``
+    cannot disambiguate these, so the ME path queries the pre-built layouts
+    directly:
+      - TR from the native BOLD OC JSON sidecar
+      - events from the raw BIDS layout (acq-specific, with inheritance fallback)
+      - confounds from the fmriprep layout (acq-specific TSV)
+
+    ``bids_layout`` and ``fp_bids_layout`` must be passed when ``acq`` is set.
+    Runs that fail are omitted from the dict.
     """
     meta: dict = {}
-    img_filters_base = [("desc", "preproc"), ("ses", session)]
+
     for run_num in run_list:
-        img_filters = img_filters_base + [("run", run_num)]
         try:
-            l1 = first_level_from_bids(
-                bids_dir,
-                task,
-                space_label="T1w",
-                sub_labels=[subject],
-                slice_time_ref=slice_time_ref,
-                hrf_model="spm",
-                drift_model=None,
-                drift_order=0,
-                high_pass=None,
-                img_filters=img_filters,
-                derivatives_folder=fmriprep_dir,
-            )
-            meta[run_num] = (l1[0][0].t_r, l1[2][0][0], l1[3][0][0])
-        except (TypeError, FileNotFoundError, IndexError) as e:
+            if acq:
+                # ── ME: direct layout queries ─────────────────────────────────
+                assert bids_layout is not None and fp_bids_layout is not None, (
+                    "bids_layout and fp_bids_layout are required when acq is set"
+                )
+
+                # TR — from native BOLD OC (desc-preproc, no echo, no space entity)
+                bold_candidates = fp_bids_layout.get(
+                    subject=subject,
+                    session=session,
+                    task=task,
+                    run=run_num,
+                    acquisition=acq,
+                    desc="preproc",
+                    suffix="bold",
+                    extension=".nii.gz",
+                    invalid_filters="allow",
+                )
+                oc_files = [
+                    f
+                    for f in bold_candidates
+                    if not f.entities.get("echo") and not f.entities.get("space")
+                ]
+                if not oc_files:
+                    raise FileNotFoundError(
+                        f"No native BOLD OC (desc-preproc, no echo/space) "
+                        f"for acq-{acq} run-{run_num}"
+                    )
+                t_r = oc_files[0].get_metadata()["RepetitionTime"]
+                console.print(
+                    f"  [dim]ME metadata anchor: {oc_files[0].filename}  TR={t_r}[/dim]"
+                )
+
+                # Events — acq-specific, with inheritance fallback
+                ev_files = bids_layout.get(
+                    subject=subject,
+                    session=session,
+                    task=task,
+                    run=run_num,
+                    acquisition=acq,
+                    suffix="events",
+                    extension=".tsv",
+                    invalid_filters="allow",
+                )
+                if not ev_files:
+                    ev_files = bids_layout.get(
+                        subject=subject,
+                        session=session,
+                        task=task,
+                        run=run_num,
+                        suffix="events",
+                        extension=".tsv",
+                    )
+                if not ev_files:
+                    raise FileNotFoundError(
+                        f"No events.tsv for acq-{acq} run-{run_num}"
+                    )
+                events_df = pd.read_csv(ev_files[0].path, sep="\t")
+
+                # Confounds — acq-specific TSV from fmriprep
+                conf_files = fp_bids_layout.get(
+                    subject=subject,
+                    session=session,
+                    task=task,
+                    run=run_num,
+                    acquisition=acq,
+                    desc="confounds",
+                    suffix="timeseries",
+                    extension=".tsv",
+                    invalid_filters="allow",
+                )
+                if not conf_files:
+                    raise FileNotFoundError(
+                        f"No confounds TSV for acq-{acq} run-{run_num}"
+                    )
+                confounds_df = pd.read_csv(conf_files[0].path, sep="\t")
+
+                meta[run_num] = (t_r, events_df, confounds_df)
+
+            else:
+                # ── SE: first_level_from_bids with desc-preproc + space-T1w ──
+                img_filters = [("desc", "preproc"), ("ses", session), ("run", run_num)]
+                l1 = first_level_from_bids(
+                    bids_dir,
+                    task,
+                    space_label="T1w",
+                    sub_labels=[subject],
+                    slice_time_ref=slice_time_ref,
+                    hrf_model="spm",
+                    drift_model=None,
+                    drift_order=0,
+                    high_pass=None,
+                    img_filters=img_filters,
+                    derivatives_folder=fmriprep_dir,
+                )
+                meta[run_num] = (l1[0][0].t_r, l1[2][0][0], l1[3][0][0])
+
+        except (TypeError, FileNotFoundError, IndexError, AssertionError) as e:
             console.print(
                 f"  [yellow]WARNING[/yellow]: error fetching metadata for run {run_num}: {e} — skipping"
             )
@@ -704,6 +820,9 @@ def prepare_glm_input(
     confound_strategy,
     run_metadata,
     hemi=None,
+    bold_desc=None,
+    n_vols=0,
+    acq=None,
 ):
     """
     Gather per-run timeseries, events, and confounds; build concatenated
@@ -724,6 +843,9 @@ def prepare_glm_input(
     # Per-run step timing: {run_num: {step: seconds}}
     run_step_times: dict[str, dict[str, float]] = {}
 
+    # Per-run scrubbing stats (populated only when rel_sample_mask is not None)
+    scrub_stats_per_run: list[dict] = []
+
     for idx, run_num in enumerate(run_list):
         console.print(f"  Processing run [cyan]{run_num}[/cyan]")
         run_step_times[run_num] = {}
@@ -741,7 +863,12 @@ def prepare_glm_input(
         }
         if is_surface and hemi:
             query_params["hemi"] = hemi
-        if use_smoothed:
+        if acq:
+            query_params["acquisition"] = acq
+        if bold_desc:
+            # explicit desc override (e.g. 'denoised', 'optcom' for tedana outputs)
+            query_params["desc"] = bold_desc
+        elif use_smoothed:
             query_params["desc"] = f"smoothed{sm}"
         elif not is_surface:
             query_params["desc"] = "preproc"
@@ -774,6 +901,14 @@ def prepare_glm_input(
             f"  Length original data: {np.shape(data_float)[1]}  "
             f"[dim](load_func: {run_step_times[run_num]['load_func']:.1f} s)[/dim]"
         )
+
+        # ── Step 1b: truncate to n_vols before start_scans removal ───────────
+        if n_vols > 0 and data_float.shape[1] > n_vols:
+            console.print(
+                f"  [dim]Truncating {data_float.shape[1]} → {n_vols} volumes "
+                f"(--n-vols)[/dim]"
+            )
+            data_float = data_float[:, :n_vols]
 
         # ── Step 2: z-score + trim ────────────────────────────────────────────
         _t = time.time()
@@ -812,6 +947,21 @@ def prepare_glm_input(
         _t = time.time()
         t_r, events, confounds = run_metadata[run_num]
         events = events.copy()  # don't mutate the shared cache (thread-safety)
+
+        # Clip events to n_vols × TR so design matrix matches truncated data
+        if n_vols > 0:
+            max_time = n_vols * t_r
+            n_before = len(events)
+            events = events[events["onset"] < max_time].copy()
+            # Clip durations that extend beyond the truncated window
+            events["duration"] = events.apply(
+                lambda r: min(r["duration"], max_time - r["onset"]), axis=1
+            )
+            if len(events) < n_before:
+                console.print(
+                    f"  [dim]Events clipped: {n_before} → {len(events)} rows "
+                    f"(max_time={max_time:.1f} s = {n_vols} × {t_r:.3f} s)[/dim]"
+                )
         # Use full (pre-scrub) run duration for onset offset so that events
         # from later runs remain correctly timed even when volumes are censored.
         events.loc[:, "onset"] = events["onset"] + idx * n_scans_full * t_r
@@ -824,6 +974,12 @@ def prepare_glm_input(
             confounds_keep, rel_sample_mask = _load_nilearn_confounds(
                 func_file, confound_strategy["cfg"], start_scans
             )
+            # _load_nilearn_confounds already removed start_scans; clip to n_scans_full
+            # in case the full run is longer than the n_vols-truncated data.
+            if rel_sample_mask is None and len(confounds_keep) > n_scans_full:
+                confounds_keep = confounds_keep.iloc[:n_scans_full].reset_index(
+                    drop=True
+                )
             scrub_note = (
                 f", {len(confounds_keep)} vols kept after scrubbing"
                 if rel_sample_mask is not None
@@ -843,6 +999,12 @@ def prepare_glm_input(
                     confounds_keep.index[0], "framewise_displacement"
                 ] = np.nanmean(confounds_keep["framewise_displacement"])
             confounds_keep = confounds_keep.iloc[start_scans:].reset_index(drop=True)
+            # Clip to n_scans_full: confounds come from the full run but data was
+            # already truncated to n_vols, so they may be 1+ rows too long.
+            if len(confounds_keep) > n_scans_full:
+                confounds_keep = confounds_keep.iloc[:n_scans_full].reset_index(
+                    drop=True
+                )
             rel_sample_mask = None
             console.print(
                 f"  [dim]Strategy [cyan]{confound_strategy['name']}[/cyan] (yaml): "
@@ -861,6 +1023,25 @@ def prepare_glm_input(
             frame_times = t_r * (
                 (np.arange(n_scans_full) + slice_time_ref) + idx * n_scans_full
             )
+
+        # ── Scrubbing accounting ──────────────────────────────────────────────
+        kept_vols = data_final.shape[1]
+        pct_removed = (
+            100.0 * (1.0 - kept_vols / n_scans_full)
+            if rel_sample_mask is not None
+            else 0.0
+        )
+        scrub_stats_per_run.append(
+            {
+                "run": run_num,
+                "total_vols": n_scans_full,
+                "kept_vols": kept_vols,
+                "removed_vols": n_scans_full - kept_vols,
+                "pct_removed": round(pct_removed, 1),
+                "scrubbed": rel_sample_mask is not None,
+                "flagged": pct_removed > 15.0,
+            }
+        )
 
         data_allrun.append(data_final)
         confounds_allrun.append(confounds_keep)
@@ -888,11 +1069,61 @@ def prepare_glm_input(
             )
         console.print(tbl_run)
 
+    # ── Scrubbing report ──────────────────────────────────────────────────────
+    any_scrubbed = any(r["scrubbed"] for r in scrub_stats_per_run)
+    if any_scrubbed:
+        scrub_df = pd.DataFrame(scrub_stats_per_run)
+        outdir_scrub = op.join(
+            bids_dir,
+            "derivatives",
+            "l1_surface",
+            f"analysis-{analysis_name}",
+            f"sub-{subject}",
+            f"ses-{session}",
+        )
+        if not op.exists(outdir_scrub):
+            makedirs(outdir_scrub)
+        strategy_name_safe = confound_strategy["name"]
+        scrub_tsv = op.join(
+            outdir_scrub,
+            f"sub-{subject}_ses-{session}_task-{task}_strategy-{strategy_name_safe}_desc-scrubbing_report.tsv",
+        )
+        scrub_df.to_csv(scrub_tsv, sep="\t", index=False)
+        console.print(f"  [dim]Scrubbing report → {op.basename(scrub_tsv)}[/dim]")
+
+        tbl_scrub = Table(title="Scrubbing summary", box=box.SIMPLE_HEAD)
+        tbl_scrub.add_column("run")
+        tbl_scrub.add_column("total", justify="right")
+        tbl_scrub.add_column("kept", justify="right")
+        tbl_scrub.add_column("removed", justify="right")
+        tbl_scrub.add_column("% removed", justify="right")
+        tbl_scrub.add_column("flag", justify="center")
+        for r in scrub_stats_per_run:
+            flag = "[bold red]FLAG >15%[/bold red]" if r["flagged"] else ""
+            tbl_scrub.add_row(
+                r["run"],
+                str(r["total_vols"]),
+                str(r["kept_vols"]),
+                str(r["removed_vols"]),
+                f"{r['pct_removed']:.1f}%",
+                flag,
+            )
+        console.print(tbl_scrub)
+
+        flagged_runs = [r["run"] for r in scrub_stats_per_run if r["flagged"]]
+        if flagged_runs:
+            console.print(
+                f"  [bold red]WARNING[/bold red]: runs {flagged_runs} have >15% volumes removed "
+                f"(sub-{subject} ses-{session} strategy={strategy_name_safe}). "
+                f"Consider excluding this session or switching strategy."
+            )
+
     # ── Step 5: build design matrix ───────────────────────────────────────────
     _t = time.time()
     conc_data_std = np.concatenate(data_allrun, axis=1)
     concat_frame_times = np.concatenate(frame_time_allrun, axis=0)
     concat_events = pd.concat(events_allrun, axis=0)
+    concat_events = concat_events.applymap(replace_prefix_and_suffix)
     concat_confounds = pd.concat(confounds_allrun, axis=0)
 
     console.print(f"\n  Confound columns:\n  {list(concat_confounds.columns)}")
@@ -920,17 +1151,18 @@ def prepare_glm_input(
     return conc_data_std, design_matrix_std, contrasts, nonan_confounds
 
 
-def _load_rerun_exclusions(rerun_tsv: str) -> dict[tuple[str, str, str], set[str]]:
+def _load_rerun_exclusions(
+    rerun_tsv: str, acq: str | None = None
+) -> dict[tuple[str, str, str], set[str]]:
     """
-    Read rerun_check.tsv and return the set of compensates_run values to
+    Read rerun_check.tsv/csv and return the set of compensates_run values to
     exclude per (sub, ses, task).
 
-    Only rows where ``found_in_bids == "True"`` are included — if the redo
-    run is not in BIDS there is nothing to replace the original with, so the
-    original must stay.
+    Only rows where ``found_in_bids`` is truthy are included.
+    When ``acq`` is given, only rows whose ``acq`` column matches (or is "None")
+    are included — so acq-SE reruns do not pollute an acq-ME run list.
 
-    Sub, ses, and run values are zero-padded to two digits to match BIDS
-    run labels.
+    Sub, ses, and run values are zero-padded to two digits when numeric.
 
     Returns
     -------
@@ -941,13 +1173,26 @@ def _load_rerun_exclusions(rerun_tsv: str) -> dict[tuple[str, str, str], set[str
 
     excl: dict[tuple[str, str, str], set[str]] = {}
     with open(rerun_tsv, newline="") as fh:
-        for row in _csv.DictReader(fh, delimiter="\t"):
-            if str(row.get("found_in_bids", "")).strip() != "True":
+        sample = fh.read(2048)
+        fh.seek(0)
+        delimiter = "\t" if "\t" in sample else ","
+        for row in _csv.DictReader(fh, delimiter=delimiter):
+            if str(row.get("found_in_bids", "")).strip().lower() not in (
+                "true",
+                "1",
+                "yes",
+            ):
                 continue
-            sub = str(row["sub"]).strip().zfill(2)
-            ses = str(row["ses"]).strip().zfill(2)
+            row_acq = str(row.get("acq", "None")).strip()
+            if acq and row_acq not in ("None", "", acq):
+                continue
+            raw_sub = str(row["sub"]).strip()
+            sub = raw_sub.zfill(2) if raw_sub.isdigit() else raw_sub
+            raw_ses = str(row["ses"]).strip()
+            ses = raw_ses.zfill(2) if raw_ses.isdigit() else raw_ses
             task = str(row["task"]).strip()
-            crun = str(row["compensates_run"]).strip().zfill(2)
+            raw_crun = str(row["compensates_run"]).strip()
+            crun = raw_crun.zfill(2) if raw_crun.isdigit() else raw_crun
             excl.setdefault((sub, ses, task), set()).add(crun)
     return excl
 
@@ -959,6 +1204,7 @@ def generate_run_groups(
     task,
     selected_runs=None,
     excl_runs: set[str] | None = None,
+    acq: str | None = None,
 ):
     """
     Return the run list for a task and a run-label string for filenames.
@@ -968,6 +1214,9 @@ def generate_run_groups(
     excl_runs : set[str] | None
         Zero-padded run strings to drop (compensated/aborted runs from
         rerun_check.tsv).  Ignored when *selected_runs* is given explicitly.
+    acq : str | None
+        Filter runs by acquisition entity (e.g. ``"ME"`` or ``"SE"``).
+        When given, only runs that have files with that acquisition are returned.
 
     Returns
     -------
@@ -975,7 +1224,10 @@ def generate_run_groups(
         (run_list, randrun_idx)
     """
     if not selected_runs:
-        runs = sorted(set(layout.get_runs(subject=subject, session=session, task=task)))
+        get_kw: dict = dict(subject=subject, session=session, task=task)
+        if acq:
+            get_kw["acquisition"] = acq
+        runs = sorted(set(layout.get_runs(**get_kw)))
         randrun_idx = None
     else:
         runs = selected_runs
@@ -1029,6 +1281,9 @@ def process_run_list(
     randrun_idx=None,
     hemi=None,
     n_glm_jobs=1,
+    bold_desc=None,
+    n_vols=0,
+    acq=None,
 ) -> dict[str, float]:
     """
     Build GLM inputs and run the GLM for one run-list / hemisphere combination.
@@ -1061,6 +1316,9 @@ def process_run_list(
         confound_strategy,
         run_metadata,
         hemi,
+        bold_desc=bold_desc,
+        n_vols=n_vols,
+        acq=acq,
     )
     console.print(f"  Contrasts: {list(contrasts.keys())}")
 
@@ -1113,6 +1371,9 @@ def run_power_analysis(
     confound_strategy,
     run_metadata,
     hemi=None,
+    bold_desc=None,
+    n_vols=0,
+    acq=None,
 ) -> None:
     """Run power analysis: total_runs × n_iterations GLMs."""
     label = f"hemi-{hemi}" if hemi else "volumetric"
@@ -1166,6 +1427,9 @@ def run_power_analysis(
                 run_metadata,
                 randrun_idx,
                 hemi,
+                bold_desc=bold_desc,
+                n_vols=n_vols,
+                acq=acq,
             )
 
             elapsed = time.time() - t_iter
@@ -1390,6 +1654,32 @@ def main(
             "GLM per-vertex jobs are set to max(1, 4 // n_workers) automatically."
         ),
     ),
+    bold_desc: Optional[str] = typer.Option(
+        None,
+        "--bold-desc",
+        help=(
+            "desc entity to filter bold files in BIDSLayout query.  "
+            "e.g. 'denoised' for tedana output, 'optcom' for optimal combination.  "
+            "Default (None): no desc filter for surface, 'preproc' for volumetric."
+        ),
+    ),
+    acq: Optional[str] = typer.Option(
+        None,
+        "--acq",
+        help=(
+            "acquisition entity to filter bold files, e.g. 'ME' or 'SE'.  "
+            "Default (None): no acq filter — BIDSLayout returns all acquisitions."
+        ),
+    ),
+    n_vols: int = typer.Option(
+        0,
+        "--n-vols",
+        help=(
+            "Truncate timeseries to first N volumes before removing start_scans.  "
+            "Events.tsv onsets beyond N × TR are also dropped.  "
+            "0 = no truncation (default)."
+        ),
+    ),
 ) -> None:
     t0 = time.time()
 
@@ -1419,7 +1709,7 @@ def main(
     # Load rerun exclusion map (once, shared across all sessions)
     rerun_excl: dict[tuple[str, str, str], set[str]] = {}
     if rerun_map:
-        rerun_excl = _load_rerun_exclusions(rerun_map)
+        rerun_excl = _load_rerun_exclusions(rerun_map, acq=acq)
 
     # ── Launch summary ───────────────────────────────────────────────────────
     console.rule("[bold cyan]GLM Launch[/bold cyan]")
@@ -1491,7 +1781,17 @@ def main(
             console.print("  Prefetching BIDS run metadata for power analysis…")
             _t_fetch = time.time()
             run_metadata = _fetch_bids_run_metadata(
-                bids_dir, fmriprep_dir, task, sub, ses, all_run_list, slice_time_ref
+                bids_dir,
+                fmriprep_dir,
+                task,
+                sub,
+                ses,
+                all_run_list,
+                slice_time_ref,
+                acq=acq,
+                bold_desc=bold_desc,
+                bids_layout=layout,
+                fp_bids_layout=fp_layout,
             )
             console.print(
                 f"  [dim]Metadata prefetched in {time.time() - _t_fetch:.1f} s[/dim]"
@@ -1527,6 +1827,9 @@ def main(
                         confound_strategy,
                         run_metadata,
                         hemi,
+                        bold_desc=bold_desc,
+                        n_vols=n_vols,
+                        acq=acq,
                     )
             session_times[(sub, ses)] = time.time() - t_ses
             continue
@@ -1540,13 +1843,24 @@ def main(
             task,
             selected_runs_list,
             excl_runs or None,
+            acq=acq,
         )
 
         # Prefetch events/confounds/TR once — shared across ALL strategies and hemispheres
         console.print("  Prefetching BIDS run metadata (once for all strategies)…")
         _t_fetch = time.time()
         run_metadata = _fetch_bids_run_metadata(
-            bids_dir, fmriprep_dir, task, sub, ses, run_list, slice_time_ref
+            bids_dir,
+            fmriprep_dir,
+            task,
+            sub,
+            ses,
+            run_list,
+            slice_time_ref,
+            acq=acq,
+            bold_desc=bold_desc,
+            bids_layout=layout,
+            fp_bids_layout=fp_layout,
         )
         console.print(
             f"  [dim]Metadata prefetched in {time.time() - _t_fetch:.1f} s[/dim]"
@@ -1592,6 +1906,9 @@ def main(
                         randrun_idx,
                         hemi,
                         n_glm_jobs,
+                        bold_desc=bold_desc,
+                        n_vols=n_vols,
+                        acq=acq,
                     )
             else:
                 console.rule("[bold]Volumetric[/bold]", style="dim")
@@ -1618,6 +1935,9 @@ def main(
                     randrun_idx,
                     hemi=None,
                     n_glm_jobs=n_glm_jobs,
+                    bold_desc=bold_desc,
+                    n_vols=n_vols,
+                    acq=acq,
                 )
             return strategy_name, t_per_hemi, time.time() - _t
 
