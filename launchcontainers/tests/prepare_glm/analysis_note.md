@@ -12,7 +12,7 @@ fLoc_run-11_rerun-04
 
 This means **run-11 is the replacement** that was scanned to compensate for the aborted **run-04**.
 
-After BIDS conversion, *both* runs land in the `func/` directory.  
+After BIDS conversion, *both* runs land in the `func/` directory.
 The dataset therefore contains:
 
 | run | what happened |
@@ -26,7 +26,7 @@ Without explicit tracking, both runs would enter the GLM, corrupting the design 
 
 ## The rerun_check.tsv
 
-`<bids_dir>/sourcedata/qc/rerun_check.tsv` is the canonical map of every known rerun event.  
+`<bids_dir>/sourcedata/qc/rerun_check.tsv` is the canonical map of every known rerun event.
 It is **tab-separated** with a mandatory header row.
 
 | column | meaning |
@@ -41,8 +41,8 @@ It is **tab-separated** with a mandatory header row.
 | `is_within_range` | `True` / `False` — is `compensates_run` within the standard run count? |
 | `status` | free-text note: `OK`, `MISMATCH`, `NO_FUNC_DIR`, or any memo |
 
-**The `found_in_bids` flag is critical.**  
-If the redo run was never transferred to BIDS there is no replacement, so the original must stay.  
+**The `found_in_bids` flag is critical.**
+If the redo run was never transferred to BIDS there is no replacement, so the original must stay.
 All GLM scripts guard on this before excluding anything.
 
 ### Chained reruns
@@ -64,7 +64,7 @@ compensation chain until it reaches a standard (non-extra) run, returning all in
 |--------|-------------|
 | `01_generate_rerun_check_from_labnote.py` | authoritative — parses the lab-note Excel; catches within-range reruns the BIDS structure alone cannot detect |
 | `generate_rerun_check_from_bids.py` | use when the lab-note Excel is not accessible (e.g. running on DIPC without BCBL mount) |
-| `03_add_rerun_check_interactive.py` | use when you remember a rerun from scan day but have no lab note; prompts field-by-field, appends to an existing file |
+| `01b_add_rerun_check_interactive.py` | use when you remember a rerun from scan day but have no lab note; prompts field-by-field, appends to an existing file |
 
 All three write the same 9-column TSV schema.
 
@@ -95,7 +95,7 @@ _load_rerun_exclusions(rerun_tsv)
 Only rows where `found_in_bids == "True"` are loaded.
 
 `generate_run_groups()` receives the resulting `excl_runs` set and removes those run labels from the
-run list **before** the design matrix is built.  
+run list **before** the design matrix is built.
 The redo run (`extra_run`) stays in; the original aborted run (`compensates_run`) is dropped.
 
 ### 3. Batch GLM launcher — `run_allses_glm.py`

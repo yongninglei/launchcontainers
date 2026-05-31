@@ -874,6 +874,13 @@ def prepare_glm_input(
             query_params["desc"] = "preproc"
 
         func_files = fp_layout.get(**query_params, invalid_filters="allow")
+        # When no bold_desc is requested, prefer the file without a desc entity
+        # (fMRIprep's native projection). Without this, tedana symlinks (desc-denoised,
+        # desc-optcom) would contaminate the result set and [0] would be arbitrary.
+        if func_files and not bold_desc:
+            no_desc = [f for f in func_files if not f.entities.get("desc")]
+            if no_desc:
+                func_files = no_desc
         if not func_files:
             console.print(
                 f"  [yellow]WARNING[/yellow]: no functional file for run {run_num} "

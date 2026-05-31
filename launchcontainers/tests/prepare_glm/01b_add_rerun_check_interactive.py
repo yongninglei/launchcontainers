@@ -20,11 +20,11 @@ Usage
     python 03_add_rerun_check_interactive.py --out /path/to/rerun_check.tsv \\
         --bids-dir /bcbl/home/public/Gari/VOTCLOC/main_exp/BIDS
 """
+
 from __future__ import annotations
 
 import csv
 import glob
-import os.path as op
 from pathlib import Path
 from typing import Optional
 
@@ -37,8 +37,16 @@ console = Console()
 app = typer.Typer(add_completion=False, pretty_exceptions_show_locals=False)
 
 _TSV_FIELDS = [
-    "sub", "ses", "task", "extra_run", "compensates_run",
-    "protocol_name", "found_in_bids", "is_within_range", "status",
+    "sub",
+    "ses",
+    "task",
+    "acq",
+    "extra_run",
+    "compensates_run",
+    "protocol_name",
+    "found_in_bids",
+    "is_within_range",
+    "status",
 ]
 
 # Standard run count per task — used to auto-fill is_within_range.
@@ -53,6 +61,7 @@ _STANDARD_N_RUNS: dict[str, int] = {
 # ---------------------------------------------------------------------------
 # Interactive helpers
 # ---------------------------------------------------------------------------
+
 
 def _ask(label: str, default: str = "", required: bool = True) -> str:
     """Prompt the user; return default on empty input when one is provided."""
@@ -72,7 +81,9 @@ def _ask_bool(label: str, auto: Optional[str] = None) -> str:
     """Return 'True' or 'False', with optional auto-detected default."""
     if auto is not None:
         console.print(f"  [dim]{label} auto-detected: {auto}[/dim]")
-        override = console.input(f"  [cyan]Override {label}?[/cyan] (leave blank to keep [bold]{auto}[/bold]): ").strip()
+        override = console.input(
+            f"  [cyan]Override {label}?[/cyan] (leave blank to keep [bold]{auto}[/bold]): "
+        ).strip()
         if override.lower() in ("true", "t", "1", "yes"):
             return "True"
         if override.lower() in ("false", "f", "0", "no"):
@@ -86,7 +97,10 @@ def _ask_bool(label: str, auto: Optional[str] = None) -> str:
 # BIDS checks
 # ---------------------------------------------------------------------------
 
-def _detect_found_in_bids(bids_dir: Path, sub: str, ses: str, task: str, extra_run: str) -> Optional[str]:
+
+def _detect_found_in_bids(
+    bids_dir: Path, sub: str, ses: str, task: str, extra_run: str
+) -> Optional[str]:
     func_dir = bids_dir / f"sub-{sub}" / f"ses-{ses}" / "func"
     pattern = str(func_dir / f"sub-{sub}_ses-{ses}_task-{task}_run-{extra_run}_bold*")
     return "True" if glob.glob(pattern) else "False"
@@ -106,17 +120,23 @@ def _detect_within_range(task: str, compensates_run: str) -> Optional[str]:
 # Main command
 # ---------------------------------------------------------------------------
 
+
 @app.command()
 def main(
     out: Path = typer.Option(
-        ..., "--out", "-o",
+        ...,
+        "--out",
+        "-o",
         help="Path to rerun_check.tsv (created if absent, appended if present)",
     ),
     bids_dir: Optional[Path] = typer.Option(
-        None, "--bids-dir",
+        None,
+        "--bids-dir",
         help="BIDS root — used to auto-detect found_in_bids from the func/ tree",
     ),
-    dry_run: bool = typer.Option(False, "--dry-run", help="Preview entries without writing"),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Preview entries without writing"
+    ),
 ):
     """Interactively add rerun entries to rerun_check.tsv."""
 
@@ -125,16 +145,22 @@ def main(
     if out.exists() and out.stat().st_size > 0:
         with open(out) as f:
             existing = list(csv.DictReader(f, delimiter="\t"))
-        console.print(f"\n[green]Appending to:[/green] {out}  ([dim]{len(existing)} existing rows[/dim])")
+        console.print(
+            f"\n[green]Appending to:[/green] {out}  ([dim]{len(existing)} existing rows[/dim])"
+        )
     else:
         out.parent.mkdir(parents=True, exist_ok=True)
         console.print(f"\n[green]Creating:[/green] {out}")
 
     if bids_dir:
         if bids_dir.is_dir():
-            console.print(f"[green]BIDS dir:[/green] {bids_dir}  [dim](found_in_bids will be auto-checked)[/dim]")
+            console.print(
+                f"[green]BIDS dir:[/green] {bids_dir}  [dim](found_in_bids will be auto-checked)[/dim]"
+            )
         else:
-            console.print(f"[yellow]BIDS dir not found:[/yellow] {bids_dir}  [dim](skipping auto-check)[/dim]")
+            console.print(
+                f"[yellow]BIDS dir not found:[/yellow] {bids_dir}  [dim](skipping auto-check)[/dim]"
+            )
             bids_dir = None
 
     new_rows: list[dict] = []
@@ -143,29 +169,50 @@ def main(
     while True:
         console.rule("[bold]New entry")
 
-        sub             = _ask("sub  (e.g. 04)").zfill(2)
-        ses             = _ask("ses  (e.g. 01)").zfill(2)
-        task            = _ask("task  (e.g. fLoc)")
-        extra_run       = _ask("extra_run       — the redo/bonus run number (e.g. 11)").zfill(2)
-        compensates_run = _ask("compensates_run — the aborted run it replaces (e.g. 04)").zfill(2)
+        sub = _ask("sub  (e.g. 04)").zfill(2)
+        ses = _ask("ses  (e.g. 01)").zfill(2)
+        task = _ask("task  (e.g. fLoc)")
+        acq = (
+            _ask(
+                "acq  (e.g. ME | SE | leave blank for None)", default="", required=False
+            )
+            or "None"
+        )
+        extra_run = _ask("extra_run       — the redo/bonus run number (e.g. 11)").zfill(
+            2
+        )
+        compensates_run = _ask(
+            "compensates_run — the aborted run it replaces (e.g. 04)"
+        ).zfill(2)
 
-        protocol_name   = f"{task}_run-{extra_run}_rerun-{compensates_run}"
+        protocol_name = f"{task}_run-{extra_run}_rerun-{compensates_run}"
         console.print(f"  [dim]protocol_name → {protocol_name}[/dim]")
 
-        auto_bids   = _detect_found_in_bids(bids_dir, sub, ses, task, extra_run) if bids_dir else None
-        auto_range  = _detect_within_range(task, compensates_run)
-        found_in_bids   = _ask_bool("found_in_bids",   auto=auto_bids)
+        auto_bids = (
+            _detect_found_in_bids(bids_dir, sub, ses, task, extra_run)
+            if bids_dir
+            else None
+        )
+        auto_range = _detect_within_range(task, compensates_run)
+        found_in_bids = _ask_bool("found_in_bids", auto=auto_bids)
         is_within_range = _ask_bool("is_within_range", auto=auto_range)
 
-        status = _ask(
-            "status  (free text — note why you know this, e.g. 'remembered from scan day')",
-            default="OK",
-            required=False,
-        ) or "OK"
+        status = (
+            _ask(
+                "status  (free text — note why you know this, e.g. 'remembered from scan day')",
+                default="OK",
+                required=False,
+            )
+            or "OK"
+        )
 
         row = {
-            "sub": sub, "ses": ses, "task": task,
-            "extra_run": extra_run, "compensates_run": compensates_run,
+            "sub": sub,
+            "ses": ses,
+            "task": task,
+            "acq": acq,
+            "extra_run": extra_run,
+            "compensates_run": compensates_run,
             "protocol_name": protocol_name,
             "found_in_bids": found_in_bids,
             "is_within_range": is_within_range,
@@ -174,8 +221,11 @@ def main(
 
         # duplicate check
         key = (sub, ses, task, extra_run)
-        dup_src = [r for r in existing + new_rows
-                   if (r["sub"], r["ses"], r["task"], r["extra_run"]) == key]
+        dup_src = [
+            r
+            for r in existing + new_rows
+            if (r["sub"], r["ses"], r["task"], r["extra_run"]) == key
+        ]
         if dup_src:
             console.print(
                 f"  [yellow]Warning:[/yellow] entry (sub-{sub} ses-{ses} {task} run-{extra_run}) already exists."
@@ -203,7 +253,8 @@ def main(
     console.print()
     t = Table(
         title=f"{'[DRY RUN] ' if dry_run else ''}{'Append' if existing else 'Create'}  →  {out}",
-        box=box.SIMPLE_HEAD, show_lines=False,
+        box=box.SIMPLE_HEAD,
+        show_lines=False,
     )
     for col in _TSV_FIELDS:
         t.add_column(col, style="bold cyan" if col in ("sub", "ses") else "")

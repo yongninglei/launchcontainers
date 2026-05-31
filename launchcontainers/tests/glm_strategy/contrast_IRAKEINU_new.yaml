@@ -3,7 +3,7 @@
 
 # Sanity check
 AllvsNull:
-  positive: ["LSE_SWV", "CH_RAW", "LSE_WV", "EN_RW", "CH_AW", "IMG_RI", "CH_SC", "CH_RW", "CH_FF", "EN_FF"]
+  positive: ["LSE_SWV", "CH_RAW", "LSE_WV", "EN_RW", "CH_AW", "IMG_RI", "CH_SC", "CH_RW", "CH_FF", "EN_FF", "IMG_SC"]
   negative: []
 
 # Each condition vs implicit null
@@ -39,26 +39,30 @@ CH_RWvsNull:
   positive: ["CH_RW"]
   negative: []
 
-# IMG_SCvsNull:
-#   positive: ["IMG_SC"]
-#   negative: []
+IMG_SCvsNull:
+  positive: ["IMG_SC"]
+  negative: []
 
 # Main contrasts
 CH_RWvsCH_SC:
   positive: ["CH_RW"]
   negative: ["CH_SC"]
 
-# CH_RWvsIMG_SC:
-#   positive: ["CH_RW"]
-#   negative: ["IMG_SC"]
+CH_RWvsEN_RW:
+  positive: ["CH_RW"]
+  negative: ["EN_RW"]
+
+CH_RWvsIMG_SC:
+  positive: ["CH_RW"]
+  negative: ["IMG_SC"]
 
 EN_RWvsCH_SC:
   positive: ["EN_RW"]
   negative: ["CH_SC"]
 
-# EN_RWvsIMG_SC:
-#   positive: ["EN_RW"]
-#   negative: ["IMG_SC"]
+EN_RWvsIMG_SC:
+  positive: ["EN_RW"]
+  negative: ["IMG_SC"]
 
 LSE_WVvsLSE_SWV:
   positive: ["LSE_WV"]
@@ -68,17 +72,17 @@ CH_AWvsCH_RAW:
   positive: ["CH_AW"]
   negative: ["CH_RAW"]
 
-# IMG_RIvsIMG_SC:
-#   positive: ["IMG_RI"]
-#   negative: ["IMG_SC"]
+IMG_RIvsIMG_SC:
+  positive: ["IMG_RI"]
+  negative: ["IMG_SC"]
 
 IMG_RIvsCH_SC:
   positive: ["IMG_RI"]
   negative: ["CH_SC"]
 
-# IMG_SCvsCH_SC:
-#   positive: ["IMG_SC"]
-#   negative: ["CH_SC"]
+IMG_SCvsCH_SC:
+  positive: ["IMG_SC"]
+  negative: ["CH_SC"]
 
 CH_RWvsCH_FF:
   positive: ["CH_RW"]

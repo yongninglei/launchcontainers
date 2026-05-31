@@ -12,7 +12,7 @@ codedir=$basedir/code
 outputdir=$basedir/raw_nifti
 dcm_dir=/base/dicom
 script_dir=/export/home/tlei/tlei/soft/launchcontainers/MR_pipelines/00_dicom_to_nifti
-heuristicfile=$script_dir/heuristic/heuristic_all_${project}_ME.py
+heuristicfile=$script_dir/heuristic/heuristic_all_${project}.py
 sing_path=/bcbl/home/public/Gari/containers/heudiconv_1.3.4.sif
 
 # ---------------------------------------------------------------------------

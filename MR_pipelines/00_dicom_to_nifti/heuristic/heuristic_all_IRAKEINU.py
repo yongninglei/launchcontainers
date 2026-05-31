@@ -12,9 +12,9 @@
 from __future__ import annotations
 
 
-def create_key(template, outtype=('nii.gz',), annotation_classes=None):
+def create_key(template, outtype=("nii.gz",), annotation_classes=None):
     if template is None or not template:
-        raise ValueError('Template must be a valid format string')
+        raise ValueError("Template must be a valid format string")
     return template, outtype, annotation_classes
 
 
@@ -30,43 +30,53 @@ def infotodict(seqinfo):
     """
     # T1 MP2RAGE
     t1_i1 = create_key(
-        'sub-{subject}/{session}/anat/sub-{subject}_{session}_run-{item:02d}_T1_inv1',
+        "sub-{subject}/{session}/anat/sub-{subject}_{session}_run-{item:02d}_T1_inv1",
     )
     t1_i2 = create_key(
-        'sub-{subject}/{session}/anat/sub-{subject}_{session}_run-{item:02d}_T1_inv2',
+        "sub-{subject}/{session}/anat/sub-{subject}_{session}_run-{item:02d}_T1_inv2",
     )
     t1_un = create_key(
-        'sub-{subject}/{session}/anat/sub-{subject}_{session}_run-{item:02d}_T1_uni',
+        "sub-{subject}/{session}/anat/sub-{subject}_{session}_run-{item:02d}_T1_uni",
     )
 
     # T1 weighted MPRAGE
-    t1_w = create_key('sub-{subject}/{session}/anat/sub-{subject}_{session}_run-{item:02d}_T1w')
+    t1_w = create_key(
+        "sub-{subject}/{session}/anat/sub-{subject}_{session}_run-{item:02d}_T1w"
+    )
     # T2 weighted
-    t2_w = create_key('sub-{subject}/{session}/anat/sub-{subject}_{session}_run-{item:02d}_T2w')
+    t2_w = create_key(
+        "sub-{subject}/{session}/anat/sub-{subject}_{session}_run-{item:02d}_T2w"
+    )
     # fmap
     fmap_AP = create_key(
-        'sub-{subject}/{session}/fmap/sub-{subject}_{session}_acq-fMRI_dir-AP_run-{item:01d}_epi',
+        "sub-{subject}/{session}/fmap/sub-{subject}_{session}_acq-fMRI_dir-AP_run-{item:01d}_epi",
     )
     fmap_PA = create_key(
-        'sub-{subject}/{session}/fmap/sub-{subject}_{session}_acq-fMRI_dir-PA_run-{item:01d}_epi',
+        "sub-{subject}/{session}/fmap/sub-{subject}_{session}_acq-fMRI_dir-PA_run-{item:01d}_epi",
     )
 
     # func
     BfLocVideo_sbref = create_key(
-        'sub-{subject}/{session}/func/sub-{subject}_{session}_task-BfLocVideo_run-{item:02d}_sbref',
+        "sub-{subject}/{session}/func/sub-{subject}_{session}_task-BfLocVideo_run-{item:02d}_sbref",
     )
     BfLocVideo_P = create_key(
-        'sub-{subject}/{session}/func/sub-{subject}_{session}_task-BfLocVideo_run-{item:02d}_phase',
+        "sub-{subject}/{session}/func/sub-{subject}_{session}_task-BfLocVideo_run-{item:02d}_phase",
     )
     BfLocVideo_M = create_key(
-        'sub-{subject}/{session}/func/sub-{subject}_{session}_task-BfLocVideo_run-{item:02d}_magnitude',
+        "sub-{subject}/{session}/func/sub-{subject}_{session}_task-BfLocVideo_run-{item:02d}_magnitude",
     )
 
     info = {
-        t1_i1: [], t1_i2: [], t1_un: [], t1_w: [], t2_w: [],
-        fmap_AP: [], fmap_PA: [],
-        BfLocVideo_sbref: [], BfLocVideo_P: [], BfLocVideo_M: [],
-
+        t1_i1: [],
+        t1_i2: [],
+        t1_un: [],
+        t1_w: [],
+        t2_w: [],
+        fmap_AP: [],
+        fmap_PA: [],
+        BfLocVideo_sbref: [],
+        BfLocVideo_P: [],
+        BfLocVideo_M: [],
     }
     last_run = len(seqinfo)
 
@@ -96,38 +106,57 @@ def infotodict(seqinfo):
         * image_type
         """
         # T1
-        if (s.dim1 == 256) and (s.dim2 == 240) and (s.dim3 == 176) and ('mp2rage' in s.protocol_name):
-            if ('_INV1' in s.series_description):
+        if (
+            (s.dim1 == 256)
+            and (s.dim2 == 240)
+            and (s.dim3 == 176)
+            and ("mp2rage" in s.protocol_name)
+        ):
+            if "_INV1" in s.series_description:
                 info[t1_i1].append(s.series_id)
-            elif ('_INV2' in s.series_description):
+            elif "_INV2" in s.series_description:
                 info[t1_i2].append(s.series_id)
-            elif ('_UNI' in s.series_description):
+            elif "_UNI" in s.series_description:
                 info[t1_un].append(s.series_id)
-        if (s.dim1 == 256) and (s.dim2 == 256) and (s.dim3 == 176) and ('mprage' in s.protocol_name):
+        if (
+            (s.dim1 == 256)
+            and (s.dim2 == 256)
+            and (s.dim3 == 176)
+            and ("mprage" in s.protocol_name)
+        ):
             info[t1_w].append(s.series_id)
-        if (s.dim1 == 256) and (s.dim2 == 232) and (s.dim3 == 176) and ('MGH' in s.protocol_name):
+        if (
+            (s.dim1 == 256)
+            and (s.dim2 == 232)
+            and (s.dim3 == 176)
+            and ("MGH" in s.protocol_name)
+        ):
             info[t2_w].append(s.series_id)
         # fmap
         # and ('M' in s.image_type):
-        if ('TOPUP' in s.protocol_name.upper()) or ('fmap' in s.protocol_name):
-            if (s.dim1 == 100) and (s.dim3 == 80) and (s.series_files == 1):  # and (s.TR==14.956):
-                if ('AP' in s.protocol_name) :
+        if ("TOPUP" in s.protocol_name.upper()) or ("fmap" in s.protocol_name):
+            if (
+                (s.dim1 == 100) and (s.dim3 == 80) and (s.series_files == 1)
+            ):  # and (s.TR==14.956):
+                if "AP" in s.protocol_name:
                     info[fmap_AP].append(s.series_id)
-                if ('PA' in s.protocol_name) :
+                if "PA" in s.protocol_name:
                     info[fmap_PA].append(s.series_id)
 
         # TR not working for the XA30 func scan of pRFs
 
         # functional SBref
-        if (s.series_files == 1) and ('Pha' not in s.series_description):
+        if (s.series_files == 1) and ("Pha" not in s.series_description):
             # pay attention to add a check for language in the s.protocol_name when in the scanner, otherwise the multiple language thing
             # will cause trouble
-            if ('fLoc' in s.protocol_name) or ('fLoc' in s.protocol_name):
+            if ("fLoc" in s.protocol_name) or ("fLoc" in s.protocol_name):
                 info[BfLocVideo_sbref].append(s.series_id)
 
         if (s.dim1 == 100) and (s.dim3 == 80):
-            if (s.series_files == 193) and (('fLoc' in s.protocol_name) or ('fLoc' in s.protocol_name)) :
-                if ('Pha' in s.series_description) :
+            if (s.series_files == 235) and (
+                ("fLoc" in s.protocol_name) or ("fLoc" in s.protocol_name)
+            ):
+                if "Pha" in s.series_description:
                     info[BfLocVideo_P].append(s.series_id)
                 else:
                     info[BfLocVideo_M].append(s.series_id)

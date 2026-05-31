@@ -69,6 +69,7 @@ openpyxl = ">=3.1.5"
 h5py = ">=3.0"
 rich = ">=13.0"
 pre-commit = "*"
+tedana = "26.0.3"
 
 [tool.poetry.dev-dependencies]
 nox-poetry = "*"

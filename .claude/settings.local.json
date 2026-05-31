@@ -8,7 +8,37 @@
       "Bash(python3 -c \"import json; d=json.load\\(open\\('/bcbl/home/public/Gari/VOTCLOC/main_exp/BIDS/sub-07/ses-03/dwi/sub-07_ses-03_acq-magonly_dir-AP_run-01_dwi.json'\\)\\); print\\('AcquisitionTime:', d.get\\('AcquisitionTime'\\)\\)\")",
       "Bash(micromamba run -n lc python3 -c ':*)",
       "Bash('~/.local/bin/micromamba' run -n lc python3 -c ':*)",
-      "Bash(/opt/conda/bin/python3 -c ':*)"
+      "Bash(/opt/conda/bin/python3 -c ':*)",
+      "Bash(python -c \"import tedana; print\\(tedana.__version__\\)\")",
+      "Bash(find /bcbl/home/public -name \"*echo*fsnative*bold.func.gii\" 2>/dev/null | head -10 || find /bcbl -name \"*echo-*_hemi-*_space-fsnative*bold.func.gii\" -maxdepth 10 2>/dev/null | head -10 || echo \"no fsnative echo files found in /bcbl\")",
+      "Read(//bcbl/home/public/**)",
+      "Read(//bcbl/**)",
+      "Bash(mkdir -p /bcbl/home/home_n-z/tlei/soft/launchcontainers/launchcontainers/tests/run_tedana && ls /bcbl/home/home_n-z/tlei/soft/launchcontainers/launchcontainers/tests/run_tedana/)",
+      "Bash(bash -n /bcbl/home/home_n-z/tlei/soft/launchcontainers/launchcontainers/tests/run_tedana/launch_tedana_local.sh)",
+      "Bash(bash /bcbl/home/home_n-z/tlei/soft/launchcontainers/launchcontainers/tests/run_tedana/launch_tedana_local.sh --dry-run -s polit02,01)",
+      "Bash(bash /bcbl/home/home_n-z/tlei/soft/launchcontainers/launchcontainers/tests/run_tedana/launch_tedana_local.sh -n pilot01 -s polit02,01 --dry-run)",
+      "Bash(git mv *)",
+      "Bash(mkdir -p /tmp/fake_tedana/analysis-pilot01/sub-pilot02/ses-01/func)",
+      "Bash(touch /tmp/fake_tedana/analysis-pilot01/sub-pilot02/ses-01/func/sub-pilot02_ses-01_task-BfLocVideo_acq-ME_run-01_desc-optcomDenoised_bold.nii.gz)",
+      "Bash(touch /tmp/fake_tedana/analysis-pilot01/sub-pilot02/ses-01/func/sub-pilot02_ses-01_task-BfLocVideo_acq-ME_run-02_desc-optcomDenoised_bold.nii.gz)",
+      "Bash(touch /tmp/fake_tedana/analysis-pilot01/sub-pilot02/ses-01/func/sub-pilot02_ses-01_task-BfLocVideo_acq-ME_run-03_desc-optcomDenoised_bold.nii.gz)",
+      "Bash(rm -rf /tmp/fake_tedana)",
+      "Bash(bash /bcbl/home/home_n-z/tlei/soft/launchcontainers/launchcontainers/tests/run_tedana/launch_tedana_local.sh -n pilot01 -c 40 -r 3 -s pilot02,01 --dry-run)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(conda run -n launchcontainers git commit -m ' *)",
+      "Bash(find /opt/anaconda39 /home/tlei -name \"pre-commit\" -type f 2>/dev/null | head -5)",
+      "Read(//opt/**)",
+      "Bash(micromamba env *)",
+      "Bash(conda env *)",
+      "Bash(python launchcontainers/tests/dcm_to_bids_workflow/prepare_fmap/02_prepare_fmap_intendedfor.py -b ~/public/Gari/IRAKEINU/BIDS -s pilot02,02 -v)",
+      "Bash(python3 launchcontainers/tests/dcm_to_bids_workflow/prepare_fmap/02_prepare_fmap_intendedfor.py -b ~/public/Gari/IRAKEINU/BIDS -s pilot02,02 -v)",
+      "Bash(conda run *)",
+      "Bash(python3.11 launchcontainers/tests/dcm_to_bids_workflow/prepare_fmap/02_prepare_fmap_intendedfor.py -b ~/public/Gari/IRAKEINU/BIDS -s pilot02,02 -v)",
+      "Bash(/bcbl/home/home_n-z/tlei/soft/micromamba/bin/micromamba env *)"
+    ],
+    "additionalDirectories": [
+      "/bcbl/home/home_n-z/tlei/soft/launchcontainers/launchcontainers/tests"
     ]
   }
 }

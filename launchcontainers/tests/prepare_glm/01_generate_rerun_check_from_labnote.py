@@ -47,12 +47,10 @@ Batch from file::
         --bids-dir /scratch/tlei/VOTCLOC/BIDS \\
         -f subseslist.tsv --execute
 """
+
 from __future__ import annotations
 
 import csv
-import glob
-import os
-import os.path as op
 import re
 from pathlib import Path
 from typing import Optional
@@ -72,14 +70,20 @@ app = typer.Typer(add_completion=False, pretty_exceptions_show_locals=False)
 
 _BIDS_DIR = Path("/scratch/tlei/VOTCLOC/BIDS")
 _TSV_FIELDS = [
-    "sub", "ses", "task", "extra_run", "compensates_run",
-    "protocol_name", "found_in_bids", "is_within_range", "status",
+    "sub",
+    "ses",
+    "task",
+    "acq",
+    "extra_run",
+    "compensates_run",
+    "protocol_name",
+    "found_in_bids",
+    "is_within_range",
+    "status",
 ]
 
 # Only fLoc reruns are of interest for the GLM exclusion map
-FLOC_STANDARD_RUNS: set[str] = {f"{i:02d}" for i in range(1, 11)}   # 01–10
-
-
+FLOC_STANDARD_RUNS: set[str] = {f"{i:02d}" for i in range(1, 11)}  # 01–10
 
 
 # ---------------------------------------------------------------------------
@@ -94,7 +98,7 @@ _BAD_SES_PATTERNS = r"-|wrong|failed|lost|ME|bad|00|test|-t"
 _REQUIRED_SHEET_COLS = ["sub", "ses", "protocol_name"]
 # Optional columns that exist in the original xlsx; we skip sheets that
 # lack even the minimum three above.
-_EXTRA_SHEET_COLS    = ["date", "quality_mark"]
+_EXTRA_SHEET_COLS = ["date", "quality_mark"]
 
 
 def _convert_sub(series: pd.Series) -> pd.Series:
@@ -125,6 +129,7 @@ def _convert_ses(series: pd.Series, sheet_name: str = "") -> pd.Series:
                 return str(int(float(s))).zfill(2)
             except (ValueError, TypeError):
                 return s  # non-numeric session label (e.g. "01rr") — keep as-is
+
         return series.apply(_zfill_one)
     else:
         try:
@@ -152,11 +157,11 @@ def _extract_rerun_rows(df: pd.DataFrame) -> list[dict]:
 
     rows: list[dict] = []
     for _, row in rerun_df.iterrows():
-        proto  = str(row["protocol_name"]).strip()
-        parts  = proto.split("_")
+        proto = str(row["protocol_name"]).strip()
+        parts = proto.split("_")
 
         # run part: segment like "run-11"
-        run_part   = [p for p in parts if "run-" in p and "rerun" not in p.lower()]
+        run_part = [p for p in parts if "run-" in p and "rerun" not in p.lower()]
         # rerun part: segment containing "rerun" (with or without dash)
         rerun_part = [p for p in parts if "rerun" in p.lower()]
         # task part: fLoc or ret*
@@ -166,21 +171,24 @@ def _extract_rerun_rows(df: pd.DataFrame) -> list[dict]:
         if not (run_part and rerun_part and task_part):
             continue
 
-        extra_run_raw = run_part[0].split("-")[-1]          # "11"
-        rerun_digits  = re.search(r"\d+", rerun_part[0])    # "04" from "rerun-04"
+        extra_run_raw = run_part[0].split("-")[-1]  # "11"
+        rerun_digits = re.search(r"\d+", rerun_part[0])  # "04" from "rerun-04"
         if not rerun_digits:
             continue
 
         task = "fLoc"
 
-        rows.append({
-            "sub":             str(row["sub"]),
-            "ses":             str(row["ses"]),
-            "task":            task,
-            "extra_run":       extra_run_raw.zfill(2),
-            "compensates_run": rerun_digits.group(0).zfill(2),
-            "protocol_name":   proto,
-        })
+        rows.append(
+            {
+                "sub": str(row["sub"]),
+                "ses": str(row["ses"]),
+                "task": task,
+                "acq": "None",  # lab-note does not record acq; fill manually via 01b
+                "extra_run": extra_run_raw.zfill(2),
+                "compensates_run": rerun_digits.group(0).zfill(2),
+                "protocol_name": proto,
+            }
+        )
     return rows
 
 
@@ -199,7 +207,7 @@ def parse_lab_note(lab_note_path: Path) -> pd.DataFrame:
     6. Convert ses to int → zero-padded string (with graceful fallback).
     7. Keep rows whose protocol_name contains "rerun" but not "qmri" or "T1".
     """
-    ext  = lab_note_path.suffix.lower()
+    ext = lab_note_path.suffix.lower()
     rows: list[dict] = []
 
     if ext in (".xlsx", ".xls"):
@@ -219,7 +227,9 @@ def parse_lab_note(lab_note_path: Path) -> pd.DataFrame:
                 continue
 
             # Keep only the columns we care about
-            keep_cols = _REQUIRED_SHEET_COLS + [c for c in _EXTRA_SHEET_COLS if c in df.columns]
+            keep_cols = _REQUIRED_SHEET_COLS + [
+                c for c in _EXTRA_SHEET_COLS if c in df.columns
+            ]
             df = df[keep_cols].copy()
 
             # ── Step 3: clean sub / ses ───────────────────────────────────
@@ -274,7 +284,14 @@ def parse_lab_note(lab_note_path: Path) -> pd.DataFrame:
 
     if not rows:
         return pd.DataFrame(
-            columns=["sub", "ses", "task", "extra_run", "compensates_run", "protocol_name"]
+            columns=[
+                "sub",
+                "ses",
+                "task",
+                "extra_run",
+                "compensates_run",
+                "protocol_name",
+            ]
         )
     return pd.DataFrame(rows)
 
@@ -282,6 +299,7 @@ def parse_lab_note(lab_note_path: Path) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 # BIDS scanning  (extracted from handle_reruns.py)
 # ---------------------------------------------------------------------------
+
 
 def _is_task_of_interest(task: str) -> bool:
     return task == "fLoc"
@@ -294,7 +312,9 @@ def _is_standard_run(task: str, run: str) -> bool:
 
 
 def _bids_extras_for_session(
-    bids_dir: Path, sub: str, ses: str,
+    bids_dir: Path,
+    sub: str,
+    ses: str,
 ) -> tuple[list[tuple[str, str]], bool]:
     """
     Return (extras, func_exists).
@@ -323,39 +343,45 @@ def _bids_extras_for_session(
 # Per-session check
 # ---------------------------------------------------------------------------
 
+
 def check_single_session(
-    bids_dir: Path, sub: str, ses: str, df_note: pd.DataFrame,
+    bids_dir: Path,
+    sub: str,
+    ses: str,
+    df_note: pd.DataFrame,
 ) -> list[dict]:
     """
     Compare lab-note reruns with BIDS extra runs for one sub/ses.
 
     Returns a list of record dicts ready for writing to the TSV.
     """
-    note_rows   = df_note[(df_note["sub"] == sub) & (df_note["ses"] == ses)]
+    note_rows = df_note[(df_note["sub"] == sub) & (df_note["ses"] == ses)]
     bids_extras, func_exists = _bids_extras_for_session(bids_dir, sub, ses)
 
     if not func_exists:
         # No BIDS func dir — still emit lab-note rows with found_in_bids=False
         records = []
         for _, nr in note_rows.iterrows():
-            records.append({
-                "sub":             sub,
-                "ses":             ses,
-                "task":            nr.task,
-                "extra_run":       nr.extra_run,
-                "compensates_run": nr.compensates_run,
-                "protocol_name":   nr.protocol_name,
-                "found_in_bids":   "False",
-                "is_within_range": str(_is_standard_run(nr.task, nr.extra_run)),
-                "status":          "NO_FUNC_DIR",
-            })
+            records.append(
+                {
+                    "sub": sub,
+                    "ses": ses,
+                    "task": nr.task,
+                    "extra_run": nr.extra_run,
+                    "compensates_run": nr.compensates_run,
+                    "protocol_name": nr.protocol_name,
+                    "found_in_bids": "False",
+                    "is_within_range": str(_is_standard_run(nr.task, nr.extra_run)),
+                    "status": "NO_FUNC_DIR",
+                }
+            )
         return records
 
     bids_set = set(bids_extras)
 
     # Classify lab-note rows
     within_range: set[tuple[str, str]] = set()
-    note_set:     set[tuple[str, str]] = set()
+    note_set: set[tuple[str, str]] = set()
     for _, nr in note_rows.iterrows():
         key = (nr.task, nr.extra_run)
         if _is_standard_run(nr.task, nr.extra_run):
@@ -363,9 +389,9 @@ def check_single_session(
         else:
             note_set.add(key)
 
-    matched         = note_set & bids_set
+    matched = note_set & bids_set
     only_note_extra = note_set - bids_set
-    only_bids       = bids_set - note_set
+    only_bids = bids_set - note_set
 
     if only_note_extra or only_bids:
         session_status = "MISMATCH"
@@ -374,12 +400,12 @@ def check_single_session(
 
     records = []
     for _, nr in note_rows.iterrows():
-        key            = (nr.task, nr.extra_run)
-        found_in_bids  = key in bids_set
+        key = (nr.task, nr.extra_run)
+        found_in_bids = key in bids_set
         is_within_range = key in within_range
 
         if is_within_range and not found_in_bids:
-            row_status = "OK"          # within-range rerun not visible in BIDS count
+            row_status = "OK"  # within-range rerun not visible in BIDS count
         elif not found_in_bids:
             row_status = "MISMATCH"
         elif key in only_bids:
@@ -387,31 +413,35 @@ def check_single_session(
         else:
             row_status = session_status
 
-        records.append({
-            "sub":             sub,
-            "ses":             ses,
-            "task":            nr.task,
-            "extra_run":       nr.extra_run,
-            "compensates_run": nr.compensates_run,
-            "protocol_name":   nr.protocol_name,
-            "found_in_bids":   str(found_in_bids),
-            "is_within_range": str(is_within_range),
-            "status":          row_status,
-        })
+        records.append(
+            {
+                "sub": sub,
+                "ses": ses,
+                "task": nr.task,
+                "extra_run": nr.extra_run,
+                "compensates_run": nr.compensates_run,
+                "protocol_name": nr.protocol_name,
+                "found_in_bids": str(found_in_bids),
+                "is_within_range": str(is_within_range),
+                "status": row_status,
+            }
+        )
 
     # BIDS extras not in lab note → emit with unknown compensates_run
     for task, run in sorted(only_bids):
-        records.append({
-            "sub":             sub,
-            "ses":             ses,
-            "task":            task,
-            "extra_run":       run,
-            "compensates_run": "?",
-            "protocol_name":   f"{task}_run-{run}_rerun-?",
-            "found_in_bids":   "True",
-            "is_within_range": "False",
-            "status":          "MISMATCH",
-        })
+        records.append(
+            {
+                "sub": sub,
+                "ses": ses,
+                "task": task,
+                "extra_run": run,
+                "compensates_run": "?",
+                "protocol_name": f"{task}_run-{run}_rerun-?",
+                "found_in_bids": "True",
+                "is_within_range": "False",
+                "status": "MISMATCH",
+            }
+        )
 
     return records
 
@@ -420,11 +450,16 @@ def check_single_session(
 # Sub/ses pair parsing
 # ---------------------------------------------------------------------------
 
-def _parse_pairs(subses_arg: Optional[str], file_arg: Optional[str]) -> list[tuple[str, str]]:
+
+def _parse_pairs(
+    subses_arg: Optional[str], file_arg: Optional[str]
+) -> list[tuple[str, str]]:
     if subses_arg:
         parts = subses_arg.split(",")
         if len(parts) != 2:
-            console.print(f"[red]ERROR[/red]: -s expects 'sub,ses' e.g. 01,09, got: {subses_arg!r}")
+            console.print(
+                f"[red]ERROR[/red]: -s expects 'sub,ses' e.g. 01,09, got: {subses_arg!r}"
+            )
             raise typer.Exit(1)
         return [(parts[0].strip().zfill(2), parts[1].strip().zfill(2))]
 
@@ -439,7 +474,9 @@ def _parse_pairs(subses_arg: Optional[str], file_arg: Optional[str]) -> list[tup
             for row in csv.DictReader(fh, delimiter=delimiter):
                 if "RUN" in row and str(row["RUN"]).strip() != "True":
                     continue
-                pairs.append((str(row["sub"]).strip().zfill(2), str(row["ses"]).strip().zfill(2)))
+                pairs.append(
+                    (str(row["sub"]).strip().zfill(2), str(row["ses"]).strip().zfill(2))
+                )
         return pairs
 
     console.print("[red]ERROR[/red]: provide either -s <sub,ses> or -f <subseslist>")
@@ -450,17 +487,30 @@ def _parse_pairs(subses_arg: Optional[str], file_arg: Optional[str]) -> list[tup
 # CLI
 # ---------------------------------------------------------------------------
 
+
 @app.command()
 def main(
-    lab_note: Path = typer.Option(..., "--lab-note", help="Path to the lab-note Excel (.xlsx) or TSV"),
-    bids_dir: Path = typer.Option(_BIDS_DIR, "--bids-dir", "-b", help="BIDS root directory"),
-    subses_arg: Optional[str] = typer.Option(None, "-s", help="Single sub,ses pair e.g. 04,09"),
-    file_arg: Optional[str] = typer.Option(None, "-f", help="Path to subseslist TSV/CSV"),
+    lab_note: Path = typer.Option(
+        ..., "--lab-note", help="Path to the lab-note Excel (.xlsx) or TSV"
+    ),
+    bids_dir: Path = typer.Option(
+        _BIDS_DIR, "--bids-dir", "-b", help="BIDS root directory"
+    ),
+    subses_arg: Optional[str] = typer.Option(
+        None, "-s", help="Single sub,ses pair e.g. 04,09"
+    ),
+    file_arg: Optional[str] = typer.Option(
+        None, "-f", help="Path to subseslist TSV/CSV"
+    ),
     output: Optional[Path] = typer.Option(
-        None, "--output", "-o",
+        None,
+        "--output",
+        "-o",
         help="Output TSV path. Default: <bids_dir>/sourcedata/qc/rerun_check.tsv",
     ),
-    execute: bool = typer.Option(False, "--execute", help="Write the output file (default: dry-run preview only)"),
+    execute: bool = typer.Option(
+        False, "--execute", help="Write the output file (default: dry-run preview only)"
+    ),
 ) -> None:
     """
     Generate rerun_check.tsv by parsing the lab-note Excel and cross-checking
@@ -468,7 +518,7 @@ def main(
 
     Dry-run by default — pass --execute to write the file.
     """
-    pairs    = _parse_pairs(subses_arg, file_arg)
+    pairs = _parse_pairs(subses_arg, file_arg)
     out_path = output or (bids_dir / "sourcedata" / "qc" / "rerun_check.tsv")
     mode_str = "[green]EXECUTE[/green]" if execute else "[yellow]DRY-RUN[/yellow]"
 
@@ -486,7 +536,7 @@ def main(
     df_note = parse_lab_note(lab_note)
     console.print(
         f"  [green]{len(df_note)} rerun row(s)[/green] across "
-        f"{df_note[['sub','ses']].drop_duplicates().shape[0]} session(s) in lab note.\n"
+        f"{df_note[['sub', 'ses']].drop_duplicates().shape[0]} session(s) in lab note.\n"
     )
 
     all_records: list[dict] = []
@@ -497,9 +547,11 @@ def main(
             console.print(f"  [dim]sub-{sub} ses-{ses}  — no reruns in lab note[/dim]")
         else:
             for r in records:
-                color = {"OK": "green", "MISMATCH": "bold red", "NO_FUNC_DIR": "yellow"}.get(
-                    r["status"], "white"
-                )
+                color = {
+                    "OK": "green",
+                    "MISMATCH": "bold red",
+                    "NO_FUNC_DIR": "yellow",
+                }.get(r["status"], "white")
                 console.print(
                     f"  sub-{sub} ses-{ses}  "
                     f"task-{r['task']}  "
@@ -518,12 +570,17 @@ def main(
         _color = {"OK": "green", "MISMATCH": "bold red", "NO_FUNC_DIR": "yellow"}
         for r in all_records:
             c = _color.get(r["status"], "white")
-            tbl.add_row(*[f"[{c}]{r[col]}[/{c}]" if col == "status" else r[col] for col in _TSV_FIELDS])
+            tbl.add_row(
+                *[
+                    f"[{c}]{r[col]}[/{c}]" if col == "status" else r[col]
+                    for col in _TSV_FIELDS
+                ]
+            )
         console.print(tbl)
 
-    n_ok       = sum(1 for r in all_records if r["status"] == "OK")
+    n_ok = sum(1 for r in all_records if r["status"] == "OK")
     n_mismatch = sum(1 for r in all_records if r["status"] == "MISMATCH")
-    n_nofunc   = sum(1 for r in all_records if r["status"] == "NO_FUNC_DIR")
+    n_nofunc = sum(1 for r in all_records if r["status"] == "NO_FUNC_DIR")
     console.print(
         f"  Total: [bold]{len(all_records)}[/bold] rows  "
         f"([green]OK={n_ok}[/green]  "
@@ -532,7 +589,9 @@ def main(
     )
 
     if not execute:
-        console.print(f"\n  [dim]Dry-run — nothing written. Pass --execute to write {out_path}[/dim]")
+        console.print(
+            f"\n  [dim]Dry-run — nothing written. Pass --execute to write {out_path}[/dim]"
+        )
         return
 
     out_path.parent.mkdir(parents=True, exist_ok=True)

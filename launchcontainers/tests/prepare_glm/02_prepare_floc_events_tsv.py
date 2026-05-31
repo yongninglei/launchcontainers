@@ -6,9 +6,13 @@
 """
 Link fLoc events.tsv files from sourcedata into the BIDS func directories.
 
-For each fLoc bold run in BIDS, create a symlink:
-    BIDS/sub-XX/ses-XX/func/sub-XX_ses-XX_task-fLoc_run-YY_events.tsv
-    → sourcedata/sub-XX/ses-*/sub-XX_ses-XX*_1back_*/*_task-fLoc_run-YY_events.tsv
+For each bold run with the given task in BIDS, create a symlink:
+    BIDS/sub-XX/ses-XX/func/sub-XX_ses-XX_task-{TASK}_run-YY_events.tsv
+    → sourcedata/sub-XX/ses-*/sub-XX_ses-XX*_{onset_keyword}_*/*_task-{TASK}_run-YY_events.tsv
+
+Use --task to set the BIDS task label (default: BfLocVideo).
+Use --onset-keyword to set the string that must appear in the onset directory
+name (default: derived from task — fLoc→1back, BfLocVideo→oddball).
 
 The onset directory is found by scanning all sourcedata ses-* subdirs for a
 folder whose name starts with sub-{sub}_ses-{ses} (handles session label
@@ -27,6 +31,10 @@ Usage
     python prepare_floc_events_tsv.py -s 01,01
     python prepare_floc_events_tsv.py -f subseslist.tsv
 
+    # Different task / onset keyword
+    python prepare_floc_events_tsv.py -s 01,01 --task fLoc
+    python prepare_floc_events_tsv.py -s 01,01 --task fLoc --onset-keyword 1back
+
     # Verbose: full per-run table
     python prepare_floc_events_tsv.py -s 01,01 -v
 
@@ -34,6 +42,7 @@ Usage
     python prepare_floc_events_tsv.py -s 01,01 --execute
     python prepare_floc_events_tsv.py -f subseslist.tsv --execute --force
 """
+
 from __future__ import annotations
 
 import csv
@@ -52,14 +61,21 @@ from rich.text import Text
 # ---------------------------------------------------------------------------
 # Defaults
 # ---------------------------------------------------------------------------
-_BIDS_DIR = Path("/scratch/tlei/VOTCLOC/BIDS")
+_BIDS_DIR = Path("/bcbl/home/public/Gari/IRAKEINU/BIDS")
 _RERUN_MAP_DEFAULT = Path("sourcedata/qc/rerun_check.tsv")  # relative to bids_dir
-_TASK = "BfLocVideo"
+_TASK_DEFAULT = "BfLocVideo"
+
+# Automatic onset-keyword per task label (overridable via --onset-keyword)
+_TASK_ONSET_KEYWORD: dict[str, str] = {
+    "fLoc": "1back",
+    "BfLocVideo": "oddball",
+}
 
 # Regexes for validating the onset directory name
 # e.g. sub-07_ses-01_task-fLoc_14-Mar-2025_CN_Stimset1_1back_10runs
-_ONSET_SUB_RE  = re.compile(r"(?:^|_)sub-(\d+)")
-_ONSET_SES_RE  = re.compile(r"(?:^|_)ses-(\d+)")
+# sub/ses labels may be alphanumeric (e.g. pilot02), so match until next _
+_ONSET_SUB_RE = re.compile(r"(?:^|_)sub-([^_]+)")
+_ONSET_SES_RE = re.compile(r"(?:^|_)ses-([^_]+)")
 _ONSET_DATE_RE = re.compile(r"(\d{1,2}-[A-Za-z]{3,4}-\d{4})")
 
 _DATE_FMTS = ["%d-%b-%Y", "%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", "%d-%m-%Y"]
@@ -76,13 +92,17 @@ app = typer.Typer(add_completion=False)
 # Helpers
 # ---------------------------------------------------------------------------
 
-def _find_onset_dir(sourcedata_dir: Path, sub: str, ses: str) -> tuple[Path | None, str]:
+
+def _find_onset_dir(
+    sourcedata_dir: Path, sub: str, ses: str, onset_keyword: str
+) -> tuple[Path | None, str]:
     """
     Return (onset_dir_path, status_message).
 
     Scans all ses-* subdirs under sourcedata_dir/sub-{sub}/ and looks for
     a directory whose name starts with sub-{sub}_ses-{ses} and contains
-    '1back'.  Excludes dirs whose name starts with 'backup'.
+    onset_keyword (e.g. '1back' for fLoc, 'oddball' for BfLocVideo).
+    Excludes dirs whose name starts with 'backup'.
     """
     sub_src = sourcedata_dir / f"sub-{sub}"
     if not sub_src.exists():
@@ -104,13 +124,13 @@ def _find_onset_dir(sourcedata_dir: Path, sub: str, ses: str) -> tuple[Path | No
             name = onset_dir.name
             if (
                 name.startswith(prefix)
-                and "oddball" in name
+                and onset_keyword in name
                 and not name.lower().startswith("backup")
             ):
                 candidates.append(onset_dir)
 
     if not candidates:
-        return None, f"no onset dir found matching sub-{sub}_ses-{ses}*_*_*"
+        return None, f"no onset dir found matching sub-{sub}_ses-{ses}*{onset_keyword}*"
 
     if len(candidates) == 1:
         return candidates[0], "ok"
@@ -126,7 +146,9 @@ def _find_onset_dir(sourcedata_dir: Path, sub: str, ses: str) -> tuple[Path | No
     # Prefer the one with task-fLoc in the name
     with_task = [c for c in (exact or candidates) if "task-fLoc" in c.name]
     if len(with_task) == 1:
-        return with_task[0], f"multi-onset (chose task-fLoc): {[c.name for c in candidates]}"
+        return with_task[
+            0
+        ], f"multi-onset (chose task-fLoc): {[c.name for c in candidates]}"
 
     # Still ambiguous — pick longest name (most specific) as fallback
     pool = exact or candidates
@@ -134,12 +156,29 @@ def _find_onset_dir(sourcedata_dir: Path, sub: str, ses: str) -> tuple[Path | No
     return pool[0], f"AMBIGUOUS onset dirs: {[c.name for c in candidates]}"
 
 
-def _find_source_events(onset_dir: Path, run: str) -> Path | None:
-    """Inside onset_dir, find *_task-fLoc_run-{run}_events.tsv (any prefix)."""
-    pattern = re.compile(rf".*_task-{_TASK}_run-{run}_events\.tsv$")
-    for f in onset_dir.iterdir():
-        if pattern.match(f.name):
-            return f
+def _find_source_events(
+    onset_dir: Path, run: str, task: str, preferred_acq: str | None = None
+) -> Path | None:
+    """Find the source events.tsv for a given run inside onset_dir.
+
+    When preferred_acq is given (e.g. 'ME' or 'SE'), that acq-specific file
+    is tried first.  Falls back to no-acq form and then the other acquisitions
+    for backward compatibility with single-acquisition subjects.
+    """
+    tokens: list[str] = []
+    if preferred_acq:
+        tokens.append(f"_acq-{preferred_acq}")
+    tokens += [
+        t
+        for t in ("", "_acq-SE", "_acq-ME")
+        if t != (f"_acq-{preferred_acq}" if preferred_acq else None)
+    ]
+
+    for acq_token in tokens:
+        pattern = re.compile(rf".*_task-{task}{acq_token}_run-{run}_events\.tsv$")
+        for f in onset_dir.iterdir():
+            if pattern.match(f.name):
+                return f
     return None
 
 
@@ -151,14 +190,21 @@ def _load_rerun_map(rerun_tsv: Path) -> RerunMap:
     mapping: RerunMap = {}
     if not rerun_tsv.exists():
         return mapping
-    with rerun_tsv.open() as fh:
-        reader = csv.DictReader(fh, delimiter="\t")
+    # Accept both tab-separated (.tsv) and comma-separated (.csv) — sniff delimiter
+    with rerun_tsv.open(newline="") as fh:
+        sample = fh.read(2048)
+        fh.seek(0)
+        delimiter = "\t" if "\t" in sample else ","
+        reader = csv.DictReader(fh, delimiter=delimiter)
         for row in reader:
-            sub  = str(row["sub"]).strip().zfill(2)
-            ses  = str(row["ses"]).strip().zfill(2)
+            raw_sub = str(row["sub"]).strip()
+            raw_ses = str(row["ses"]).strip()
+            # zfill only makes sense for purely numeric labels
+            sub = raw_sub.zfill(2) if raw_sub.isdigit() else raw_sub
+            ses = raw_ses.zfill(2) if raw_ses.isdigit() else raw_ses
             task = str(row["task"]).strip()
             extra = str(int(row["extra_run"])).zfill(2)
-            comp  = str(int(row["compensates_run"])).zfill(2)
+            comp = str(int(row["compensates_run"])).zfill(2)
             mapping[(sub, ses, task, extra)] = comp
     return mapping
 
@@ -211,7 +257,7 @@ def _atomic_symlink(tgt: Path, src: Path) -> None:
 
 def _parse_date_flexible(val) -> date | None:
     """Parse a date value from a pandas Timestamp, datetime, or various string formats."""
-    if hasattr(val, "date"):           # pandas Timestamp / datetime
+    if hasattr(val, "date"):  # pandas Timestamp / datetime
         return val.date()
     s = str(val).strip()
     # normalise non-standard month abbreviations (e.g. "Sept" → "Sep")
@@ -238,7 +284,9 @@ def _load_session_dates(lab_note_path: Path) -> dict[tuple[str, str], date]:
 
     ext = lab_note_path.suffix.lower()
     if ext not in (".xlsx", ".xls"):
-        console.print(f"  [yellow]WARN[/yellow] lab note must be .xlsx/.xls, got: {lab_note_path.name}")
+        console.print(
+            f"  [yellow]WARN[/yellow] lab note must be .xlsx/.xls, got: {lab_note_path.name}"
+        )
         return session_dates
 
     xls = pd.ExcelFile(lab_note_path)
@@ -263,12 +311,14 @@ def _load_session_dates(lab_note_path: Path) -> dict[tuple[str, str], date]:
             continue
 
         if pd.api.types.is_string_dtype(df["ses"]):
+
             def _zfill_one(v):
                 s = str(v).strip()
                 try:
                     return str(int(float(s))).zfill(2)
                 except (ValueError, TypeError):
                     return s
+
             df["ses"] = df["ses"].apply(_zfill_one)
         else:
             try:
@@ -357,34 +407,55 @@ def _check_onset_dir(
     return warnings
 
 
-def _bids_events_path(func_dir: Path, sub: str, ses: str, run: str) -> Path:
-    return func_dir / f"sub-{sub}_ses-{ses}_task-{_TASK}_run-{run}_events.tsv"
+def _bids_events_path(
+    func_dir: Path, sub: str, ses: str, run: str, task: str, acq: str | None = None
+) -> Path:
+    acq_token = f"_acq-{acq}" if acq else ""
+    return func_dir / f"sub-{sub}_ses-{ses}_task-{task}{acq_token}_run-{run}_events.tsv"
 
 
-def _get_floc_runs(func_dir: Path, sub: str, ses: str) -> list[str]:
-    """Return sorted run labels (e.g. ['01', '02', ...]) from bold files."""
+def _get_floc_acq_runs(
+    func_dir: Path, sub: str, ses: str, task: str
+) -> list[tuple[str | None, str]]:
+    """Return sorted unique (acq, run) pairs from bold files for the given task.
+
+    Handles optional acq- (e.g. acq-ME, acq-SE) and echo- entities.
+    Three ME echo files for the same run contribute ONE (acq-ME, run) pair.
+    Returns one entry per (acq, run) combination so each acquisition gets
+    its own events.tsv with the correctly-named source file.
+
+    Examples:
+      sub-02_ses-01_task-BfLocVideo_run-01_bold.nii.gz             → (None, '01')
+      sub-02_ses-01_task-BfLocVideo_acq-SE_run-01_bold.nii.gz      → ('SE', '01')
+      sub-02_ses-01_task-BfLocVideo_acq-ME_run-01_echo-1_bold.nii.gz → ('ME', '01')
+    """
     pattern = re.compile(
-        rf"sub-{sub}_ses-{ses}_task-{_TASK}_run-(\d+)_bold\.nii\.gz"
+        rf"sub-{sub}_ses-{ses}_task-{task}"
+        rf"(?:_acq-([^_]+))?"  # optional acq entity → group 1
+        rf"_run-(\d+)"  # run → group 2
+        rf"(?:_echo-\d+)?"  # optional echo entity (ME multi-echo)
+        rf"_bold\.nii\.gz"
     )
-    runs: list[str] = []
-    for f in func_dir.glob(f"*task-{_TASK}*bold.nii.gz"):
+    pairs: set[tuple[str | None, str]] = set()
+    for f in func_dir.glob(f"*task-{task}*bold.nii.gz"):
         m = pattern.match(f.name)
         if m:
-            runs.append(m.group(1))
-    return sorted(runs)
+            pairs.add((m.group(1), m.group(2)))  # (acq or None, run)
+    return sorted(pairs, key=lambda x: (x[0] or "", x[1]))
 
 
 # ---------------------------------------------------------------------------
 # Status colours
 # ---------------------------------------------------------------------------
 _STATUS_STYLE: dict[str, str] = {
-    "LINK":       "bold green",
-    "SKIP":       "dim green",
-    "WRONG":      "bold yellow",
-    "FILE_EXISTS":"bold yellow",
-    "NO_SOURCE":  "bold red",
-    "→ FIXED":    "bold cyan",
+    "LINK": "bold green",
+    "SKIP": "dim green",
+    "WRONG": "bold yellow",
+    "FILE_EXISTS": "bold yellow",
+    "NO_SOURCE": "bold red",
+    "→ FIXED": "bold cyan",
 }
+
 
 def _styled_status(status: str) -> Text:
     return Text(status, style=_STATUS_STYLE.get(status, "white"))
@@ -398,6 +469,8 @@ def _process_session(
     force: bool,
     rerun_map: RerunMap,
     verbose: bool,
+    task: str,
+    onset_keyword: str,
     session_dates: dict[tuple[str, str], date] | None = None,
 ) -> tuple[int, int, int, int, bool]:
     """
@@ -413,20 +486,20 @@ def _process_session(
             console.print(f"  [dim]SKIP[/dim]  func dir not found: {func_dir}")
         return 0, 0, 0, 0, False
 
-    runs = _get_floc_runs(func_dir, sub, ses)
-    if not runs:
+    acq_runs = _get_floc_acq_runs(func_dir, sub, ses, task)
+    if not acq_runs:
         if verbose:
-            console.print(f"  [dim]SKIP[/dim]  no {_TASK} bold files")
+            console.print(f"  [dim]SKIP[/dim]  no {task} bold files")
         return 0, 0, 0, 0, False
 
-    onset_dir, onset_status = _find_onset_dir(sourcedata_dir, sub, ses)
+    onset_dir, onset_status = _find_onset_dir(sourcedata_dir, sub, ses, onset_keyword)
     had_error = onset_dir is None
     onset_warnings: list[str] = []
 
     if onset_dir is None:
         if verbose:
             console.print(f"  [bold red]ERROR[/bold red]  {onset_status}")
-        return 0, 0, 0, len(runs), True
+        return 0, 0, 0, len(acq_runs), True
 
     if onset_status != "ok":
         onset_warnings.append(onset_status)
@@ -438,41 +511,40 @@ def _process_session(
 
     # ---- per-run pass ----
     n_ok = n_skip = n_missing = n_warn = 0
-    rows: list[tuple[str, str, str]] = []   # (run, status, detail) for verbose table
+    rows: list[tuple[str | None, str, str, str]] = []  # (acq, run, status, detail)
 
-    for run in runs:
-        tgt = _bids_events_path(func_dir, sub, ses, run)
+    for acq, run in acq_runs:
+        tgt = _bids_events_path(func_dir, sub, ses, run, task, acq)
         rerun_note = ""
 
         # Check rerun_map FIRST: if this run is a rerun (in the map), use the
         # direct compensates_run (one hop) rather than the direct sourcedata file.
-        # Without this, within-range reruns (e.g. run-06…run-10) would find their
-        # own aborted events.tsv in sourcedata and get a self-symlink, making them
-        # invisible to generate_rerun_check_from_bids.py.
-        #
-        # We use ONE hop only so that the symlink target filename encodes the
-        # direct compensates relationship (matching the authoritative rerun_check).
-        # Full chain resolution is only a fallback when the direct run's events.tsv
-        # doesn't exist in sourcedata.
-        direct_comp = rerun_map.get((sub, ses, _TASK, run))
+        direct_comp = rerun_map.get((sub, ses, task, run))
         if direct_comp is not None:
-            src = _find_source_events(onset_dir, direct_comp)
+            src = _find_source_events(onset_dir, direct_comp, task, preferred_acq=acq)
             if src is not None:
                 rerun_note = f" [dim](rerun→run-{direct_comp})[/dim]"
             else:
                 # Direct comp not in sourcedata; fall back to full chain resolution
-                comp_run, chain = _resolve_original_run(rerun_map, sub, ses, _TASK, run)
+                comp_run, chain = _resolve_original_run(rerun_map, sub, ses, task, run)
                 if comp_run is not None:
-                    src = _find_source_events(onset_dir, comp_run)
-                    chain_str = f"via {' → '.join('run-' + r for r in chain)} → " if chain else ""
+                    src = _find_source_events(
+                        onset_dir, comp_run, task, preferred_acq=acq
+                    )
+                    chain_str = (
+                        f"via {' → '.join('run-' + r for r in chain)} → "
+                        if chain
+                        else ""
+                    )
                     rerun_note = (
                         f" [dim](rerun→{chain_str}run-{comp_run})[/dim]"
-                        if src else f" [yellow](rerun map: {chain_str}run-{comp_run} not in onset dir)[/yellow]"
+                        if src
+                        else f" [yellow](rerun map: {chain_str}run-{comp_run} not in onset dir)[/yellow]"
                     )
                 if src is None:
                     rerun_note = f" [yellow](rerun map: run-{direct_comp} not in onset dir)[/yellow]"
         else:
-            src = _find_source_events(onset_dir, run)
+            src = _find_source_events(onset_dir, run, task, preferred_acq=acq)
 
         if src is None:
             status = "NO_SOURCE"
@@ -496,7 +568,7 @@ def _process_session(
             detail = f"[dim]{src.name}[/dim]{rerun_note}"
             n_ok += 1
 
-        rows.append((run, status, detail))
+        rows.append((acq, run, status, detail))
 
         # Apply
         if execute:
@@ -504,7 +576,7 @@ def _process_session(
                 tgt.symlink_to(src)
             elif status in ("SKIP", "WRONG") and force:
                 _atomic_symlink(tgt, src)
-                rows[-1] = (run, "→ FIXED", detail)
+                rows[-1] = (acq, run, "→ FIXED", detail)
             elif status == "WRONG" and not force:
                 pass  # will be visible in the table
 
@@ -522,11 +594,14 @@ def _process_session(
 
         # Per-run table
         tbl = Table(box=box.SIMPLE, show_header=True, padding=(0, 1))
-        tbl.add_column("run",    style="bold", no_wrap=True)
+        tbl.add_column("acq", style="dim", no_wrap=True)
+        tbl.add_column("run", style="bold", no_wrap=True)
         tbl.add_column("status", no_wrap=True)
         tbl.add_column("source")
-        for run, status, detail in rows:
-            tbl.add_row(run, _styled_status(status), Text.from_markup(detail))
+        for acq_label, run, status, detail in rows:
+            tbl.add_row(
+                acq_label or "—", run, _styled_status(status), Text.from_markup(detail)
+            )
         console.print(tbl)
 
     has_problem = n_missing > 0 or n_warn > 0 or bool(validation_warnings)
@@ -537,6 +612,7 @@ def _iter_subses(
     bids_dir: Path,
     subses_arg: Optional[str],
     file_arg: Optional[Path],
+    task: str,
 ) -> list[tuple[str, str]]:
     """Return list of (sub, ses) pairs to process."""
     if subses_arg:
@@ -560,7 +636,7 @@ def _iter_subses(
                     pairs.append((parts[0].strip(), parts[1].strip()))
         return pairs
 
-    # Auto-discover all BIDS sessions with fLoc data
+    # Auto-discover all BIDS sessions with data for this task
     pairs = []
     for sub_dir in sorted(bids_dir.glob("sub-*")):
         if not sub_dir.is_dir():
@@ -571,7 +647,7 @@ def _iter_subses(
                 continue
             ses = ses_dir.name.replace("ses-", "")
             func_dir = ses_dir / "func"
-            if func_dir.exists() and list(func_dir.glob(f"*task-{_TASK}*bold.nii.gz")):
+            if func_dir.exists() and list(func_dir.glob(f"*task-{task}*bold.nii.gz")):
                 pairs.append((sub, ses))
     return pairs
 
@@ -580,44 +656,67 @@ def _iter_subses(
 # CLI
 # ---------------------------------------------------------------------------
 
+
 @app.command()
 def main(
     bids_dir: Path = typer.Option(
         _BIDS_DIR,
-        "--bids-dir", "-b",
+        "--bids-dir",
+        "-b",
         help="BIDS root directory",
     ),
     subses_arg: Optional[str] = typer.Option(
-        None, "-s",
+        None,
+        "-s",
         help="Single sub,ses pair  e.g.  -s 01,01",
     ),
     file_arg: Optional[Path] = typer.Option(
-        None, "-f",
+        None,
+        "-f",
         help="TSV/CSV with sub,ses columns (header optional)",
     ),
     execute: bool = typer.Option(
-        False, "--execute",
+        False,
+        "--execute",
         help="Apply changes. Default is dry-run.",
     ),
     force: bool = typer.Option(
-        False, "--force",
+        False,
+        "--force",
         help="Unlink and relink ALL existing symlinks (both correct and wrong).",
     ),
     rerun_tsv: Optional[Path] = typer.Option(
-        None, "--rerun-map",
+        None,
+        "--rerun-map",
         help="Path to rerun_check.tsv (default: <bids_dir>/sourcedata/qc/rerun_check.tsv)",
     ),
     lab_note: Optional[Path] = typer.Option(
-        None, "--lab-note",
+        None,
+        "--lab-note",
         help="Lab-note Excel (.xlsx) for onset-dir validation (sub/ses/date checks).",
     ),
     verbose: bool = typer.Option(
-        False, "-v", "--verbose",
+        False,
+        "-v",
+        "--verbose",
         help="Show per-run table for every session (default: one summary line per session).",
+    ),
+    task: str = typer.Option(
+        _TASK_DEFAULT,
+        "--task",
+        help="BIDS task label to look for (e.g. 'fLoc' or 'BfLocVideo').",
+    ),
+    onset_keyword: Optional[str] = typer.Option(
+        None,
+        "--onset-keyword",
+        help=(
+            "String that must appear in the onset directory name "
+            "(default: auto-derived from --task: fLoc→1back, BfLocVideo→oddball)."
+        ),
     ),
 ) -> None:
     """
-    Link fLoc events.tsv from sourcedata into BIDS func directories.
+    Link task events.tsv from sourcedata into BIDS func directories.
 
     Default is dry-run. Pass --execute to create symlinks.
     Pass --force to also fix symlinks that point to the wrong target.
@@ -631,8 +730,23 @@ def main(
         console.print("[red]Error:[/red] -s and -f are mutually exclusive")
         raise typer.Exit(1)
 
-    # Load rerun map
-    rerun_path = rerun_tsv if rerun_tsv else bids_dir / _RERUN_MAP_DEFAULT
+    # Resolve onset keyword: explicit > auto-derived from task > error
+    if onset_keyword is None:
+        onset_keyword = _TASK_ONSET_KEYWORD.get(task)
+        if onset_keyword is None:
+            console.print(
+                f"[red]Error:[/red] no default onset keyword for task '{task}'. "
+                "Pass --onset-keyword explicitly."
+            )
+            raise typer.Exit(1)
+
+    # Load rerun map — try .tsv first, fall back to .csv (same content, different ext)
+    if rerun_tsv:
+        rerun_path = rerun_tsv
+    else:
+        tsv_path = bids_dir / _RERUN_MAP_DEFAULT
+        csv_path = tsv_path.with_suffix(".csv")
+        rerun_path = tsv_path if tsv_path.exists() else csv_path
     rerun_map = _load_rerun_map(rerun_path)
 
     # Load session dates from lab note (optional)
@@ -644,21 +758,27 @@ def main(
             f"([green]{len(session_dates)} sessions with dates[/green])"
         )
 
-    pairs = _iter_subses(bids_dir, subses_arg, file_arg)
+    pairs = _iter_subses(bids_dir, subses_arg, file_arg, task)
     if not pairs:
         console.print("[yellow]No sub/ses pairs found.[/yellow]")
         raise typer.Exit(0)
 
-    mode_str = "[bold green]EXECUTE[/bold green]" if execute else "[bold yellow]DRY-RUN[/bold yellow]"
+    mode_str = (
+        "[bold green]EXECUTE[/bold green]"
+        if execute
+        else "[bold yellow]DRY-RUN[/bold yellow]"
+    )
     rerun_str = (
         f"[green]{rerun_path.name}[/green] ({len(rerun_map)} entries)"
         if rerun_map
         else f"[yellow]not found[/yellow] ({rerun_path})"
     )
-    console.print(f"\n[bold]BIDS dir[/bold]  : {bids_dir}")
-    console.print(f"[bold]Mode[/bold]      : {mode_str}")
-    console.print(f"[bold]Sessions[/bold]  : {len(pairs)}")
-    console.print(f"[bold]Rerun map[/bold] : {rerun_str}")
+    console.print(f"\n[bold]BIDS dir[/bold]       : {bids_dir}")
+    console.print(f"[bold]Task[/bold]           : {task}")
+    console.print(f"[bold]Onset keyword[/bold]  : {onset_keyword}")
+    console.print(f"[bold]Mode[/bold]           : {mode_str}")
+    console.print(f"[bold]Sessions[/bold]       : {len(pairs)}")
+    console.print(f"[bold]Rerun map[/bold]      : {rerun_str}")
     console.print()
 
     total_link = total_skip = total_wrong = total_missing = 0
@@ -671,15 +791,21 @@ def main(
             console.rule(f"[bold]{label}[/bold]", style="bright_black")
 
         n_ok, n_skip, n_warn, n_missing, has_problem = _process_session(
-            bids_dir, sub, ses,
-            execute=execute, force=force,
-            rerun_map=rerun_map, verbose=verbose,
+            bids_dir,
+            sub,
+            ses,
+            execute=execute,
+            force=force,
+            rerun_map=rerun_map,
+            verbose=verbose,
+            task=task,
+            onset_keyword=onset_keyword,
             session_dates=session_dates,
         )
 
-        total_link    += n_ok
-        total_skip    += n_skip
-        total_wrong   += n_warn
+        total_link += n_ok
+        total_skip += n_skip
+        total_wrong += n_warn
         total_missing += n_missing
         if has_problem:
             n_problem += 1
@@ -693,21 +819,22 @@ def main(
             summary_style = "green"
 
         parts = []
-        if n_ok:    parts.append(f"link={n_ok}")
-        if n_skip:  parts.append(f"skip={n_skip}")
-        if n_warn:  parts.append(f"[yellow]wrong={n_warn}[/yellow]")
-        if n_missing: parts.append(f"[red]no_source={n_missing}[/red]")
+        if n_ok:
+            parts.append(f"link={n_ok}")
+        if n_skip:
+            parts.append(f"skip={n_skip}")
+        if n_warn:
+            parts.append(f"[yellow]wrong={n_warn}[/yellow]")
+        if n_missing:
+            parts.append(f"[red]no_source={n_missing}[/red]")
         counts = "  ".join(parts) if parts else "—"
 
-        console.print(
-            f"  {icon}  [{summary_style}]{label}[/{summary_style}]"
-            f"  {counts}"
-        )
+        console.print(f"  {icon}  [{summary_style}]{label}[/{summary_style}]  {counts}")
 
     # ---- final summary ----
     console.print()
     console.rule(style="bright_black")
-    ok_col   = "green" if total_missing == 0 and total_wrong == 0 else "yellow"
+    ok_col = "green" if total_missing == 0 and total_wrong == 0 else "yellow"
     console.print(
         f"[bold]Total[/bold]  "
         f"link=[{ok_col}]{total_link}[/{ok_col}]  "

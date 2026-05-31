@@ -34,6 +34,9 @@ Usage
     python prepare_fmap_intendedfor.py --bidsdir /path/BIDS -f subseslist.tsv --execute
     python prepare_fmap_intendedfor.py --bidsdir /path/BIDS -f subseslist.tsv --execute -w 8
     python prepare_fmap_intendedfor.py --bidsdir /path/BIDS -s 06,10 --lookback 10
+    python prepare_fmap_intendedfor.py --bidsdir /path/BIDS -f subseslist.tsv --suffix magnitude
+    python prepare_fmap_intendedfor.py --bidsdir /path/BIDS -s 05,day6BCBL --match fov
+    python prepare_fmap_intendedfor.py --bidsdir /path/BIDS -s 05,day6BCBL --match both
 """
 
 from __future__ import annotations
@@ -123,11 +126,14 @@ def _read_fov(json_path: str) -> tuple[int | None, int | None]:
 # ---------------------------------------------------------------------------
 
 
-def _read_func_files(bidsdir: str, sub: str, ses: str) -> list[dict]:
+def _read_func_files(
+    bidsdir: str, sub: str, ses: str, func_suffix: str = "bold"
+) -> list[dict]:
     """
     Return one entry per func JSON sidecar, sorted by AcquisitionTime.
 
-    Covers bold, sbref, and ME magnitude files.  Each entry carries:
+    func_suffix — "bold" matches bold + sbref; "magnitude" matches magnitude only.
+    Each entry carries:
       acq   — acq-* entity string (empty string if absent)
       echo  — echo-* entity string (empty string if absent)
       fov   — (n_slices, matrix_pe) fingerprint for fallback FOV matching
@@ -136,15 +142,19 @@ def _read_func_files(bidsdir: str, sub: str, ses: str) -> list[dict]:
     if not op.isdir(func_dir):
         return []
 
+    _suffix_pattern = (
+        r"_(bold|sbref)\.json$" if func_suffix == "bold" else r"_magnitude\.json$"
+    )
+
     rows = []
     for jf in sorted(
         glob.glob(op.join(func_dir, f"sub-{sub}_ses-{ses}_task-*_run-*_*.json"))
     ):
         basename = op.basename(jf)
-        m = re.search(r"_(bold|sbref|magnitude)\.json$", basename)
+        m = re.search(_suffix_pattern, basename)
         if not m:
             continue
-        acq_m  = re.search(r"_acq-(\w+)_", basename)
+        acq_m = re.search(r"_acq-(\w+)_", basename)
         echo_m = re.search(r"_echo-(\w+)_", basename)
         nii_name = basename.replace(".json", ".nii.gz")
         acq_time = parse_hms(read_json_acqtime(jf))
@@ -152,9 +162,9 @@ def _read_func_files(bidsdir: str, sub: str, ses: str) -> list[dict]:
             {
                 "basename": basename,
                 "suffix": m.group(1),
-                "acq":  acq_m.group(1)  if acq_m  else "",
+                "acq": acq_m.group(1) if acq_m else "",
                 "echo": echo_m.group(1) if echo_m else "",
-                "fov":  _read_fov(jf),
+                "fov": _read_fov(jf),
                 "acq_time": acq_time,
                 "acq_sec": hms_to_sec(acq_time),
                 "intended_for_path": f"ses-{ses}/func/{nii_name}",
@@ -187,8 +197,8 @@ def _read_fmap_files(bidsdir: str, sub: str, ses: str) -> list[dict]:
         if not run_m:
             continue
         acq_m = re.search(r"_acq-(\w+)_", basename)
-        acq   = acq_m.group(1) if acq_m else ""
-        key   = (acq, int(run_m.group(1)))
+        acq = acq_m.group(1) if acq_m else ""
+        key = (acq, int(run_m.group(1)))
         by_run.setdefault(key, []).append(jf)
 
     rows = []
@@ -201,11 +211,11 @@ def _read_fmap_files(bidsdir: str, sub: str, ses: str) -> list[dict]:
                 break
         rows.append(
             {
-                "run":        str(run_int),
-                "acq":        acq,
-                "fov":        _read_fov(json_paths[0]),
-                "acq_time":   acq_time,
-                "acq_sec":    hms_to_sec(acq_time),
+                "run": str(run_int),
+                "acq": acq,
+                "fov": _read_fov(json_paths[0]),
+                "acq_time": acq_time,
+                "acq_sec": hms_to_sec(acq_time),
                 "json_paths": json_paths,
             }
         )
@@ -269,20 +279,48 @@ def _check_fmap_timing(func_files: list[dict], fmap_runs: list[dict]) -> None:
 
 
 def _assign_intendedfor(
-    func_files: list[dict], fmap_runs: list[dict], lookback_sec: int = FMAP_LOOKBACK_SEC
+    func_files: list[dict],
+    fmap_runs: list[dict],
+    lookback_sec: int = FMAP_LOOKBACK_SEC,
+    match_mode: str = "timing",
 ) -> list[dict]:
+    """
+    Assign IntendedFor lists to fmap runs.
+
+    match_mode:
+      "timing" — timing window only (default, current behaviour)
+      "fov"    — FOV fingerprint only; ignores time windows entirely
+      "both"   — timing window AND matching FOV (strictest)
+    """
     for i, fm in enumerate(fmap_runs):
-        # Look back up to lookback_sec, but not before the previous fmap (no overlap).
+        # --- timing window boundaries (used by "timing" and "both") ---
         prev_sec = fmap_runs[i - 1]["acq_sec"] if i > 0 else 0.0
         window_start = max(fm["acq_sec"] - lookback_sec, prev_sec)
         next_sec = (
             fmap_runs[i + 1]["acq_sec"] if i + 1 < len(fmap_runs) else float("inf")
         )
-        funcs_in_window = [
-            f for f in func_files if window_start <= f["acq_sec"] < next_sec
-        ]
+
+        fmap_fov = fm.get("fov")
+        fov_valid = fmap_fov and fmap_fov != (None, None)
+
+        if match_mode == "timing":
+            funcs_in_window = [
+                f for f in func_files if window_start <= f["acq_sec"] < next_sec
+            ]
+        elif match_mode == "fov":
+            funcs_in_window = [
+                f for f in func_files if fov_valid and f.get("fov") == fmap_fov
+            ]
+        else:  # "both"
+            funcs_in_window = [
+                f
+                for f in func_files
+                if window_start <= f["acq_sec"] < next_sec
+                and fov_valid
+                and f.get("fov") == fmap_fov
+            ]
+
         fm["intended_for"] = [f["intended_for_path"] for f in funcs_in_window]
-        # Store the acq_sec of the first func in the window for session-gap check
         fm["first_func_in_window_sec"] = (
             min(f["acq_sec"] for f in funcs_in_window) if funcs_in_window else None
         )
@@ -502,8 +540,10 @@ def _plan_renumber(kept_runs: list[dict]) -> list[tuple[str, str]]:
         for new_idx, fm in enumerate(acq_fmaps, start=1):
             new_run = str(new_idx)
             for jf, nii in _fmap_all_paths(fm):
-                jf_new  = re.sub(r"_run-\d+_epi\.json$",   f"_run-{new_run}_epi.json",   jf)
-                nii_new = re.sub(r"_run-\d+_epi\.nii\.gz$", f"_run-{new_run}_epi.nii.gz", nii)
+                jf_new = re.sub(r"_run-\d+_epi\.json$", f"_run-{new_run}_epi.json", jf)
+                nii_new = re.sub(
+                    r"_run-\d+_epi\.nii\.gz$", f"_run-{new_run}_epi.nii.gz", nii
+                )
                 if jf != jf_new:
                     ops.append((jf, jf_new))
                 if nii != nii_new:
@@ -612,8 +652,8 @@ def _print_plan_table(
     t.add_column("IntendedFor", justify="center")
 
     for fm in fmap_runs:
-        old_run   = fm["run"]
-        acq_cell  = fm.get("acq") or "—"
+        old_run = fm["run"]
+        acq_cell = fm.get("acq") or "—"
         if id(fm) in kept_new_ids:
             new_run = kept_new_ids[id(fm)]
             action = (
@@ -632,8 +672,8 @@ def _print_plan_table(
             )
         else:
             new_run = "—"
-            action  = "[red]delete (no func)[/]"
-            n_func  = "0"
+            action = "[red]delete (no func)[/]"
+            n_func = "0"
             if_cell = "[dim]n/a[/]"
         t.add_row(
             acq_cell,
@@ -719,11 +759,13 @@ def process_session(
     dry_run: bool = True,
     ln_fmap_counts: dict | None = None,
     lookback_sec: int = FMAP_LOOKBACK_SEC,
+    func_suffix: str = "bold",
+    match_mode: str = "both",
 ) -> dict:
     """
     Returns {sub, ses, n_fmaps_orig, n_removed, n_written, intendedfor_status, warnings}.
     """
-    func_files = _read_func_files(bidsdir, sub, ses)
+    func_files = _read_func_files(bidsdir, sub, ses, func_suffix=func_suffix)
     fmap_runs = _read_fmap_files(bidsdir, sub, ses)
 
     if not fmap_runs:
@@ -773,7 +815,7 @@ def process_session(
     for fm in fmap_runs:
         acq_fmap.setdefault(fm.get("acq", ""), []).append(fm)
 
-    kept_runs:    list[dict] = []
+    kept_runs: list[dict] = []
     removed_runs: list[dict] = []
 
     for acq in sorted(set(acq_func) | set(acq_fmap)):
@@ -786,7 +828,8 @@ def process_session(
             fov_ref = g_funcs[0].get("fov")
             if fov_ref and fov_ref != (None, None):
                 candidates = [
-                    fm for fm in fmap_runs
+                    fm
+                    for fm in fmap_runs
                     if fm.get("fov") == fov_ref and fm.get("acq") not in acq_func
                 ]
                 if candidates:
@@ -794,6 +837,24 @@ def process_session(
                     all_warnings.append(
                         f"  [yellow]⚠ FOV FALLBACK[/]  {acq_label}: no dedicated fmap; "
                         f"matched {len(g_fmaps)} fmap(s) by FOV {fov_ref}"
+                    )
+
+        # Reverse FOV fallback: fmap group has no matching funcs → match funcs by
+        # first fmap's FOV fingerprint.  Handles the case where fmaps carry an
+        # acq- entity (e.g. acq-fMRI) but the corresponding func files do not.
+        if not g_funcs and g_fmaps:
+            fov_ref = g_fmaps[0].get("fov")
+            if fov_ref and fov_ref != (None, None):
+                candidates = [
+                    f
+                    for f in func_files
+                    if f.get("fov") == fov_ref and f.get("acq") not in acq_fmap
+                ]
+                if candidates:
+                    g_funcs = sorted(candidates, key=lambda r: r["acq_sec"])
+                    all_warnings.append(
+                        f"  [yellow]⚠ FOV FALLBACK[/]  {acq_label}: no matching funcs; "
+                        f"matched {len(g_funcs)} func(s) by fmap FOV {fov_ref}"
                     )
 
         if not g_fmaps:
@@ -830,7 +891,7 @@ def process_session(
             continue  # skip this acq group; others may still succeed
 
         # assign IntendedFor windows, then prune
-        g_fmaps = _assign_intendedfor(g_funcs, g_fmaps, lookback_sec)
+        g_fmaps = _assign_intendedfor(g_funcs, g_fmaps, lookback_sec, match_mode)
         kept, removed = _prune_fmaps(g_fmaps)
         kept, removed = _prune_session_gap_fmaps(kept, removed)
 
@@ -840,6 +901,18 @@ def process_session(
 
         kept_runs.extend(kept)
         removed_runs.extend(removed)
+
+    # Deduplicate: a fmap can be claimed by multiple acq groups via FOV fallback.
+    # Keep first occurrence (preserves time order); drop the rest from both lists.
+    seen: set[int] = set()
+    deduped: list[dict] = []
+    for fm in kept_runs:
+        if id(fm) not in seen:
+            seen.add(id(fm))
+            deduped.append(fm)
+    kept_runs = deduped
+    kept_ids = seen
+    removed_runs = [fm for fm in removed_runs if id(fm) not in kept_ids]
 
     # merge across acq groups, restore time order
     kept_runs.sort(key=lambda r: r["acq_sec"])
@@ -1025,6 +1098,21 @@ def main(
         "--lookback",
         help="Minutes before a fmap to include func files in IntendedFor (default: 10).",
     ),
+    func_suffix: str = typer.Option(
+        "bold",
+        "--suffix",
+        help="Func suffix to assign IntendedFor to: 'bold' (bold+sbref) or 'magnitude'.",
+    ),
+    match_mode: str = typer.Option(
+        "both",
+        "--match",
+        help=(
+            "How to match func files to fmaps: "
+            "'both' (time window AND FOV, default), "
+            "'timing' (time window only), "
+            "'fov' (FOV fingerprint only, ignores time)."
+        ),
+    ),
 ):
     """
     Populate IntendedFor in fmap JSONs based on AcquisitionTime ordering.
@@ -1039,6 +1127,13 @@ def main(
     _verbose = verbose or debug  # debug implies verbose
     _debug = debug
     lookback_sec = lookback * 60
+
+    if func_suffix not in ("bold", "magnitude"):
+        console.print("[red]--suffix must be 'bold' or 'magnitude'.[/]")
+        raise typer.Exit(1)
+    if match_mode not in ("timing", "fov", "both"):
+        console.print("[red]--match must be 'timing', 'fov', or 'both'.[/]")
+        raise typer.Exit(1)
 
     # Load lab-note fmap counts once if provided
     ln_fmap_counts: dict | None = None
@@ -1077,6 +1172,8 @@ def main(
                     dry_run,
                     ln_fmap_counts,
                     lookback_sec,
+                    func_suffix,
+                    match_mode,
                 ): (sub, ses)
                 for sub, ses in pairs
             }
@@ -1097,6 +1194,8 @@ def main(
                     dry_run=dry_run,
                     ln_fmap_counts=ln_fmap_counts,
                     lookback_sec=lookback_sec,
+                    func_suffix=func_suffix,
+                    match_mode=match_mode,
                 )
             )
 
