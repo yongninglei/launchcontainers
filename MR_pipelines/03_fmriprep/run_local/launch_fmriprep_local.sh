@@ -76,19 +76,6 @@ mkdir -p "${DERIVS_DIR}"
 export SINGULARITYENV_FS_LICENSE=/export/home/tlei/tlei/linux_settings/license.txt
 export SINGULARITYENV_TEMPLATEFLOW_HOME="/templateflow"
 
-SINGULARITY_CMD="unset PYTHONPATH && singularity run --cleanenv --no-home \
-                     --containall --writable-tmpfs \
-                 -B /bcbl:/bcbl \
-                 -B /export:/export \
-                 -B $BIDS_DIR:/base \
-                 -B $CODE_DIR:/code \
-                 -B ${LOCAL_FREESURFER_DIR}:/fsdir \
-                 -B ${TEMPLATEFLOW_HOST_HOME}:${SINGULARITYENV_TEMPLATEFLOW_HOME} \
-                 -B ${FMRIPREP_HOST_CACHE}:/work \
-                 /bcbl/home/public/Gari/containers/fmriprep_${fp_version}.sif"
-
-# If you already have FS run, add: -B ${LOCAL_FREESURFER_DIR}:/fsdir
-
 # ---------------------------------------------------------------------------
 # Run fMRIPrep
 # ---------------------------------------------------------------------------
@@ -97,6 +84,22 @@ while IFS=',' read -r sub ses; do
 
     echo "### fMRIPrep: sub-${sub} (all sessions) ###"
     now=$(date +"%Y-%m-%dT%H:%M")
+
+    # Per-subject isolated work dir: prevents fmriprep from finding other
+    # subjects' config files (avoids skull_strip_template resume bug).
+    SUBJECT_WORK_DIR=${FMRIPREP_HOST_CACHE}/sub-${sub}
+    mkdir -p "${SUBJECT_WORK_DIR}"
+
+    SINGULARITY_CMD="unset PYTHONPATH && singularity run --cleanenv --no-home \
+                         --containall --writable-tmpfs \
+                     -B /bcbl:/bcbl \
+                     -B /export:/export \
+                     -B $BIDS_DIR:/base \
+                     -B $CODE_DIR:/code \
+                     -B ${LOCAL_FREESURFER_DIR}:/fsdir \
+                     -B ${TEMPLATEFLOW_HOST_HOME}:${SINGULARITYENV_TEMPLATEFLOW_HOME} \
+                     -B ${SUBJECT_WORK_DIR}:/work \
+                     /bcbl/home/public/Gari/containers/fmriprep_${fp_version}.sif"
 
     cmd="module load apptainer/latest && \
          ${SINGULARITY_CMD} \

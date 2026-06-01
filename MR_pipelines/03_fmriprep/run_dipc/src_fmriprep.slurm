@@ -13,10 +13,10 @@
 # The above copyright notice and this permission notice shall be included in all copies or substantial
 # portions of the Software.
 
-#SBATCH --time=18:00:00
+#SBATCH --time=12:00:00
 #SBATCH -n 1  # this stands for number of task/ or number of nodes being used
 #SBATCH --cpus-per-task=30    #6
-#SBATCH --mem=65000
+#SBATCH --mem=80000
 #SBATCH --partition=general  # Queue names you can submit to
 #SBATCH --qos=regular       #<regular,serial,test,long or xlong>
 
@@ -24,19 +24,19 @@
 # need to create the log folder first
 # the sublist is shared across launch.sh and the slurm
 
-echo "output_base is ${output_base}"
+echo "basedir is ${basedir}"
 echo "bids_dir is ${bids_dir}"
 
 # Read-only BIDS input (on /data — not writable)
 BIDS_DIR="${bids_dir}"
 # Scratch-side paths (all writable)
-CODE_DIR="${output_base}/code"
-fp_output_dir="${output_base}/derivatives_new/fmriprep-${fp_version}_${analysis_name}"
+CODE_DIR="${basedir}/code"
+fp_output_dir="${basedir}/derivatives/fmriprep-${fp_version}_${analysis_name}"
 # Prepare output folder (on scratch — writable)
 mkdir -p ${fp_output_dir}
 echo "fp_output_dir: $fp_output_dir"
 
-export cache_dir=/scratch/tlei/fmriprep_tmps_${fp_version}_${analysis_name}
+export cache_dir=${basedir}/fmriprep_tmps_${fp_version}_${analysis_name}
 
 # Prepare some writeable bind-mount points.
 TEMPLATEFLOW_HOST_HOME=$cache_dir/.cache/templateflow
@@ -56,33 +56,17 @@ mkdir -p ${FMRIPREP_WORK_DIR}
 
 # Make sure FS_LICENSE is defined in the container.
 # License file lives in the (read-only) BIDS dir — reading it is fine.
-export SINGULARITYENV_FS_LICENSE=${BIDS_DIR}/.license
+export APPTAINERENV_FS_LICENSE=${BIDS_DIR}/.license
 # Designate a templateflow bind-mount point
-export SINGULARITYENV_TEMPLATEFLOW_HOME="/templateflow"
-# BIDS input  → /bids  (read-only bind so fmriprep cannot write there)
-# Output dir  → /output (writable scratch)
-# Work/cache  → /work  (writable scratch)
-FS_DIR="/scratch/tlei/VOTCLOC/BIDS/derivatives/freesurfer-with_t2"
-SINGULARITY_CMD="unset PYTHONPATH && export PYTHONDONTWRITEBYTECODE=1 && singularity run --cleanenv --no-home --writable-tmpfs\
-                 -B ${BIDS_DIR}:/bids \
-                 -B ${fp_output_dir}:/output \
-                 -B $CODE_DIR:/code \
-                 -B ${TEMPLATEFLOW_HOST_HOME}:${SINGULARITYENV_TEMPLATEFLOW_HOME}\
-                 -B ${FMRIPREP_HOST_CACHE}:/work \
-                 -B ${FS_DIR}:/fsdir \
-                 /scratch/tlei/containers/fmriprep_${fp_version}.sif "
-
-                 # If you already have FS run, add this line to find it
-                 # -B ${LOCAL_FREESURFER_DIR}:/fsdir \
-# Remove IsRunning files from FreeSurfer
-# find ${LOCAL_FREESURFER_DIR}/sub-$subject/ -name "*IsRunning*" -type f -delete
+export APPTAINERENV_TEMPLATEFLOW_HOME="/templateflow"
+FS_DIR="${fs_dir}"
 
 # Parse the participants.tsv file and extract one subject ID from the
 # line corresponding to this SLURM task.
 # this is getting the sub from \t operator
 # subject=$(
 #   sed -n -E "$((${SLURM_ARRAY_TASK_ID} + 1))s/^([0-9]+)[[:space:]]+([0-9]+)$/\1/p" \
-#   ${output_base}/code/${sublist}
+#   ${basedir}/code/${sublist}
 # )
 # this is get the sub from , operator
 subject=$(
@@ -94,9 +78,29 @@ ses=$(
     "${sublist}"
 )
 scontrol update JobId=${SLURM_JOB_ID} Name="fp_s${subject}_${ses}"
+
+# Per-subject isolated work dir: each container sees only its own /work,
+# preventing fmriprep from finding other subjects' config files.
+SUBJECT_WORK_DIR=${FMRIPREP_HOST_CACHE}/sub-${subject}
+mkdir -p ${SUBJECT_WORK_DIR}
+
+# BIDS input  → /bids  (read-only)
+# Output dir  → /output (writable scratch)
+# Work/cache  → /work  (per-subject isolated writable scratch)
+fs_bind_opt=""
+[[ -n "${FS_DIR}" ]] && fs_bind_opt="-B ${FS_DIR}:/fsdir"
+APPTAINER_CMD="unset PYTHONPATH && export PYTHONDONTWRITEBYTECODE=1 && apptainer run --cleanenv --no-home --writable-tmpfs\
+                 -B ${BIDS_DIR}:/bids \
+                 -B ${fp_output_dir}:/output \
+                 -B $CODE_DIR:/code \
+                 -B ${TEMPLATEFLOW_HOST_HOME}:${APPTAINERENV_TEMPLATEFLOW_HOME}\
+                 -B ${SUBJECT_WORK_DIR}:/work \
+                 ${fs_bind_opt}\
+                 /scratch/tlei/containers/fmriprep_${fp_version}.sif "
+
 # Compose the command line
 cmd_anatonly="module load Apptainer/1.3.5 &&  \
-     ${SINGULARITY_CMD} \
+     ${APPTAINER_CMD} \
      /bids \
      /output \
      participant \
@@ -106,12 +110,10 @@ cmd_anatonly="module load Apptainer/1.3.5 &&  \
       --omp-nthreads 10 --nthreads 20 --mem_mb 50000 \
       --skip-bids-validation \
       --anat-only \
-      --stop-on-first-crash \
-      --bids-filter-file /code/fmriprep/bids_filter_sub-${subject}.json \
       --output-spaces T1w MNI152NLin2009cAsym fsnative fsaverage "
 
-cmd_runall="module load Apptainer/1.3.5 &&  \
-     ${SINGULARITY_CMD} \
+cmd_runall_SE="module load Apptainer/1.3.5 &&  \
+     ${APPTAINER_CMD} \
      /bids \
      /output \
      participant \
@@ -122,8 +124,25 @@ cmd_runall="module load Apptainer/1.3.5 &&  \
       --skip-bids-validation \
       --fs-subjects-dir /fsdir \
       --force bbr \
-      --bold2anat-init t2w \
+      --bold2anat-init auto \
       --output-spaces T1w func MNI152NLin2009cAsym fsnative fsaverage "
+
+cmd_runall_ME="module load Apptainer/1.3.5 &&  \
+     ${APPTAINER_CMD} \
+     /bids \
+     /output \
+     participant \
+      --participant-label $subject \
+      -w /work/ -vv \
+      --fs-license-file /bids/.license \
+      --omp-nthreads 10 --nthreads 20 --mem_mb 70000 \
+      --skip-bids-validation \
+      --fs-subjects-dir /fsdir \
+      --force bbr \
+      --bold2anat-init t2w \
+      --output-spaces T1w func MNI152NLin2009cAsym fsnative fsaverage \
+      --me-t2s-fit-method curvefit \
+      --me-output-echos "
 
 # Add these two lines if you had freesurfer run already
 #             --force bbr \
@@ -139,30 +158,17 @@ cmd_runall="module load Apptainer/1.3.5 &&  \
 #     --project-goodvoxels \
 #     --notrack \
 # --stop-on-first-crash \ this is dangerous, since the rendering step can fail for some subjects, but the rest of the pipeline is fine. Use with caution.
-# Pre-warm the TemplateFlow cache before running the main command.
-# Multiple array tasks starting simultaneously on a fresh cache will race
-# on templateflow registry initialization, causing some tasks to see only
-# partially-populated template lists (e.g. missing MNI152NLin2009cAsym).
-# Task 1 runs fmriprep --version (triggers tf registry init) while others wait.
-if [ "${SLURM_ARRAY_TASK_ID}" -eq 1 ]; then
-    echo "Task 1: pre-warming TemplateFlow cache..."
-    module load Apptainer/1.3.5
-    eval "${SINGULARITY_CMD} --version"
-    echo "TemplateFlow cache pre-warm done."
-    touch "${FMRIPREP_WORK_DIR}/.tf_cache_ready"
-else
-    echo "Task ${SLURM_ARRAY_TASK_ID}: waiting for TemplateFlow cache pre-warm..."
-    for i in $(seq 1 60); do
-        [ -f "${FMRIPREP_WORK_DIR}/.tf_cache_ready" ] && break
-        sleep 5
-    done
-    echo "Task ${SLURM_ARRAY_TASK_ID}: proceeding."
-fi
-
 # Setup done, run the command
 echo Running task ${SLURM_ARRAY_TASK_ID}, for subject ${subject}
-echo Commandline: $cmd_runall
-eval $cmd_runall
+if [[ -n "${fs_dir}" ]]; then
+    echo "fs_dir set — running full pipeline (cmd_runall_SE)"
+    echo Commandline: $cmd_runall_SE
+    eval $cmd_runall_SE
+else
+    echo "fs_dir not set — running anat-only"
+    echo Commandline: $cmd_anatonly
+    eval $cmd_anatonly
+fi
 exitcode=$?
 
 # Post-job: write one summary line to job_results.tsv in slurm_log_dir.
