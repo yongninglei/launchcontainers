@@ -125,7 +125,8 @@ cmd_runall_SE="module load Apptainer/1.3.5 &&  \
       --fs-subjects-dir /fsdir \
       --force bbr \
       --bold2anat-init auto \
-      --output-spaces T1w func MNI152NLin2009cAsym fsnative fsaverage "
+      --output-spaces T1w func MNI152NLin2009cAsym fsnative fsaverage \
+      --bids-filter-file /code/fmriprep/bids_filter_sub-${subject}.json "
 
 cmd_runall_ME="module load Apptainer/1.3.5 &&  \
      ${APPTAINER_CMD} \
