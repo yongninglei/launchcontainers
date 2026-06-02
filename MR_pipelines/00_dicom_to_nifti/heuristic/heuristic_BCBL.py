@@ -170,7 +170,7 @@ def infotodict(seqinfo):
             info[t1_w].append(s.series_id)
 
         # fmap
-        if ('TOPUP' in s.protocol_name.upper()):  # and ('M' in s.image_type):
+        if ('TOPUP' in s.protocol_name.upper()) or ('SEFieldMaP' in s.protocol_name.upper()):  # and ('M' in s.image_type):
             if (s.dim1 == 92) and (s.dim3 == 80) and (s.series_files == 1):  # and (s.TR==14.956):
                 if ('AP' in s.protocol_name) :
                     info[fmap_AP].append(s.series_id)
@@ -183,15 +183,15 @@ def infotodict(seqinfo):
         if (s.series_files == 1) and ('Pha' not in s.series_description):
             # pay attention to add a check for language in the s.protocol_name when in the scanner, otherwise the multiple language thing
             # will cause trouble
-            if ('fLoc' in s.protocol_name) or ('floc' in s.protocol_name):
+            if ('fLoc' in s.protocol_name) or ('floc' in s.protocol_name) or ('taskfMRI' in s.protocol_name):
                 info[fLoc_sbref].append(s.series_id)
 
-        if (s.dim1 == 92) and (s.dim3 == 80) and ((s.series_files == 160) or (s.series_files == 159)):
+        if (s.dim1 == 92) and (s.dim3 == 80) and ((s.series_files == 160) or (s.series_files == 159)) or (s.series_files == 121):
             if ('Pha' in s.series_description) :
-                if ('fLoc' in s.protocol_name) or ('floc' in s.protocol_name) :
+                if ('fLoc' in s.protocol_name) or ('floc' in s.protocol_name) or ('taskfMRI' in s.protocol_name):
                     info[fLoc_P].append(s.series_id)
             else:
-                if ('fLoc' in s.protocol_name) or ('floc' in s.protocol_name) :
+                if ('fLoc' in s.protocol_name) or ('floc' in s.protocol_name) or ('taskfMRI' in s.protocol_name):
                     info[fLoc_M].append(s.series_id)
 
         # dwi

@@ -8,7 +8,7 @@ TB_PATH="/export/home/tlei/tlei/toolboxes"
 
 # nordic parameters (must match your MATLAB signature)
 # NUMBER_OF_ECHOS: 1 for SE, N for ME (detected per-run from acq-ME in filename)
-NUMBER_OF_ECHOS=3
+NUMBER_OF_ECHOS=1
 NUM_WORKERS=16   # number of parallel MATLAB workers (parfor)
 FORCE=true
 DONORDIC=true

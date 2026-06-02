@@ -5,14 +5,13 @@
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-project=IRAKEINU
-basedir=/bcbl/home/public/Gari/$project
-codedir=$basedir/code
+project=VOTCLOC
+basedir=/bcbl/home/public/Gari/$project/Japan_27ses_dp
 
 outputdir=$basedir/raw_nifti
 dcm_dir=/base/dicom
 script_dir=/export/home/tlei/tlei/soft/launchcontainers/MR_pipelines/00_dicom_to_nifti
-heuristicfile=$script_dir/heuristic/heuristic_all_${project}.py
+heuristicfile=$script_dir/heuristic/heuristic_BCBL.py
 sing_path=/bcbl/home/public/Gari/containers/heudiconv_1.3.4.sif
 
 # ---------------------------------------------------------------------------
@@ -21,7 +20,7 @@ sing_path=/bcbl/home/public/Gari/containers/heudiconv_1.3.4.sif
 usage() {
     echo "Usage:"
     echo "  $0 -t <step> -s <sub>,<ses>         # single sub/ses pair"
-    echo "  $0 -t <step> -f <subseslist_name>   # batch from codedir/<subseslist_name>"
+    echo "  $0 -t <step> -f <subseslist_name>   # batch from <subseslist_name>"
     echo ""
     echo "  -t  heudiconv step: step1 or step2"
     exit 1
