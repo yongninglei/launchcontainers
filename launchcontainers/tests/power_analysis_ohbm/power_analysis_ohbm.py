@@ -373,31 +373,36 @@ def prepare_allses_data(
 def save_design_matrix_files(
     design_matrix_std: pd.DataFrame,
     contrasts: dict,
-    outdir: str,
+    ses_dir: str,
     sub: str,
     task: str,
     hemi: str,
 ) -> None:
-    """Save DM CSV, DM PNG, and one contrast PNG per contrast to outdir."""
-    makedirs(outdir, exist_ok=True)
+    """Save DM CSV, DM PNG, and one contrast PNG per contrast.
 
-    csv_path = op.join(outdir, f"sub-{sub}_hemi-{hemi}_task-{task}_design_matrix_allses.csv")
-    design_matrix_std.to_csv(csv_path)
-    console.print(f"  [dim]DM CSV  → {csv_path}[/dim]")
+    ses_dir is the allses subdir — matches existing l1_surface layout.
+    """
+    makedirs(ses_dir, exist_ok=True)
 
+    # design_matrix.png — plain name, matches existing analysis-final_v3_allses
     ax = plot_design_matrix(design_matrix_std)
     fig = ax.get_figure()
     fig.suptitle(f"sub-{sub}  all-sessions  task-{task}  hemi-{hemi}", fontsize=9)
-    dm_png = op.join(outdir, f"sub-{sub}_hemi-{hemi}_task-{task}_design_matrix_allses.png")
+    dm_png = op.join(ses_dir, "design_matrix.png")
     fig.savefig(dm_png, bbox_inches="tight", dpi=120)
     plt.close(fig)
     console.print(f"  [dim]DM PNG  → {dm_png}[/dim]")
+
+    # DM CSV — BIDS-ish name for clarity
+    csv_path = op.join(ses_dir, f"sub-{sub}_ses-allses_task-{task}_hemi-{hemi}_design_matrix.csv")
+    design_matrix_std.to_csv(csv_path)
+    console.print(f"  [dim]DM CSV  → {csv_path}[/dim]")
 
     for key, vec in contrasts.items():
         ax = plot_contrast_matrix(vec, design_matrix=design_matrix_std)
         fig = ax.get_figure()
         fig.suptitle(f"sub-{sub}  {key}  hemi-{hemi}", fontsize=9)
-        c_png = op.join(outdir, f"sub-{sub}_hemi-{hemi}_task-{task}_contrast_{key}.png")
+        c_png = op.join(ses_dir, f"sub-{sub}_ses-allses_task-{task}_hemi-{hemi}_contrast-{key}_contrast_matrix.png")
         fig.savefig(c_png, bbox_inches="tight", dpi=100)
         plt.close(fig)
     console.print(f"  [dim]Contrast PNGs saved ({len(contrasts)} files)[/dim]")
@@ -582,14 +587,18 @@ def save_allruns_maps(
     Y_full: np.ndarray,
     X_full: np.ndarray,
     contrasts: dict,
-    outdir: str,
+    ses_dir: str,
     sub: str,
     task: str,
     space: str,
     hemi: str,
 ) -> None:
-    """Fit GLM on ALL runs and save full-brain stat maps (effect + t only)."""
-    makedirs(outdir, exist_ok=True)
+    """Fit GLM on ALL runs and save full-brain stat maps (effect + t only).
+
+    Files go into ses_dir (the allses subdir) with names matching
+    analysis-final_v3_allses convention: ses-allses, stat-effect / stat-t.
+    """
+    makedirs(ses_dir, exist_ok=True)
     console.print(f"\n  [bold]Fitting all-runs baseline GLM (hemi-{hemi}) …[/bold]")
 
     labels, estimates = run_glm(Y_full.T, X_full)
@@ -601,13 +610,13 @@ def save_allruns_maps(
 
         for stat_label, arr in [("stat-effect", effect), ("stat-t", t_value)]:
             fname = (
-                f"sub-{sub}_ses-allruns_task-{task}"
+                f"sub-{sub}_ses-allses_task-{task}"
                 f"_hemi-{hemi}_space-{space}"
                 f"_contrast-{contrast_id}_{stat_label}_statmap.func.gii"
             )
-            save_statmap_to_gifti(arr, op.join(outdir, fname))
+            save_statmap_to_gifti(arr, op.join(ses_dir, fname))
 
-    console.print(f"  All-runs maps saved → {outdir}")
+    console.print(f"  All-runs maps saved → {ses_dir}")
 
 
 # ---------------------------------------------------------------------------
@@ -774,9 +783,10 @@ def main(
     confound_strategy = load_confound_strategy(strategy_yaml, strategy)
 
     outdir = op.join(
-        bids_dir, "derivatives", "power_analysis_ohbm",
+        base, "derivatives", "power_analysis_ohbm",
         f"analysis-{output_name}", f"sub-{sub}",
     )
+    ses_dir = op.join(outdir, "allses")
 
     # ── Launch summary ────────────────────────────────────────────────────────
     console.rule("[bold cyan]Power Analysis OHBM[/bold cyan]")
@@ -874,8 +884,8 @@ def main(
                     hemi=hemi,
                 )
             )
-            # Save DM diagnostics (always, on every fresh build)
-            save_design_matrix_files(design_matrix_std, contrasts, outdir, sub, task, hemi)
+            # Save DM diagnostics into allses/ (matches l1_surface layout)
+            save_design_matrix_files(design_matrix_std, contrasts, ses_dir, sub, task, hemi)
             del design_matrix_std
 
             # Save big cache so next run skips all BOLD/BIDS loading
@@ -897,8 +907,7 @@ def main(
 
         # ── Optional: all-runs full-brain baseline ────────────────────────────
         if save_allruns:
-            allruns_outdir = op.join(outdir, "allruns_maps")
-            save_allruns_maps(Y_full, X_full, contrasts, allruns_outdir, sub, task, space, hemi)
+            save_allruns_maps(Y_full, X_full, contrasts, ses_dir, sub, task, space, hemi)
 
         # ── Power analysis loop ───────────────────────────────────────────────
         results, c_names, r_names = run_power_loop(
