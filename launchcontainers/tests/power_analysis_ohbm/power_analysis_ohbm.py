@@ -812,36 +812,59 @@ def main(
     )
     console.print(tbl)
 
-    # ── Build BIDS layouts ────────────────────────────────────────────────────
-    console.print("Creating BIDS layout …")
-    _t = time.time()
-    layout = BIDSLayout(bids_dir, validate=False)
-    console.print(f"  [dim]BIDS ready in {time.time() - _t:.1f} s[/dim]")
-    console.print("Creating fMRIPrep layout …")
-    _t = time.time()
-    fp_layout = BIDSLayout(fmriprep_dir, validate=False)
-    console.print(f"  [dim]fMRIPrep ready in {time.time() - _t:.1f} s[/dim]\n")
-
-    # ── Auto-detect sessions ──────────────────────────────────────────────────
-    if sessions is None:
-        ext  = ".func.gii" if is_surface else ".nii.gz"
-        raw  = sorted(s.zfill(2) for s in layout.get_sessions(subject=sub, task=task))
-        sessions = []
-        for s in raw:
-            func_dir = op.join(fmriprep_dir, f"sub-{sub}", f"ses-{s}", "func")
-            if op.isdir(func_dir) and any(
-                task in f and f.endswith(ext) for f in os.listdir(func_dir)
-            ):
-                sessions.append(s)
-        if not sessions:
-            console.print(f"[red]ERROR[/red]: no sessions with fMRIprep data for sub-{sub}")
-            raise typer.Exit(1)
-        console.print(
-            f"  Auto-detected {len(sessions)} sessions: "
-            f"{', '.join('ses-' + s for s in sessions)}\n"
-        )
-
     hemis = ["L", "R"] if is_surface else [None]
+
+    # ── Skip layouts entirely when every hemisphere is already cached ─────────
+    _db_dir  = op.join(base, "derivatives", "power_analysis_ohbm")
+    makedirs(_db_dir, exist_ok=True)
+    _all_cached = (not force) and all(
+        op.exists(_cache_paths(outdir, sub, h)[0]) and op.exists(_cache_paths(outdir, sub, h)[1])
+        for h in (hemis if hemis[0] is not None else [])
+    )
+
+    layout = fp_layout = None
+    if _all_cached:
+        console.print(
+            "  [green]Cache found for all hemispheres — skipping BIDS/fMRIPrep layout.[/green]\n"
+        )
+    else:
+        # ── Build BIDS layouts (SQLite-persisted — fast on second run) ────────
+        # database_path saves the pybids index to disk; subsequent runs load it
+        # in seconds instead of re-scanning the full directory tree.
+        console.print("Creating BIDS layout …")
+        _t = time.time()
+        layout = BIDSLayout(
+            bids_dir, validate=False,
+            database_path=op.join(_db_dir, ".bids_layout.db"),
+        )
+        console.print(f"  [dim]BIDS ready in {time.time() - _t:.1f} s[/dim]")
+
+        console.print("Creating fMRIPrep layout …")
+        _t = time.time()
+        fp_layout = BIDSLayout(
+            fmriprep_dir, validate=False,
+            database_path=op.join(_db_dir, f".fmriprep_{fp_ana_name}_layout.db"),
+        )
+        console.print(f"  [dim]fMRIPrep ready in {time.time() - _t:.1f} s[/dim]\n")
+
+        # ── Auto-detect sessions if not supplied ──────────────────────────────
+        if sessions is None:
+            ext  = ".func.gii" if is_surface else ".nii.gz"
+            raw  = sorted(s.zfill(2) for s in layout.get_sessions(subject=sub, task=task))
+            sessions = []
+            for s in raw:
+                func_dir = op.join(fmriprep_dir, f"sub-{sub}", f"ses-{s}", "func")
+                if op.isdir(func_dir) and any(
+                    task in f and f.endswith(ext) for f in os.listdir(func_dir)
+                ):
+                    sessions.append(s)
+            if not sessions:
+                console.print(f"[red]ERROR[/red]: no sessions with fMRIprep data for sub-{sub}")
+                raise typer.Exit(1)
+            console.print(
+                f"  Auto-detected {len(sessions)} sessions: "
+                f"{', '.join('ses-' + s for s in sessions)}\n"
+            )
 
     for hemi in hemis:
         hemi_label = f"hemi-{hemi}" if hemi else "volumetric"
