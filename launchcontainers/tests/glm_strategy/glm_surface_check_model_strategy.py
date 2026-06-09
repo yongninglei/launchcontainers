@@ -23,6 +23,8 @@ import time
 from os import makedirs
 from typing import List, Optional
 
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import nibabel as nib
 import numpy as np

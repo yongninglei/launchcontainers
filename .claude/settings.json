@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n \"import matplotlib\\\\|import tkinter\\\\|pyplot\\\\|plt\\\\|matplotlib.use\\\\|backend\\\\|Agg\\\\|TkAgg\" /export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/glm_surface_check_model_strategy.py | head -30)",
+      "Read(//export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/**)",
+      "Bash(mkdir -p /home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/power_analysis_ohbm && ls /home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/)",
+      "Bash(python -c ' *)",
+      "Bash(python3 -c ' *)",
+      "Bash(python3 -c \"import ast; ast.parse\\(open\\('/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/power_analysis_ohbm/power_analysis_ohbm.py'\\).read\\(\\)\\); print\\('OK'\\)\")"
+    ],
+    "additionalDirectories": [
+      "/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests"
+    ]
+  }
+}
