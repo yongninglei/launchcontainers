@@ -1,0 +1,11 @@
+RWvsFF:
+  positive: ["RW"]
+  negative: ["FF"]
+
+RWvsPER:
+  positive: ["RW"]
+  negative: ["SC"]
+
+FacesvsAllnoFace:
+  positive: ["face"]
+  negative: ["SC", "CS", "FF", "bodylimb", "RW"]

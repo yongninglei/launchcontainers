@@ -17,9 +17,9 @@ PYTHON_SCRIPT="/scratch/tlei/lc/launchcontainers/tests/power_analysis_ohbm/power
 LOGBASE="/scratch/tlei/VOTCLOC/logs/power_analysis_ohbm"
 
 # Slurm resource settings  (2 h / subject is the initial budget for checking)
-CPUS="8"
-MEM="96G"
-TIME="02:00:00"
+CPUS="10"
+MEM="64G"
+TIME="04:00:00"
 QOS="regular"           # regular | test
 PARTITION="general"
 
@@ -29,14 +29,14 @@ FP_ANA_NAME="25.1.4_newest"
 TASK="fLoc"
 SPACE="fsnative"
 START_SCANS="6"
-CONTRAST="/scratch/tlei/lc/launchcontainers/tests/glm_strategy/contrast_VOTCLOC_short.yaml"
+CONTRAST="/scratch/tlei/lc/launchcontainers/tests/glm_strategy/contrast_VOTCLOC_3.yaml"
 STRATEGY_YAML="/scratch/tlei/lc/launchcontainers/tests/glm_strategy/strategy.yaml"
 STRATEGY="basic_MC"
 ROI_YAML="/scratch/tlei/lc/launchcontainers/tests/power_analysis_ohbm/roi_config_VOTCLOC.yaml"
 FS_ANA_NAME="freesurfer-with_t2"
 LABEL_SUBDIR="manual_label_clusters_analysis_12_v3"
 RERUN_MAP="/scratch/tlei/VOTCLOC/BIDS/sourcedata/qc/rerun_check.tsv"   # leave empty "" to skip
-N_ITER="10"
+N_ITER="5"
 SEED="42"
 
 # ---------------------------------------------------------------------------
@@ -46,7 +46,7 @@ SEED="42"
 # Format:  ["<sub>"]="<ses1>,<ses2>,..."   (zero-padded, comma-separated)
 # ---------------------------------------------------------------------------
 declare -A SESSION_OVERRIDES
-# SESSION_OVERRIDES["02"]="01,02,03,04,05,06,07,08,09"
+SESSION_OVERRIDES["02"]="01,02,03,04,05,06"
 
 # Python / conda environment
 CONDA_INIT="/home/tlei/soft/miniconda3/bin/activate"
@@ -106,9 +106,9 @@ else
         }
         {
             if(runcol && $runcol!="True") next
-            sub=$subcol
-            gsub(/ /, "", sub)
-            printf "%02d\n", sub+0
+            subid=$subcol
+            gsub(/ /, "", subid)
+            printf "%02d\n", subid+0
         }
     ' "$file_arg" | sort -u)
 fi

@@ -7,7 +7,7 @@
 # ---------------------------------------------------------------------------
 script_dir=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
 
-fp_version=25.1.4  # default; override with -v
+fp_version=25.2.5  # default; override with -v
 
 # ---------------------------------------------------------------------------
 # Parse arguments

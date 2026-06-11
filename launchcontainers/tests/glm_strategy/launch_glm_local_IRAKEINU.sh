@@ -41,6 +41,7 @@ usage() {
     echo ""
     echo "  Optional:"
     echo "    -i <input_dir>   BIDS dir name under BASE (default: BIDS)"
+    echo "    -p <space>       Space: T1w | fsnative | fsaverage | MNI152NLin2009cAsym (default: ${SPACE})"
     echo "    -a <acq>         acquisition filter: ME | SE (default: no filter)"
     echo "    -d <bold_desc>   bold desc filter: denoised | optcom (default: no filter)"
     echo "    -v <n_vols>      truncate timeseries to first N volumes (default: 0 = no truncation)"
@@ -65,6 +66,7 @@ while [[ $# -gt 0 ]]; do
         -s) subses_arg="$2";    shift 2 ;;
         -f) file_arg="$2";      shift 2 ;;
         -i) INPUT_DIR="$2";     shift 2 ;;
+        -p) SPACE="$2";         shift 2 ;;
         -a) ACQ="$2";           shift 2 ;;
         -d) BOLD_DESC="$2";     shift 2 ;;
         -v) N_VOLS="$2";        shift 2 ;;

@@ -48,6 +48,7 @@ usage() {
     echo ""
     echo "  Optional:"
     echo "    -i <input_dir>   BIDS dir name under BASE (default: BIDS, use BIDS_WC for WC)"
+    echo "    -p <space>       Space: T1w | fsnative | fsaverage | MNI152NLin2009cAsym (default: ${SPACE})"
     echo "    --dry-run        print qsub commands without submitting"
     echo "    --use-smoothed"
     echo ""
@@ -68,6 +69,7 @@ while [[ $# -gt 0 ]]; do
         -s) subses_arg="$2";    shift 2 ;;
         -f) file_arg="$2";      shift 2 ;;
         -i) INPUT_DIR="$2";     shift 2 ;;
+        -p) SPACE="$2";         shift 2 ;;
         --dry-run)      dry_run=1; extra_flags="${extra_flags} --dry-run"; shift ;;
         --use-smoothed) extra_flags="${extra_flags} --use-smoothed"; shift ;;
         *) echo "Unknown option: $1"; usage ;;

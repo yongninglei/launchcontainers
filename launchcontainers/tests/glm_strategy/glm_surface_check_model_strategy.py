@@ -94,6 +94,12 @@ def save_statmap_to_gifti(data, outname):
     nib.save(gii, outname)
 
 
+def save_statmap_to_nifti(data: np.ndarray, outname: str, affine: np.ndarray, shape: tuple) -> None:
+    """Save a flat (n_voxels,) stat-map array to a NIfTI file, reshaping to ``shape``."""
+    data_3d = data.reshape(shape)
+    nib.save(nib.Nifti1Image(data_3d.astype(np.float32), affine), outname)
+
+
 def save_timeseries_to_gifti(data: np.ndarray, outname: str) -> None:
     """
     Save a (n_vertices, n_frames) array as a multi-frame GIFTI.
@@ -404,6 +410,8 @@ def glm_l1(
     randrun_idx=None,
     hemi=None,
     n_glm_jobs=1,
+    vol_affine=None,
+    vol_shape=None,
 ) -> dict[str, float]:
     """
     Fit the GLM and compute contrasts.
@@ -546,10 +554,12 @@ def glm_l1(
                     variance, outname_base.replace("stat-X", "stat-variance")
                 )
         else:
-            console.print(
-                f"  [yellow]WARNING[/yellow]: volumetric output not implemented, "
-                f"skipping {outname_base}"
-            )
+            save_statmap_to_nifti(effect, outname_base.replace("stat-X", "stat-effect"), vol_affine, vol_shape)
+            save_statmap_to_nifti(t_value, outname_base.replace("stat-X", "stat-t"), vol_affine, vol_shape)
+            if not randrun_idx:
+                save_statmap_to_nifti(z_score, outname_base.replace("stat-X", "stat-z"), vol_affine, vol_shape)
+                save_statmap_to_nifti(p_value, outname_base.replace("stat-X", "stat-p"), vol_affine, vol_shape)
+                save_statmap_to_nifti(variance, outname_base.replace("stat-X", "stat-variance"), vol_affine, vol_shape)
         t_save = time.time() - _t
         t_save_maps_total += t_save
 
@@ -841,6 +851,8 @@ def prepare_glm_input(
     frame_time_allrun = []
     events_allrun = []
     confounds_allrun = []
+    vol_affine = None
+    vol_shape = None
 
     # Per-run step timing: {run_num: {step: seconds}}
     run_step_times: dict[str, dict[str, float]] = {}
@@ -905,6 +917,9 @@ def prepare_glm_input(
             console.print(
                 f"  Volumetric shape: {original_shape}, timepoints: {n_timepoints}"
             )
+            if vol_affine is None:
+                vol_affine = img.affine
+                vol_shape = original_shape
         run_step_times[run_num]["load_func"] = time.time() - _t
         console.print(
             f"  Length original data: {np.shape(data_float)[1]}  "
@@ -1157,7 +1172,7 @@ def prepare_glm_input(
         f"  [dim]design_matrix build: {t_design:.2f} s[/dim]"
     )
 
-    return conc_data_std, design_matrix_std, contrasts, nonan_confounds
+    return conc_data_std, design_matrix_std, contrasts, nonan_confounds, vol_affine, vol_shape
 
 
 def _load_rerun_exclusions(
@@ -1305,7 +1320,7 @@ def process_run_list(
     label = f"hemi-{hemi}" if hemi else "volumetric"
     console.print(f"\n[bold]Processing {label}[/bold]  runs: {run_list}")
 
-    conc_data_std, design_matrix_std, contrasts, nonan_confounds = prepare_glm_input(
+    conc_data_std, design_matrix_std, contrasts, nonan_confounds, vol_affine, vol_shape = prepare_glm_input(
         bids_dir,
         fmriprep_dir,
         fp_layout,
@@ -1354,6 +1369,8 @@ def process_run_list(
         randrun_idx,
         hemi,
         n_glm_jobs,
+        vol_affine,
+        vol_shape,
     )
 
 

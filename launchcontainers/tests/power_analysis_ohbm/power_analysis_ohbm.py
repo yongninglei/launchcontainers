@@ -518,6 +518,14 @@ def run_power_loop(
     n_contrasts    = len(contrast_names)
     n_rois         = len(roi_names)
 
+    # Restrict to the union of ROI vertices — run_glm cost scales per-voxel,
+    # and only ROI-mean stats are ever read out, so fitting all ~150k
+    # vertices per GLM is wasted work. Remap ROI indices into the subset.
+    roi_union = np.unique(np.concatenate(roi_verts_list))
+    Y_roi = Y_full[roi_union, :]
+    roi_verts_list = [np.searchsorted(roi_union, rv) for rv in roi_verts_list]
+    console.print(f"  ROI-restricted Y: {len(roi_union)} / {Y_full.shape[0]} vertices")
+
     results = np.full((total_runs, n_iter, n_contrasts, n_rois), np.nan, dtype=np.float32)
 
     total_glms = total_runs * n_iter
@@ -547,7 +555,7 @@ def run_power_loop(
             rows = np.concatenate(
                 [np.arange(run_boundaries[i][0], run_boundaries[i][1]) for i in selected]
             )
-            Y_sub = Y_full[:, rows].T   # (n_trs, n_verts)  — run_glm expects (n_trs, n_verts)
+            Y_sub = Y_roi[:, rows].T    # (n_trs, n_verts)  — run_glm expects (n_trs, n_verts)
             X_sub = X_full[rows, :]     # (n_trs, n_regs)
 
             labels, estimates = run_glm(Y_sub, X_sub)
@@ -815,8 +823,6 @@ def main(
     hemis = ["L", "R"] if is_surface else [None]
 
     # ── Skip layouts entirely when every hemisphere is already cached ─────────
-    _db_dir  = op.join(base, "derivatives", "power_analysis_ohbm")
-    makedirs(_db_dir, exist_ok=True)
     _all_cached = (not force) and all(
         op.exists(_cache_paths(outdir, sub, h)[0]) and op.exists(_cache_paths(outdir, sub, h)[1])
         for h in (hemis if hemis[0] is not None else [])
@@ -828,23 +834,19 @@ def main(
             "  [green]Cache found for all hemispheres — skipping BIDS/fMRIPrep layout.[/green]\n"
         )
     else:
-        # ── Build BIDS layouts (SQLite-persisted — fast on second run) ────────
-        # database_path saves the pybids index to disk; subsequent runs load it
-        # in seconds instead of re-scanning the full directory tree.
+        # ── Build BIDS layouts (in-memory — no shared on-disk index) ──────────
+        # A persisted SQLite index shared across parallel per-subject jobs
+        # causes "disk I/O error" / corrupted reads when jobs race to build
+        # or read it. Build in-memory per job instead; the design-matrix
+        # cache above is what makes repeat runs fast.
         console.print("Creating BIDS layout …")
         _t = time.time()
-        layout = BIDSLayout(
-            bids_dir, validate=False,
-            database_path=op.join(_db_dir, ".bids_layout.db"),
-        )
+        layout = BIDSLayout(bids_dir, validate=False)
         console.print(f"  [dim]BIDS ready in {time.time() - _t:.1f} s[/dim]")
 
         console.print("Creating fMRIPrep layout …")
         _t = time.time()
-        fp_layout = BIDSLayout(
-            fmriprep_dir, validate=False,
-            database_path=op.join(_db_dir, f".fmriprep_{fp_ana_name}_layout.db"),
-        )
+        fp_layout = BIDSLayout(fmriprep_dir, validate=False)
         console.print(f"  [dim]fMRIPrep ready in {time.time() - _t:.1f} s[/dim]\n")
 
         # ── Auto-detect sessions if not supplied ──────────────────────────────
@@ -913,6 +915,21 @@ def main(
 
             # Save big cache so next run skips all BOLD/BIDS loading
             save_cache(Y_full, X_full, contrasts, run_boundaries, run_labels, outdir, sub, hemi)
+
+        # ── Restrict to the contrasts requested via --contrast ────────────────
+        # A cached run may carry contrasts from a previous --contrast file
+        # (contrast vectors only depend on design-matrix columns, which are
+        # unchanged, so cached vectors for these names remain valid).
+        with open(contrast) as _f:
+            wanted = list(yaml.safe_load(_f).keys())
+        missing = [c for c in wanted if c not in contrasts]
+        if missing:
+            console.print(
+                f"  [red]ERROR[/red]: contrasts {missing} not found in cache for "
+                f"sub-{sub} hemi-{hemi}. Re-run with --force to rebuild the cache."
+            )
+            raise typer.Exit(1)
+        contrasts = {c: contrasts[c] for c in wanted}
 
         total_runs = len(run_boundaries)
         console.print(

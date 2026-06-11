@@ -13,7 +13,7 @@
 # The above copyright notice and this permission notice shall be included in all copies or substantial
 # portions of the Software.
 
-#SBATCH --time=12:00:00
+#SBATCH --time=06:00:00
 #SBATCH -n 1  # this stands for number of task/ or number of nodes being used
 #SBATCH --cpus-per-task=30    #6
 #SBATCH --mem=80000
@@ -59,6 +59,8 @@ mkdir -p ${FMRIPREP_WORK_DIR}
 export APPTAINERENV_FS_LICENSE=${BIDS_DIR}/.license
 # Designate a templateflow bind-mount point
 export APPTAINERENV_TEMPLATEFLOW_HOME="/templateflow"
+# Prevent concurrent array tasks from racing to re-extract the skeleton zip (Python 3.12 makedirs race)
+export APPTAINERENV_TF_AUTOUPDATE=0
 FS_DIR="${fs_dir}"
 
 # Parse the participants.tsv file and extract one subject ID from the
@@ -123,7 +125,7 @@ cmd_runall_SE="module load Apptainer/1.3.5 &&  \
       --omp-nthreads 10 --nthreads 20 --mem_mb 50000 \
       --skip-bids-validation \
       --fs-subjects-dir /fsdir \
-      --force bbr \
+      $(fp_ver_major=$(echo ${fp_version} | cut -d. -f1); [[ ${fp_ver_major} -ge 24 ]] && echo "--force bbr" || echo "--force-bbr") \
       --bold2anat-init auto \
       --output-spaces T1w func MNI152NLin2009cAsym fsnative fsaverage \
       --bids-filter-file /code/fmriprep/bids_filter_sub-${subject}.json "
@@ -139,7 +141,7 @@ cmd_runall_ME="module load Apptainer/1.3.5 &&  \
       --omp-nthreads 10 --nthreads 20 --mem_mb 70000 \
       --skip-bids-validation \
       --fs-subjects-dir /fsdir \
-      --force bbr \
+      $(fp_ver_major=$(echo ${fp_version} | cut -d. -f1); [[ ${fp_ver_major} -ge 24 ]] && echo "--force bbr" || echo "--force-bbr") \
       --bold2anat-init t2w \
       --output-spaces T1w func MNI152NLin2009cAsym fsnative fsaverage \
       --me-t2s-fit-method curvefit \

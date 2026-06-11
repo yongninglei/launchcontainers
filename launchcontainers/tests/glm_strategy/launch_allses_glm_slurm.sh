@@ -39,9 +39,9 @@ FP_ANA_NAME="25.1.4_japan26ses"
 TASK="fLoc"
 SPACE="fsnative"
 START_SCANS="6"
-CONTRAST="/scratch/tlei/lc/launchcontainers/tests/run_glm/contrast_Japan_all.yaml"
+CONTRAST="/scratch/tlei/lc/launchcontainers/tests/glm_strategy/contrast_Japan_all.yaml"
 RERUN_MAP=""   # leave empty "" to skip
-INPUT_DIR="BIDS"
+INPUT_DIR="BIDS_bcbl"
 
 # ---------------------------------------------------------------------------
 # Per-subject session overrides
@@ -67,6 +67,9 @@ usage() {
     echo ""
     echo "Required:"
     echo "  -o <output_name>   GLM output label (--output-name) and log dir suffix"
+    echo ""
+    echo "Optional:"
+    echo "  -p <space>         Space: T1w | fsnative | fsaverage | MNI152NLin2009cAsym (default: ${SPACE})"
     exit 1
 }
 
@@ -74,11 +77,12 @@ sub_arg=""
 file_arg=""
 output_name=""
 
-while getopts ":o:s:f:" opt; do
+while getopts ":o:s:f:p:" opt; do
     case $opt in
         o) output_name="$OPTARG" ;;
         s) sub_arg="$OPTARG"     ;;
         f) file_arg="$OPTARG"    ;;
+        p) SPACE="$OPTARG"       ;;
         *) usage ;;
     esac
 done

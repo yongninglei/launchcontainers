@@ -12,13 +12,13 @@
 # ---------------------------------------------------------------------------
 PROJECT="Japan"
 analysis_space="surface"  # "volume" or "surface"; determines which run_glm script to use
-PYTHON_SCRIPT="/scratch/tlei/lc/launchcontainers/tests/run_glm/glm_surface_${PROJECT}.py"
-LOGBASE="/scratch/tlei/${PROJECT}/logs/glm/${analysis_space}"
+PYTHON_SCRIPT="/scratch/tlei/lc/launchcontainers/tests/glm_strategy/glm_surface_check_model_strategy.py"
+LOGBASE="/scratch/tlei/${PROJECT}/logs/glm_strategy/${analysis_space}"
 
 # Slurm resource settings
 CPUS="8"
 MEM="32G"
-TIME="00:40:00"
+TIME="00:20:00"
 QOS="regular"           # regular | test
 PARTITION="general"
 
@@ -28,9 +28,11 @@ FP_ANA_NAME="25.2.5_japan26ses"
 TASK="fLoc"
 SPACE="fsnative"
 START_SCANS="6"
-CONTRAST="/scratch/tlei/lc/launchcontainers/tests/run_glm/contrast_${PROJECT}_all.yaml"
+CONTRAST="/scratch/tlei/lc/launchcontainers/tests/glm_strategy/contrast_Japan_all.yaml"
 RERUN_MAP=""   # leave empty "" to skip
 INPUT_DIR="BIDS"
+STRATEGY_YAML="/scratch/tlei/lc/launchcontainers/tests/glm_strategy/strategy.yaml"
+STRATEGY_NAME="basic_MC"
 
 # Python / conda environment
 # Set CONDA_INIT to the path that makes `conda` available in your shell.
@@ -51,6 +53,9 @@ usage() {
     echo ""
     echo "Required:"
     echo "  -o <analysis_name>   GLM output label (--analysis-name) and log dir suffix"
+    echo ""
+    echo "Optional:"
+    echo "  -p <space>           Space: T1w | fsnative | fsaverage | MNI152NLin2009cAsym (default: ${SPACE})"
     exit 1
 }
 
@@ -58,11 +63,12 @@ subses_arg=""
 file_arg=""
 analysis_name=""
 
-while getopts ":o:s:f:" opt; do
+while getopts ":o:s:f:p:" opt; do
     case $opt in
         o) analysis_name="$OPTARG"  ;;
         s) subses_arg="$OPTARG"   ;;
         f) file_arg="$OPTARG"     ;;
+        p) SPACE="$OPTARG"        ;;
         *) usage ;;
     esac
 done
@@ -116,6 +122,7 @@ echo "  Sessions    : ${#PAIRS[@]}"
 echo "  Task        : ${TASK}"
 echo "  Start scans : ${START_SCANS}"
 echo "  Space       : ${SPACE}"
+echo "  Strategy    : ${STRATEGY_NAME}"
 echo "  QOS         : ${QOS}"
 echo "  Partition   : ${PARTITION}"
 echo "  CPUs / job  : ${CPUS}"
@@ -134,7 +141,7 @@ for pair in "${PAIRS[@]}"; do
     SES=$(echo "$pair" | cut -d',' -f2 | tr -d ' ')
 
     # Build the python command
-    PY_CMD="python ${PYTHON_SCRIPT} --base ${BASE} -s ${SUB},${SES} --fp-ana-name ${FP_ANA_NAME} --task ${TASK} --space ${SPACE} --start-scans ${START_SCANS} --contrast ${CONTRAST} --analysis-name ${analysis_name} --input-dir ${INPUT_DIR}"
+    PY_CMD="python ${PYTHON_SCRIPT} --base ${BASE} -s ${SUB},${SES} --fp-ana-name ${FP_ANA_NAME} --task ${TASK} --space ${SPACE} --start-scans ${START_SCANS} --contrast ${CONTRAST} --analysis-name ${analysis_name} --input-dir ${INPUT_DIR} --strategy-yaml ${STRATEGY_YAML} --strategy ${STRATEGY_NAME}"
     if [[ -n "${RERUN_MAP}" ]]; then
         PY_CMD="${PY_CMD} --rerun-map ${RERUN_MAP}"
     fi
