@@ -20,7 +20,7 @@ LOGBASE="/bcbl/home/public/Gari/${PROJECT}/logs/glm/${analysis_space}"
 BASE="/bcbl/home/public/Gari/${PROJECT}"
 FP_ANA_NAME="25.1.4_IRpilot "
 TASK="BfLocVideo"
-SPACE="fsnative"
+SPACE="T1w"
 START_SCANS="6"
 CONTRAST="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/contrast_${PROJECT}_new.yaml"
 STRATEGY_YAML="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/strategy.yaml"
@@ -29,7 +29,7 @@ RERUN_MAP=""          # leave empty "" to skip
 INPUT_DIR="BIDS"      # input BIDS dir name under BASE; use BIDS_WC for WC runs
 ACQ=""                # acquisition label: "ME" | "SE" | leave empty "" for no filter
 BOLD_DESC=""          # desc label for bold query: "denoised" | "optcom" | leave empty ""
-N_VOLS=0              # truncate to first N volumes (0 = no truncation)
+N_VOLS=213              # truncate to first N volumes (0 = no truncation)
 
 # ---------------------------------------------------------------------------
 # Parse arguments
@@ -42,12 +42,16 @@ usage() {
     echo "  Optional:"
     echo "    -i <input_dir>   BIDS dir name under BASE (default: BIDS)"
     echo "    -p <space>       Space: T1w | fsnative | fsaverage | MNI152NLin2009cAsym (default: ${SPACE})"
-    echo "    -a <acq>         acquisition filter: ME | SE (default: no filter)"
-    echo "    -d <bold_desc>   bold desc filter: denoised | optcom (default: no filter)"
+    echo "    -a <acq>         acquisition filter: ME | SE (default: run all combos below)"
+    echo "    -d <bold_desc>   bold desc filter: denoised | optcom (default: run all combos below)"
+    echo ""
+    echo "  If neither -a nor -d is given, all acq/desc combos are run, one job"
+    echo "  per combo per session: SE, ME+denoised, ME+optcom."
     echo "    -v <n_vols>      truncate timeseries to first N volumes (default: 0 = no truncation)"
     echo "    -r <rerun_map>   path to rerun_check.tsv/csv to exclude compensated runs"
     echo "    --dry-run        print design matrix / confounds; do not write outputs"
     echo "    --use-smoothed"
+    echo "    --save-betas     also save per-regressor betas/residuals/fitted (space-tagged GIFTI/NIfTI)"
     echo ""
     echo "Required:"
     echo "  -n <analysis_name>   maps to --analysis-name in run_glm.py"
@@ -59,6 +63,8 @@ file_arg=""
 analysis_name=""
 dry_run=0
 extra_flags=""
+acq_set=0
+bold_desc_set=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -67,12 +73,13 @@ while [[ $# -gt 0 ]]; do
         -f) file_arg="$2";      shift 2 ;;
         -i) INPUT_DIR="$2";     shift 2 ;;
         -p) SPACE="$2";         shift 2 ;;
-        -a) ACQ="$2";           shift 2 ;;
-        -d) BOLD_DESC="$2";     shift 2 ;;
+        -a) ACQ="$2";           acq_set=1;      shift 2 ;;
+        -d) BOLD_DESC="$2";     bold_desc_set=1; shift 2 ;;
         -v) N_VOLS="$2";        shift 2 ;;
         -r) RERUN_MAP="$2";     shift 2 ;;
         --dry-run)      dry_run=1; extra_flags="${extra_flags} --dry-run"; shift ;;
         --use-smoothed) extra_flags="${extra_flags} --use-smoothed"; shift ;;
+        --save-betas)   extra_flags="${extra_flags} --save-betas"; shift ;;
         *) echo "Unknown option: $1"; usage ;;
     esac
 done
@@ -84,6 +91,17 @@ fi
 
 if [[ -z "$subses_arg" && -z "$file_arg" ]]; then
     usage
+fi
+
+# ---------------------------------------------------------------------------
+# acq/desc combos to run
+#   - if -a and/or -d given explicitly, run just that one combo
+#   - otherwise run all combos: SE (no bold_desc), ME+denoised, ME+optcom
+# ---------------------------------------------------------------------------
+if [[ "$acq_set" -eq 1 || "$bold_desc_set" -eq 1 ]]; then
+    COMBOS=("${ACQ},${BOLD_DESC}")
+else
+    COMBOS=("SE," "ME,denoised" "ME,optcom")
 fi
 
 # ---------------------------------------------------------------------------
@@ -129,8 +147,12 @@ echo "  Space         : ${SPACE}"
 echo "  Input dir     : ${INPUT_DIR}"
 echo "  Strategy YAML : ${STRATEGY_YAML}"
 echo "  Strategy      : ${STRATEGY:-"(all strategies in YAML)"}"
-echo "  Acq filter    : ${ACQ:-"(none)"}"
-echo "  Bold desc     : ${BOLD_DESC:-"(none)"}"
+echo "  Acq/desc combos:"
+for combo in "${COMBOS[@]}"; do
+    c_acq="${combo%%,*}"
+    c_desc="${combo#*,}"
+    echo "    - acq=${c_acq:-none}  desc=${c_desc:-none}"
+done
 echo "  N vols        : ${N_VOLS}"
 echo "  Log dir       : ${LOG_DIR}"
 echo "  Dry run       : ${dry_run}"
@@ -140,55 +162,65 @@ echo ""
 # ---------------------------------------------------------------------------
 # Run sessions sequentially
 # ---------------------------------------------------------------------------
+total_jobs=$(( ${#PAIRS[@]} * ${#COMBOS[@]} ))
 job_num=1
 for pair in "${PAIRS[@]}"; do
     SUB=$(echo "$pair" | cut -d',' -f1 | tr -d ' ')
     SES=$(echo "$pair" | cut -d',' -f2 | tr -d ' ')
 
-    LOG_OUT="${LOG_DIR}/$(date +"%H-%M")_sub-${SUB}_ses-${SES}.o"
-    LOG_ERR="${LOG_DIR}/$(date +"%H-%M")_sub-${SUB}_ses-${SES}.e"
+    for combo in "${COMBOS[@]}"; do
+        CUR_ACQ="${combo%%,*}"
+        CUR_DESC="${combo#*,}"
 
-    PY_CMD="python ${PYTHON_SCRIPT} \
-        --base ${BASE} \
-        -s ${SUB},${SES} \
-        --fp-ana-name ${FP_ANA_NAME} \
-        --task ${TASK} \
-        --space ${SPACE} \
-        --start-scans ${START_SCANS} \
-        --contrast ${CONTRAST} \
-        --analysis-name ${analysis_name} \
-        --input-dir ${INPUT_DIR} \
-        --strategy-yaml ${STRATEGY_YAML} \
-        --n-workers 20"
+        TAG="${CUR_ACQ:-noacq}${CUR_DESC:+_${CUR_DESC}}"
 
-    [[ -n "${STRATEGY}" ]]   && PY_CMD="${PY_CMD} --strategy ${STRATEGY}"
-    [[ -n "${RERUN_MAP}" ]]  && PY_CMD="${PY_CMD} --rerun-map ${RERUN_MAP}"
-    [[ -n "${ACQ}" ]]        && PY_CMD="${PY_CMD} --acq ${ACQ}"
-    [[ -n "${BOLD_DESC}" ]]  && PY_CMD="${PY_CMD} --bold-desc ${BOLD_DESC}"
-    [[ "${N_VOLS}" -gt 0 ]]  && PY_CMD="${PY_CMD} --n-vols ${N_VOLS}"
-    [[ -n "${extra_flags}" ]] && PY_CMD="${PY_CMD} ${extra_flags}"
+        LOG_OUT="${LOG_DIR}/$(date +"%H-%M")_sub-${SUB}_ses-${SES}_${TAG}.o"
+        LOG_ERR="${LOG_DIR}/$(date +"%H-%M")_sub-${SUB}_ses-${SES}_${TAG}.e"
 
-    echo "  [${job_num}/${#PAIRS[@]}]  sub-${SUB} ses-${SES}  → log: ${LOG_OUT}"
+        PY_CMD="python ${PYTHON_SCRIPT} \
+            --base ${BASE} \
+            -s ${SUB},${SES} \
+            --fp-ana-name ${FP_ANA_NAME} \
+            --task ${TASK} \
+            --space ${SPACE} \
+            --start-scans ${START_SCANS} \
+            --contrast ${CONTRAST} \
+            --analysis-name ${analysis_name} \
+            --input-dir ${INPUT_DIR} \
+            --strategy-yaml ${STRATEGY_YAML} \
+            --n-workers 20"
 
-    {
-        echo "============================================================"
-        echo "  sub         : ${SUB}"
-        echo "  ses         : ${SES}"
-        echo "  analysis    : ${analysis_name}"
-        echo "  Start       : $(date '+%Y-%m-%d %H:%M:%S')"
-        echo "============================================================"
-        echo ""
-        time ${PY_CMD}
-        EXIT_CODE=$?
-        echo ""
-        echo "============================================================"
-        echo "  End         : $(date '+%Y-%m-%d %H:%M:%S')"
-        echo "  Exit code   : ${EXIT_CODE}"
-        echo "============================================================"
-    } >"${LOG_OUT}" 2>"${LOG_ERR}"
+        [[ -n "${STRATEGY}" ]]    && PY_CMD="${PY_CMD} --strategy ${STRATEGY}"
+        [[ -n "${RERUN_MAP}" ]]   && PY_CMD="${PY_CMD} --rerun-map ${RERUN_MAP}"
+        [[ -n "${CUR_ACQ}" ]]     && PY_CMD="${PY_CMD} --acq ${CUR_ACQ}"
+        [[ -n "${CUR_DESC}" ]]    && PY_CMD="${PY_CMD} --bold-desc ${CUR_DESC}"
+        [[ "${N_VOLS}" -gt 0 ]]   && PY_CMD="${PY_CMD} --n-vols ${N_VOLS}"
+        [[ -n "${extra_flags}" ]] && PY_CMD="${PY_CMD} ${extra_flags}"
 
-    ((job_num++))
+        echo "  [${job_num}/${total_jobs}]  sub-${SUB} ses-${SES} acq-${CUR_ACQ:-none} desc-${CUR_DESC:-none}  → log: ${LOG_OUT}"
+
+        {
+            echo "============================================================"
+            echo "  sub         : ${SUB}"
+            echo "  ses         : ${SES}"
+            echo "  acq         : ${CUR_ACQ:-(none)}"
+            echo "  bold_desc   : ${CUR_DESC:-(none)}"
+            echo "  analysis    : ${analysis_name}"
+            echo "  Start       : $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "============================================================"
+            echo ""
+            time ${PY_CMD}
+            EXIT_CODE=$?
+            echo ""
+            echo "============================================================"
+            echo "  End         : $(date '+%Y-%m-%d %H:%M:%S')"
+            echo "  Exit code   : ${EXIT_CODE}"
+            echo "============================================================"
+        } >"${LOG_OUT}" 2>"${LOG_ERR}"
+
+        ((job_num++))
+    done
 done
 
 echo ""
-echo "All ${#PAIRS[@]} sessions done. Logs: ${LOG_DIR}"
+echo "All ${total_jobs} job(s) (${#PAIRS[@]} session(s) x ${#COMBOS[@]} combo(s)) done. Logs: ${LOG_DIR}"

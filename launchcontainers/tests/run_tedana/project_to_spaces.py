@@ -11,14 +11,29 @@ transforms and system tools (ANTs + FreeSurfer loaded via environment modules).
 
 Transform chain
 ---------------
+  BOLD → T1w      : antsApplyTransforms  boldref_to_T1w.txt
   BOLD → MNI      : antsApplyTransforms  boldref_to_T1w.txt + T1w_to_MNI.h5
-  BOLD → fsnative : bbregister --bold --force-ras (native boldref → FreeSurfer T1)
-                    + mri_vol2surf --reg <bbr.reg> --surf midthickness
-  BOLD → fsaverage: same bbregister step
-                    + mri_vol2surf --reg <bbr.reg> --surf white --trgsubject fsaverage
+  BOLD → fsnative : lta_convert boldref_to_T1w.txt + lta_convert T1w_to_fsnative.txt
+                    + mri_concatenate_lta -> boldref_to_fsnative.lta (fMRIprep's own
+                    transforms, no extra registration)
+                    + mri_vol2surf --reg <concat.lta> --surf white --interp trilinear
+                    --projfrac-avg 0 1 0.2
+  BOLD → fsaverage: same boldref_to_fsnative.lta
+                    + mri_vol2surf --reg <concat.lta> --surf white --interp trilinear
+                    --projfrac-avg 0 1 0.2 --trgsubject fsaverage
 
 Outputs are written back into the same sub/ses/func dir as the tedana inputs.
 A ``project_to_spaces_sources.json`` is saved in the analysis root.
+
+Parallelization
+----------------
+Every (sub, ses, task, run, desc, space) combination is broken down into one
+or more atomic jobs (one antsApplyTransforms call, one fsnative-reg
+computation, one mri_vol2surf call, ...). All jobs across the whole batch are
+collected into a single flat queue and executed by a pool of ``--n-jobs``
+workers, regardless of how many subs/sessions/runs were requested. The only
+dependency is that the fsnative-reg job (shared by fsnative/fsaverage and by
+all descs of the same run) must finish before its 4 mri_vol2surf jobs run.
 
 Usage
 -----
@@ -30,9 +45,9 @@ Dry-run (print plan, no execution)::
         --fs-subjects-dir .../derivatives/freesurfer \\
         -s pilot02,01 --tasks BfLocVideo
 
-Execute::
+Execute, using 8 parallel workers across the whole batch::
 
-    python project_to_spaces.py ... --execute
+    python project_to_spaces.py ... --execute -J 8
 """
 
 from __future__ import annotations
@@ -40,12 +55,14 @@ from __future__ import annotations
 import datetime
 import glob
 import json
+import os
 import os.path as op
 import re
 import subprocess
 import time
-from concurrent.futures import ProcessPoolExecutor, as_completed
-from typing import Optional
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
+from dataclasses import dataclass, field
+from typing import Callable, Optional
 
 import typer
 from rich.console import Console
@@ -54,7 +71,7 @@ from rich.table import Table
 console = Console()
 app = typer.Typer(add_completion=False, pretty_exceptions_show_locals=False)
 
-VALID_SPACES = {"MNI", "fsnative", "fsaverage"}
+VALID_SPACES = {"T1w", "MNI", "fsnative", "fsaverage"}
 MNI_SPACE = "MNI152NLin2009cAsym"
 
 # Locations where Environment Modules initialisation script may live
@@ -181,13 +198,34 @@ def _find_t1w_boldref(fp_func_dir, sub, ses, task, acq, run) -> str | None:
 
 
 def _find_boldref_native(fp_func_dir, sub, ses, task, acq, run) -> str | None:
-    """Find fMRIprep's native-BOLD-space boldref (no space entity) for bbregister."""
+    """Find fMRIprep's native-BOLD-space boldref (no space entity)."""
     acq_token = f"_acq-{acq}" if acq else ""
     run_token = f"_run-{run}" if run else ""
     found = glob.glob(
         op.join(
             fp_func_dir,
             f"sub-{sub}_ses-{ses}_task-{task}{acq_token}{run_token}_boldref.nii.gz",
+        )
+    )
+    return found[0] if found else None
+
+
+def _find_t1w_preproc(fp_anat_dir: str, sub: str, ses: str) -> str | None:
+    """Locate fMRIprep's sub-*_desc-preproc_T1w.nii.gz."""
+    found = sorted(
+        glob.glob(op.join(fp_anat_dir, f"sub-{sub}_ses-{ses}*_desc-preproc_T1w.nii.gz"))
+    )
+    return found[0] if found else None
+
+
+def _find_t1w_to_fsnative_xfm(fp_anat_dir: str, sub: str, ses: str) -> str | None:
+    """Locate fMRIprep's sub-*_from-T1w_to-fsnative_mode-image_xfm.txt (ITK affine)."""
+    found = sorted(
+        glob.glob(
+            op.join(
+                fp_anat_dir,
+                f"sub-{sub}_ses-{ses}*_from-T1w_to-fsnative_mode-image_xfm.txt",
+            )
         )
     )
     return found[0] if found else None
@@ -245,18 +283,57 @@ def _ants_cmd(
     )
 
 
-def _bbregister_cmd(boldref: str, reg_out: str, subject: str, subjects_dir: str) -> str:
-    """Return bbregister command to compute a BBR registration from native BOLD to FreeSurfer T1."""
+def _lta_convert_cmd(itk_xfm: str, src_vol: str, trg_vol: str, out_lta: str, subjects_dir: str = "") -> str:
+    """Return an lta_convert command converting an ITK affine (double_3_3 header) to .lta."""
+    prefix = f"SUBJECTS_DIR={subjects_dir} " if subjects_dir else ""
     return (
-        f"SUBJECTS_DIR={subjects_dir}"
-        f" bbregister"
-        f" --s {subject}"
-        f" --mov {boldref}"
-        f" --init-header"
-        f" --bold"
-        f" --force-ras"
-        f" --reg {reg_out}"
+        f"{prefix}lta_convert"
+        f" --initk {itk_xfm}"
+        f" --src {src_vol}"
+        f" --trg {trg_vol}"
+        f" --outlta {out_lta}"
     )
+
+
+def _concat_lta_cmd(lta_first: str, lta_second: str, out_lta: str) -> str:
+    """Concatenate two .lta transforms: out = lta_second(lta_first(x))."""
+    return f"mri_concatenate_lta {lta_first} {lta_second} {out_lta}"
+
+
+def _fix_itk_xfm_precision(itk_xfm: str, out_path: str) -> None:
+    """Work around `lta_convert --initk ... ERROR readITK: Transform type unknown!`.
+
+    ANTs/fMRIPrep write ITK transforms with header type
+    `[Matrix...|Affine]Transform_float_3_3`, but FreeSurfer's `lta_convert
+    --initk` only recognises the `_double_3_3` variant. The transform
+    parameters are stored as plain-text numbers regardless of the declared
+    precision, so rewriting the header type to `_double_3_3` is sufficient.
+    """
+    with open(itk_xfm) as fh:
+        content = fh.read()
+    content = content.replace("_float_3_3", "_double_3_3")
+    with open(out_path, "w") as fh:
+        fh.write(content)
+
+
+def _set_lta_subject(lta_path: str, subject: str) -> None:
+    """Ensure the `.lta`'s `subject <name>` field is set to `subject`.
+
+    `lta_convert --initk` leaves this field blank, which makes
+    `mri_vol2surf` resolve surface files as `$SUBJECTS_DIR//surf/lh.pial`
+    (empty subject) instead of `$SUBJECTS_DIR/{subject}/surf/lh.pial`,
+    failing with "could not open file".
+    """
+    with open(lta_path) as fh:
+        lines = fh.readlines()
+    for i, line in enumerate(lines):
+        if line.startswith("subject"):
+            lines[i] = f"subject {subject}\n"
+            break
+    else:
+        lines.append(f"subject {subject}\n")
+    with open(lta_path, "w") as fh:
+        fh.writelines(lines)
 
 
 def _vol2surf_cmd(
@@ -268,11 +345,15 @@ def _vol2surf_cmd(
     subjects_dir: str,
     reg: str | None = None,
     trg_subject: str | None = None,
+    interp: str = "trilinear",
+    proj_frac_avg: tuple[float, float, float] = (0, 1, 0.2),
 ) -> str:
-    """Return the mri_vol2surf shell command string."""
+    """Return the mri_vol2surf shell command string (fMRIprep-style surface sampling:
+    --surf white --interp trilinear --projfrac-avg 0 1 0.2)."""
     fs_hemi = "lh" if hemi == "L" else "rh"
     trg = f" --trgsubject {trg_subject}" if trg_subject else ""
     reg_flag = f" --reg {reg}" if reg else f" --regheader {subject}"
+    start, stop, step = proj_frac_avg
     return (
         f"SUBJECTS_DIR={subjects_dir}"
         f" mri_vol2surf"
@@ -280,177 +361,347 @@ def _vol2surf_cmd(
         f"{reg_flag}"
         f" --hemi {fs_hemi}"
         f" --surf {surf}"
+        f" --interp {interp}"
+        f" --projfrac-avg {start} {stop} {step}"
         f"{trg}"
         f" --o {out}"
     )
 
 
 # ---------------------------------------------------------------------------
-# Core: plan + execute per run
+# Job queue
 # ---------------------------------------------------------------------------
 
 
-def _process_run(
-    sub: str,
-    ses: str,
-    task: str,
-    acq: str,
-    run: str | None,
-    input_path: str,
-    func_dir: str,
-    fp_func_dir: str,
-    fp_anat_dir: str,
-    spaces: list[str],
-    desc: str,
-    fs_subject: str,
-    fs_subjects_dir: str,
-    ants_module: str,
-    fs_module: str,
-    execute: bool,
-    overwrite: bool,
-) -> tuple[bool, float]:
-    t0_run = time.perf_counter()
-    run_label = f"run-{run}" if run else "(no run entity)"
-    prefix = _bids_prefix(sub, ses, task, acq, run)
-    console.print(f"\n  [bold]task-{task}  {run_label}  desc-{desc}[/bold]")
-    console.print(f"    Input : {op.basename(input_path)}")
+@dataclass
+class RunCtx:
+    sub: str
+    ses: str
+    task: str
+    acq: str
+    run: str | None
+    run_label: str
+    desc: str
+    prefix: str
+    input_path: str
+    func_dir: str
 
-    # ── Resolve transforms ─────────────────────────────────────────────────
-    boldref_to_t1w = _find_boldref_to_t1w(fp_func_dir, sub, ses, task, acq, run)
+
+@dataclass
+class Job:
+    id: str
+    sub: str
+    ses: str
+    task: str
+    run: str | None
+    desc: str
+    label: str
+    depends_on: list[str] = field(default_factory=list)
+    planned_ok: bool = True
+    run_fn: Optional[Callable[[], tuple[bool, float]]] = None
+
+
+def _run_jobs(jobs: list[Job], n_workers: int, execute: bool) -> list[tuple[Job, bool, float]]:
+    """Run `jobs` (a flat list with dependencies via `depends_on`) across `n_workers`
+    threads. In dry-run mode (`execute=False`), nothing is run; each job's status
+    reflects whether its prerequisites were found during planning."""
+    if not execute:
+        return [(j, j.planned_ok, 0.0) for j in jobs]
+
+    job_by_id = {j.id: j for j in jobs}
+    results: dict[str, tuple[bool, float]] = {}
+    pending = dict(job_by_id)
+    futures: dict = {}
+
+    def submit_ready(pool: ThreadPoolExecutor) -> None:
+        for jid in list(pending):
+            j = pending[jid]
+            if not all(d in results for d in j.depends_on):
+                continue
+            if not j.planned_ok or any(not results[d][0] for d in j.depends_on):
+                results[jid] = (False, 0.0)
+                del pending[jid]
+                continue
+            futures[pool.submit(j.run_fn)] = jid
+            del pending[jid]
+
+    with ThreadPoolExecutor(max_workers=max(1, n_workers)) as pool:
+        submit_ready(pool)
+        while pending or futures:
+            if not futures:
+                # Nothing runnable (shouldn't normally happen) — fail the rest.
+                for jid in list(pending):
+                    results[jid] = (False, 0.0)
+                    del pending[jid]
+                break
+            done, _ = wait(list(futures.keys()), return_when=FIRST_COMPLETED)
+            for f in done:
+                jid = futures.pop(f)
+                try:
+                    results[jid] = f.result()
+                except Exception as exc:
+                    console.print(f"  [red]✗ {job_by_id[jid].label}: {exc}[/red]")
+                    results[jid] = (False, 0.0)
+            submit_ready(pool)
+
+    return [(j, *results[j.id]) for j in jobs]
+
+
+# ---------------------------------------------------------------------------
+# Per-job planners
+# ---------------------------------------------------------------------------
+
+
+def _plan_t1w_job(
+    ctx: RunCtx, boldref_to_t1w: str | None, t1w_boldref: str | None,
+    ants_module: str, overwrite: bool,
+) -> Job:
+    jid = f"{ctx.prefix}{ctx.desc}_T1w"
+    label = "T1w"
+
+    missing = [
+        n for n, v in [("boldref_to_T1w xfm", boldref_to_t1w), ("T1w boldref", t1w_boldref)]
+        if not v
+    ]
+    if missing:
+        console.print(f"    [red]✗ T1w: missing {missing}[/red]")
+        return Job(jid, ctx.sub, ctx.ses, ctx.task, ctx.run, ctx.desc, label,
+                    planned_ok=False, run_fn=lambda: (False, 0.0))
+
+    out = op.join(ctx.func_dir, f"{ctx.prefix}space-T1w_desc-{ctx.desc}_bold.nii.gz")
+    cmd = _ants_cmd(ctx.input_path, t1w_boldref, [boldref_to_t1w], out)
+
+    console.print("    [cyan]→ T1w[/cyan]")
+    console.print(f"      Module : {ants_module}")
+    console.print(f"      XFM    : {op.basename(boldref_to_t1w)}  (BOLD→T1w)")
+    console.print(f"      Ref    : {op.basename(t1w_boldref)}")
+    console.print(f"      Cmd    : {cmd}")
+    console.print(f"      Out    : {op.basename(out)}")
+
+    tag = f"[{ctx.sub}/{ctx.ses}/{ctx.run_label}/{ctx.desc}] {label}"
+
+    def run_fn() -> tuple[bool, float]:
+        if op.isfile(out) and not overwrite:
+            console.print(f"      [yellow]→ {tag} exists, skip[/yellow]")
+            return True, 0.0
+        t0 = time.perf_counter()
+        try:
+            _run_with_modules(cmd, [ants_module])
+            elapsed = time.perf_counter() - t0
+            console.print(f"      [green]✓ {tag} done[/green] [dim]({_fmt_time(elapsed)})[/dim]")
+            return True, elapsed
+        except RuntimeError as exc:
+            console.print(f"      [red]✗ {tag}: {exc}[/red]")
+            return False, 0.0
+
+    return Job(jid, ctx.sub, ctx.ses, ctx.task, ctx.run, ctx.desc, label, run_fn=run_fn)
+
+
+def _plan_mni_job(
+    ctx: RunCtx, boldref_to_t1w: str | None, t1w_to_mni: str | None,
+    mni_boldref: str | None, ants_module: str, overwrite: bool,
+) -> Job:
+    jid = f"{ctx.prefix}{ctx.desc}_MNI"
+    label = "MNI"
+
+    missing = [
+        n for n, v in [
+            ("boldref_to_T1w xfm", boldref_to_t1w),
+            ("T1w_to_MNI xfm", t1w_to_mni),
+            ("MNI boldref", mni_boldref),
+        ] if not v
+    ]
+    if missing:
+        console.print(f"    [red]✗ MNI: missing {missing}[/red]")
+        return Job(jid, ctx.sub, ctx.ses, ctx.task, ctx.run, ctx.desc, label,
+                    planned_ok=False, run_fn=lambda: (False, 0.0))
+
+    out = op.join(ctx.func_dir, f"{ctx.prefix}space-{MNI_SPACE}_desc-{ctx.desc}_bold.nii.gz")
+    cmd = _ants_cmd(ctx.input_path, mni_boldref, [t1w_to_mni, boldref_to_t1w], out)
+
+    console.print("    [cyan]→ MNI[/cyan]")
+    console.print(f"      Module : {ants_module}")
+    console.print(f"      XFM1   : {op.basename(t1w_to_mni)}  (T1w→MNI, applied 1st)")
+    console.print(f"      XFM2   : {op.basename(boldref_to_t1w)}  (BOLD→T1w, applied 2nd)")
+    console.print(f"      Ref    : {op.basename(mni_boldref)}")
+    console.print(f"      Cmd    : {cmd}")
+    console.print(f"      Out    : {op.basename(out)}")
+
+    tag = f"[{ctx.sub}/{ctx.ses}/{ctx.run_label}/{ctx.desc}] {label}"
+
+    def run_fn() -> tuple[bool, float]:
+        if op.isfile(out) and not overwrite:
+            console.print(f"      [yellow]→ {tag} exists, skip[/yellow]")
+            return True, 0.0
+        t0 = time.perf_counter()
+        try:
+            _run_with_modules(cmd, [ants_module])
+            elapsed = time.perf_counter() - t0
+            console.print(f"      [green]✓ {tag} done[/green] [dim]({_fmt_time(elapsed)})[/dim]")
+            return True, elapsed
+        except RuntimeError as exc:
+            console.print(f"      [red]✗ {tag}: {exc}[/red]")
+            return False, 0.0
+
+    return Job(jid, ctx.sub, ctx.ses, ctx.task, ctx.run, ctx.desc, label, run_fn=run_fn)
+
+
+def _plan_fsreg_job(
+    ctx: RunCtx, boldref_to_t1w: str | None, fp_func_dir: str, fp_anat_dir: str,
+    fs_subject: str, fs_subjects_dir: str, fs_module: str, overwrite: bool,
+) -> tuple[Job | None, str | None, bool]:
+    """Plan the boldref→fsnative .lta job (shared across fsnative/fsaverage and
+    across all descs of this run). Returns (job_or_None, reg_file, ok)."""
+    reg_file = op.join(ctx.func_dir, f"{ctx.prefix}from-boldref_to-fsnative_reg.lta")
+
+    if op.isfile(reg_file) and not overwrite:
+        console.print("    [cyan]→ boldref→fsnative reg[/cyan]")
+        console.print(f"      [yellow]→ reg exists, skip ({op.basename(reg_file)})[/yellow]")
+        return None, reg_file, True
+
+    boldref_native = _find_boldref_native(fp_func_dir, ctx.sub, ctx.ses, ctx.task, ctx.acq, ctx.run)
+    t1w_preproc = _find_t1w_preproc(fp_anat_dir, ctx.sub, ctx.ses)
+    t1w_to_fsnative_xfm = _find_t1w_to_fsnative_xfm(fp_anat_dir, ctx.sub, ctx.ses)
+
+    missing = [
+        n for n, v in [
+            ("native boldref", boldref_native),
+            ("boldref_to_T1w xfm", boldref_to_t1w),
+            ("T1w preproc", t1w_preproc),
+            ("T1w_to_fsnative xfm", t1w_to_fsnative_xfm),
+        ] if not v
+    ]
+    if missing:
+        console.print(f"    [red]✗ fsnative-reg: missing {missing}[/red]")
+        return None, None, False
+
+    fs_orig = op.join(fs_subjects_dir, fs_subject, "mri", "orig.mgz")
+
+    boldref_to_t1w_fixed = op.join(ctx.func_dir, f"{ctx.prefix}from-boldref_to-T1w_xfm_double.txt")
+    boldref_to_t1w_lta = op.join(ctx.func_dir, f"{ctx.prefix}from-boldref_to-T1w_reg.lta")
+    t1w_to_fsnative_fixed = op.join(ctx.func_dir, f"sub-{ctx.sub}_ses-{ctx.ses}_from-T1w_to-fsnative_xfm_double.txt")
+    t1w_to_fsnative_lta = op.join(ctx.func_dir, f"sub-{ctx.sub}_ses-{ctx.ses}_from-T1w_to-fsnative_reg.lta")
+
+    cmd1 = _lta_convert_cmd(boldref_to_t1w_fixed, boldref_native, t1w_preproc, boldref_to_t1w_lta)
+    cmd2 = _lta_convert_cmd(t1w_to_fsnative_fixed, t1w_preproc, fs_orig, t1w_to_fsnative_lta, fs_subjects_dir)
+    cmd3 = _concat_lta_cmd(boldref_to_t1w_lta, t1w_to_fsnative_lta, reg_file)
+
+    console.print("    [cyan]→ boldref→fsnative reg (fMRIprep transforms, concatenated)[/cyan]")
+    console.print(f"      Module : {fs_module}")
+    console.print(f"      XFM1   : {op.basename(boldref_to_t1w)}  (boldref→T1w)")
+    console.print(f"      XFM2   : {op.basename(t1w_to_fsnative_xfm)}  (T1w→fsnative)")
+    console.print(f"      Cmd1   : {cmd1}")
+    console.print(f"      Cmd2   : {cmd2}")
+    console.print(f"      Cmd3   : {cmd3}")
+    console.print(f"      Reg    : {op.basename(reg_file)}")
+
+    tag = f"[{ctx.sub}/{ctx.ses}/{ctx.run_label}] fsnative-reg"
+    jid = f"{ctx.prefix}fsreg"
+
+    def run_fn() -> tuple[bool, float]:
+        t0 = time.perf_counter()
+        try:
+            _fix_itk_xfm_precision(boldref_to_t1w, boldref_to_t1w_fixed)
+            _run_with_modules(cmd1, [fs_module])
+            if not (op.isfile(t1w_to_fsnative_lta) and not overwrite):
+                _fix_itk_xfm_precision(t1w_to_fsnative_xfm, t1w_to_fsnative_fixed)
+                _run_with_modules(cmd2, [fs_module])
+            _run_with_modules(cmd3, [fs_module])
+            _set_lta_subject(reg_file, fs_subject)
+            elapsed = time.perf_counter() - t0
+            console.print(f"      [green]✓ {tag} done[/green] [dim]({_fmt_time(elapsed)})[/dim]")
+            return True, elapsed
+        except RuntimeError as exc:
+            console.print(f"      [red]✗ {tag}: {exc}[/red]")
+            return False, 0.0
+
+    job = Job(jid, ctx.sub, ctx.ses, ctx.task, ctx.run, "—", "fsnative-reg", run_fn=run_fn)
+    return job, reg_file, True
+
+
+def _plan_vol2surf_job(
+    ctx: RunCtx, hemi: str, surf: str, fs_subject: str, fs_subjects_dir: str,
+    fs_module: str, reg_file: str | None, reg_ok: bool, trg: str | None,
+    space_label: str, depends_on: list[str], overwrite: bool,
+) -> Job:
+    label = f"{space_label} hemi-{hemi}"
+    jid = f"{ctx.prefix}{ctx.desc}_{label}"
+
+    if not reg_ok:
+        console.print(f"    [red]✗ {label}: fsnative-reg prerequisites missing[/red]")
+        return Job(jid, ctx.sub, ctx.ses, ctx.task, ctx.run, ctx.desc, label,
+                    planned_ok=False, run_fn=lambda: (False, 0.0))
+
+    out = op.join(
+        ctx.func_dir,
+        f"{ctx.prefix}hemi-{hemi}_space-{space_label}_desc-{ctx.desc}_bold.func.gii",
+    )
+    v2s_cmd = _vol2surf_cmd(ctx.input_path, out, hemi, surf, fs_subject, fs_subjects_dir, reg=reg_file, trg_subject=trg)
+
+    console.print(f"    [cyan]→ {label}[/cyan]")
+    console.print(f"      Module : {fs_module}")
+    console.print(f"      Cmd    : {v2s_cmd}")
+    console.print(f"      Out    : {op.basename(out)}")
+
+    tag = f"[{ctx.sub}/{ctx.ses}/{ctx.run_label}/{ctx.desc}] {label}"
+
+    def run_fn() -> tuple[bool, float]:
+        if op.isfile(out) and not overwrite:
+            console.print(f"      [yellow]→ {tag} exists, skip[/yellow]")
+            return True, 0.0
+        t0 = time.perf_counter()
+        try:
+            _run_with_modules(v2s_cmd, [fs_module])
+            elapsed = time.perf_counter() - t0
+            console.print(f"      [green]✓ {tag} done[/green] [dim]({_fmt_time(elapsed)})[/dim]")
+            return True, elapsed
+        except RuntimeError as exc:
+            console.print(f"      [red]✗ {tag}: {exc}[/red]")
+            return False, 0.0
+
+    return Job(jid, ctx.sub, ctx.ses, ctx.task, ctx.run, ctx.desc, label,
+               depends_on=depends_on, run_fn=run_fn)
+
+
+def _plan_jobs_for_run(
+    ctx: RunCtx, fp_func_dir: str, fp_anat_dir: str, fs_subject: str, fs_subjects_dir: str,
+    spaces: list[str], ants_module: str, fs_module: str, overwrite: bool,
+    fsreg_cache: dict[str, tuple[Job | None, str | None, bool]], jobs: list[Job],
+) -> None:
+    console.print(f"\n  [bold]task-{ctx.task}  {ctx.run_label}  desc-{ctx.desc}[/bold]")
+    console.print(f"    Input : {op.basename(ctx.input_path)}")
+
+    boldref_to_t1w = _find_boldref_to_t1w(fp_func_dir, ctx.sub, ctx.ses, ctx.task, ctx.acq, ctx.run)
     t1w_to_mni = _find_t1w_to_mni(fp_anat_dir)
-    mni_boldref = _find_mni_boldref(fp_func_dir, sub, ses, task, acq, run)
-    t1w_boldref = _find_t1w_boldref(fp_func_dir, sub, ses, task, acq, run)
-
-    all_ok = True
+    mni_boldref = _find_mni_boldref(fp_func_dir, ctx.sub, ctx.ses, ctx.task, ctx.acq, ctx.run)
+    t1w_boldref = _find_t1w_boldref(fp_func_dir, ctx.sub, ctx.ses, ctx.task, ctx.acq, ctx.run)
 
     for space in spaces:
-        # ── MNI ───────────────────────────────────────────────────────────
-        if space == "MNI":
-            out = op.join(
-                func_dir, f"{prefix}space-{MNI_SPACE}_desc-{desc}_bold.nii.gz"
-            )
-            missing = [
-                n
-                for n, v in [
-                    ("boldref_to_T1w xfm", boldref_to_t1w),
-                    ("T1w_to_MNI xfm", t1w_to_mni),
-                    ("MNI boldref", mni_boldref),
-                ]
-                if not v
-            ]
-            if missing:
-                console.print(f"    [red]✗ MNI: missing {missing}[/red]")
-                all_ok = False
-                continue
+        if space == "T1w":
+            jobs.append(_plan_t1w_job(ctx, boldref_to_t1w, t1w_boldref, ants_module, overwrite))
 
-            cmd = _ants_cmd(input_path, mni_boldref, [t1w_to_mni, boldref_to_t1w], out)
+        elif space == "MNI":
+            jobs.append(_plan_mni_job(ctx, boldref_to_t1w, t1w_to_mni, mni_boldref, ants_module, overwrite))
 
-            console.print("    [cyan]→ MNI[/cyan]")
-            console.print(f"      Module : {ants_module}")
-            console.print(
-                f"      XFM1   : {op.basename(t1w_to_mni)}  (T1w→MNI, applied 1st)"
-            )
-            console.print(
-                f"      XFM2   : {op.basename(boldref_to_t1w)}  (BOLD→T1w, applied 2nd)"
-            )
-            console.print(f"      Ref    : {op.basename(mni_boldref)}")
-            console.print(f"      Cmd    : {cmd}")
-            console.print(f"      Out    : {op.basename(out)}")
-
-            if not execute:
-                continue
-            if op.isfile(out) and not overwrite:
-                console.print("      [yellow]→ exists, skip[/yellow]")
-                continue
-            t0 = time.perf_counter()
-            try:
-                _run_with_modules(cmd, [ants_module])
-                console.print(
-                    f"      [green]✓ done[/green] [dim]({_fmt_time(time.perf_counter() - t0)})[/dim]"
-                )
-            except RuntimeError as exc:
-                console.print(f"      [red]✗ {exc}[/red]")
-                all_ok = False
-
-        # ── fsnative / fsaverage ──────────────────────────────────────────
         elif space in ("fsnative", "fsaverage"):
+            if ctx.prefix not in fsreg_cache:
+                fsreg_cache[ctx.prefix] = _plan_fsreg_job(
+                    ctx, boldref_to_t1w, fp_func_dir, fp_anat_dir, fs_subject, fs_subjects_dir, fs_module, overwrite
+                )
+                reg_job, _, _ = fsreg_cache[ctx.prefix]
+                if reg_job is not None:
+                    jobs.append(reg_job)
+
+            reg_job, reg_file, reg_ok = fsreg_cache[ctx.prefix]
+            depends_on = [reg_job.id] if reg_job is not None else []
             trg = "fsaverage" if space == "fsaverage" else None
-            surf = "white" if space == "fsaverage" else "midthickness"
             space_label = "fsaverage" if space == "fsaverage" else "fsnative"
 
-            # ── Step 1: bbregister (native BOLD boldref → FreeSurfer T1) ──
-            boldref_native = _find_boldref_native(fp_func_dir, sub, ses, task, acq, run)
-            if not boldref_native:
-                console.print(
-                    f"    [red]✗ {space_label}: native boldref not found for bbregister[/red]"
-                )
-                all_ok = False
-                continue
-            reg_file = op.join(func_dir, f"{prefix}from-boldref_to-T1w_bbr.reg")
-            bbr_cmd = _bbregister_cmd(
-                boldref_native, reg_file, fs_subject, fs_subjects_dir
-            )
-            console.print("    [cyan]→ bbregister (BOLD→T1w, force-BBR)[/cyan]")
-            console.print(f"      Module : {fs_module}")
-            console.print(f"      Mov    : {op.basename(boldref_native)}")
-            console.print(f"      Cmd    : {bbr_cmd}")
-            console.print(f"      Reg    : {op.basename(reg_file)}")
-
-            if execute:
-                if not op.isfile(reg_file) or overwrite:
-                    t0 = time.perf_counter()
-                    try:
-                        _run_with_modules(bbr_cmd, [fs_module])
-                        console.print(
-                            f"      [green]✓ done[/green] "
-                            f"[dim]({_fmt_time(time.perf_counter() - t0)})[/dim]"
-                        )
-                    except RuntimeError as exc:
-                        console.print(f"      [red]✗ bbregister failed: {exc}[/red]")
-                        all_ok = False
-                        continue
-                else:
-                    console.print("      [yellow]→ reg exists, skip[/yellow]")
-
-            # ── Step 2: mri_vol2surf per hemi (native BOLD → surface) ─────
             for hemi in ("L", "R"):
-                out = op.join(
-                    func_dir,
-                    f"{prefix}hemi-{hemi}_space-{space_label}_desc-{desc}_bold.func.gii",
-                )
-                v2s_cmd = _vol2surf_cmd(
-                    input_path,
-                    out,
-                    hemi,
-                    surf,
-                    fs_subject,
-                    fs_subjects_dir,
-                    reg=reg_file,
-                    trg_subject=trg,
-                )
-                console.print(f"    [cyan]→ {space_label} hemi-{hemi}[/cyan]")
-                console.print(f"      Module : {fs_module}")
-                console.print(f"      Cmd    : {v2s_cmd}")
-                console.print(f"      Out    : {op.basename(out)}")
-
-                if not execute:
-                    continue
-                if op.isfile(out) and not overwrite:
-                    console.print("      [yellow]→ exists, skip[/yellow]")
-                    continue
-
-                t0 = time.perf_counter()
-                try:
-                    _run_with_modules(v2s_cmd, [fs_module])
-                    console.print(
-                        f"      [green]✓ done[/green] [dim]({_fmt_time(time.perf_counter() - t0)})[/dim]"
-                    )
-                except RuntimeError as exc:
-                    console.print(f"      [red]✗ {exc}[/red]")
-                    all_ok = False
-
-    t_total = time.perf_counter() - t0_run
-    return all_ok, t_total
+                jobs.append(_plan_vol2surf_job(
+                    ctx, hemi, "white", fs_subject, fs_subjects_dir, fs_module,
+                    reg_file, reg_ok, trg, space_label, depends_on, overwrite,
+                ))
 
 
 # ---------------------------------------------------------------------------
@@ -489,9 +740,9 @@ def main(
         "denoised", "--descs", help="Comma-separated desc labels  e.g.  denoised,optcom"
     ),
     spaces: str = typer.Option(
-        "MNI,fsnative,fsaverage",
+        "T1w,MNI,fsnative,fsaverage",
         "--spaces",
-        help="Comma-separated target spaces: MNI, fsnative, fsaverage",
+        help="Comma-separated target spaces: T1w, MNI, fsnative, fsaverage",
     ),
     ants_module: str = typer.Option("ants/2.5.1", "--ants-module"),
     fs_module: str = typer.Option("freesurfer/7.3.2", "--fs-module"),
@@ -501,8 +752,11 @@ def main(
         help="Run transforms. Without this flag only the plan is printed.",
     ),
     overwrite: bool = typer.Option(False, "--overwrite"),
-    n_run_jobs: int = typer.Option(
-        1, "--n-run-jobs", "-J", help="Runs in parallel (1=sequential, -1=all)"
+    n_jobs: int = typer.Option(
+        1, "--n-jobs", "-J",
+        help="Total parallel workers for the whole batch's job queue "
+             "(ANTs/vol2surf calls across all subs/sessions/runs/spaces). "
+             "1=sequential, -1=use all CPU cores.",
     ),
 ) -> None:
     """Project tedana outputs to other spaces via ANTs + FreeSurfer modules."""
@@ -544,6 +798,8 @@ def main(
         console.print("[red]✗ provide -s sub,ses  or  -f batch_file[/red]")
         raise typer.Exit(1)
 
+    workers = os.cpu_count() or 1 if n_jobs == -1 else max(1, n_jobs)
+
     # ── Banner ─────────────────────────────────────────────────────────────
     tbl = Table(title="project_to_spaces", show_lines=False)
     tbl.add_column("Parameter", style="cyan")
@@ -558,6 +814,7 @@ def main(
     tbl.add_row("spaces", ", ".join(space_list))
     tbl.add_row("ants_module", ants_module)
     tbl.add_row("fs_module", fs_module)
+    tbl.add_row("n_jobs (workers)", str(workers))
     tbl.add_row("execute", str(execute))
     console.print(tbl)
 
@@ -566,12 +823,9 @@ def main(
             "\n[yellow bold]DRY RUN — pass --execute to run transforms[/yellow bold]\n"
         )
 
-    if execute:
-        _save_sources(input_dir, fp_dir, space_list, fs_subjects_dir)
-
-    # ── Main loop ──────────────────────────────────────────────────────────
-    results: list[tuple[str, str, str, str | None, str, bool, float]] = []
-    t_total_start = time.perf_counter()
+    # ── Plan: build a flat job queue across the whole batch ─────────────────
+    jobs: list[Job] = []
+    fsreg_cache: dict[str, tuple[Job | None, str | None, bool]] = {}
 
     for sub, ses in subses_pairs:
         console.print(f"\n[bold cyan]sub-{sub}  ses-{ses}[/bold cyan]")
@@ -580,6 +834,7 @@ def main(
         fp_anat_dir = op.join(fp_dir, f"sub-{sub}", f"ses-{ses}", "anat")
         fs_subject = fs_subject_template.format(sub=sub, ses=ses)
 
+        dirs_ok = True
         for path, label in [
             (func_dir, "tedana func"),
             (fp_func_dir, "fmriprep func"),
@@ -588,10 +843,15 @@ def main(
         ]:
             if not op.isdir(path):
                 console.print(f"  [red]✗ {label} dir not found: {path}[/red]")
-                for task in task_list:
-                    for desc in desc_list:
-                        results.append((sub, ses, task, None, desc, False, 0.0))
-                continue
+                dirs_ok = False
+
+        if not dirs_ok:
+            for task in task_list:
+                for desc in desc_list:
+                    jid = f"sub-{sub}_ses-{ses}_task-{task}_desc-{desc}_setup"
+                    jobs.append(Job(jid, sub, ses, task, None, desc, "(missing dirs)",
+                                     planned_ok=False, run_fn=lambda: (False, 0.0)))
+            continue
 
         for task in task_list:
             for desc in desc_list:
@@ -600,58 +860,29 @@ def main(
                     console.print(
                         f"  [yellow]⚠ task-{task} desc-{desc}: no input files found[/yellow]"
                     )
-                    results.append((sub, ses, task, None, desc, False, 0.0))
+                    jid = f"sub-{sub}_ses-{ses}_task-{task}_desc-{desc}_noinput"
+                    jobs.append(Job(jid, sub, ses, task, None, desc, "(no input)",
+                                     planned_ok=False, run_fn=lambda: (False, 0.0)))
                     continue
 
-                run_kwargs = [
-                    dict(
-                        sub=sub,
-                        ses=ses,
-                        task=task,
-                        acq=acq,
-                        run=run,
-                        input_path=path,
-                        func_dir=func_dir,
-                        fp_func_dir=fp_func_dir,
-                        fp_anat_dir=fp_anat_dir,
-                        spaces=space_list,
-                        desc=desc,
-                        fs_subject=fs_subject,
-                        fs_subjects_dir=fs_subjects_dir,
-                        ants_module=ants_module,
-                        fs_module=fs_module,
-                        execute=execute,
-                        overwrite=overwrite,
+                for run, path in pairs:
+                    run_label = f"run-{run}" if run else "(no run entity)"
+                    prefix = _bids_prefix(sub, ses, task, acq, run)
+                    ctx = RunCtx(sub, ses, task, acq, run, run_label, desc, prefix, path, func_dir)
+                    _plan_jobs_for_run(
+                        ctx, fp_func_dir, fp_anat_dir, fs_subject, fs_subjects_dir,
+                        space_list, ants_module, fs_module, overwrite, fsreg_cache, jobs,
                     )
-                    for run, path in pairs
-                ]
 
-                workers = len(pairs) if n_run_jobs == -1 else n_run_jobs
-                if workers == 1 or len(pairs) == 1:
-                    for kw in run_kwargs:
-                        ok, elapsed = _process_run(**kw)
-                        results.append((sub, ses, task, kw["run"], desc, ok, elapsed))
-                else:
-                    console.print(
-                        f"  [dim]Launching {len(pairs)} run(s) across "
-                        f"{min(workers, len(pairs))} worker(s) …[/dim]"
-                    )
-                    with ProcessPoolExecutor(
-                        max_workers=min(workers, len(pairs))
-                    ) as pool:
-                        future_to_run = {
-                            pool.submit(_process_run, **kw): kw["run"]
-                            for kw in run_kwargs
-                        }
-                        for future in as_completed(future_to_run):
-                            run = future_to_run[future]
-                            try:
-                                ok, elapsed = future.result()
-                            except Exception as exc:
-                                console.print(f"  [red]✗ run-{run}: {exc}[/red]")
-                                ok, elapsed = False, 0.0
-                            results.append((sub, ses, task, run, desc, ok, elapsed))
+    console.print(f"\n[bold]Total jobs in queue: {len(jobs)}[/bold]")
 
+    # ── Execute: run the flat job queue across `workers` threads ────────────
+    if execute:
+        _save_sources(input_dir, fp_dir, space_list, fs_subjects_dir)
+        console.print(f"[dim]Running {len(jobs)} job(s) across up to {workers} worker(s) …[/dim]\n")
+
+    t_total_start = time.perf_counter()
+    results = _run_jobs(jobs, workers, execute)
     t_total = time.perf_counter() - t_total_start
 
     # ── Summary ────────────────────────────────────────────────────────────
@@ -662,15 +893,12 @@ def main(
     summary.add_column("task")
     summary.add_column("run")
     summary.add_column("desc")
+    summary.add_column("job")
     summary.add_column("status")
     summary.add_column("wall time", justify="right")
-    for sub, ses, task, run, desc, ok, elapsed in results:
+    for job, ok, elapsed in results:
         summary.add_row(
-            sub,
-            ses,
-            task,
-            run or "—",
-            desc,
+            job.sub, job.ses, job.task, job.run or "—", job.desc, job.label,
             "[green]✓[/green]" if ok else "[red]✗[/red]",
             _fmt_time(elapsed) if elapsed > 0 else "—",
         )
@@ -683,11 +911,11 @@ def main(
         return
 
     console.print(f"Total wall time: [bold]{_fmt_time(t_total)}[/bold]")
-    n_failed = sum(1 for *_, ok, _e in results if not ok)
+    n_failed = sum(1 for _job, ok, _e in results if not ok)
     if n_failed:
-        console.print(f"\n[red]{n_failed} run(s) failed.[/red]")
+        console.print(f"\n[red]{n_failed} job(s) failed.[/red]")
         raise typer.Exit(1)
-    console.print("\n[green]All runs completed successfully.[/green]")
+    console.print("\n[green]All jobs completed successfully.[/green]")
 
 
 if __name__ == "__main__":

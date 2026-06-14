@@ -42,6 +42,7 @@ usage() {
     echo "    -p <space>       Space: T1w | fsnative | fsaverage | MNI152NLin2009cAsym (default: ${SPACE})"
     echo "    --dry-run        print commands without running"
     echo "    --use-smoothed"
+    echo "    --save-betas     also save per-regressor betas/residuals/fitted (space-tagged GIFTI/NIfTI)"
     echo ""
     echo "Required:"
     echo "  -n <analysis_name>   maps to --analysis-name in run_glm.py"
@@ -63,6 +64,7 @@ while [[ $# -gt 0 ]]; do
         -p) SPACE="$2";     shift 2 ;;
         --dry-run)      dry_run=1; extra_flags="${extra_flags} --dry-run"; shift ;;
         --use-smoothed) extra_flags="${extra_flags} --use-smoothed"; shift ;;
+        --save-betas)   extra_flags="${extra_flags} --save-betas"; shift ;;
         *) echo "Unknown option: $1"; usage ;;
     esac
 done

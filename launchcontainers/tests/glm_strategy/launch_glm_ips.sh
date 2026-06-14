@@ -11,8 +11,8 @@
 # Edit these variables before running
 # ---------------------------------------------------------------------------
 PROJECT="IRAKEINU"
-analysis_space="surface"  # "volume" or "surface"; determines which run_glm script to use
-PYTHON_SCRIPT="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/glm_surface_${PROJECT}_HMC_explore.py"
+analysis_space="volume"  # "volume" or "surface"; determines which run_glm script to use
+PYTHON_SCRIPT="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/glm_surface_check_model_strategy.py"
 LOGBASE="/bcbl/home/public/Gari/${PROJECT}/logs/glm/${analysis_space}"
 
 # run_glm.py arguments
@@ -23,9 +23,12 @@ SPACE="fsnative"
 START_SCANS="6"
 CONTRAST="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/contrast_${PROJECT}_all.yaml"
 STRATEGY_YAML="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/strategy.yaml"
-STRATEGY=""   # single strategy name to run, or leave empty "" to run all strategies in the YAML
+STRATEGY="basic_MC"   # single strategy name to run, or leave empty "" to run all strategies in the YAML
 RERUN_MAP=""   # leave empty "" to skip
 INPUT_DIR="BIDS"           # input BIDS dir name under BASE; use BIDS_WC for WC runs
+ACQ=""                # acquisition label: "ME" | "SE" | leave empty "" for no filter
+BOLD_DESC=""          # desc label for bold query: "denoised" | "optcom" | leave empty ""
+N_VOLS=0              # truncate to first N volumes (0 = no truncation)
 
 # Python / micromamba environment
 # Set MAMBA_EXE to the full path of the micromamba binary.
@@ -49,8 +52,13 @@ usage() {
     echo "  Optional:"
     echo "    -i <input_dir>   BIDS dir name under BASE (default: BIDS, use BIDS_WC for WC)"
     echo "    -p <space>       Space: T1w | fsnative | fsaverage | MNI152NLin2009cAsym (default: ${SPACE})"
+    echo "    -a <acq>         acquisition filter: ME | SE (default: no filter)"
+    echo "    -d <bold_desc>   bold desc filter: denoised | optcom (default: no filter)"
+    echo "    -v <n_vols>      truncate timeseries to first N volumes (default: 0 = no truncation)"
+    echo "    -r <rerun_map>   path to rerun_check.tsv/csv to exclude compensated runs"
     echo "    --dry-run        print qsub commands without submitting"
     echo "    --use-smoothed"
+    echo "    --save-betas     also save per-regressor betas/residuals/fitted (space-tagged GIFTI/NIfTI)"
     echo ""
     echo "Required:"
     echo "  -n <analysis_name>   maps to --analysis-name in run_glm.py"
@@ -70,8 +78,13 @@ while [[ $# -gt 0 ]]; do
         -f) file_arg="$2";      shift 2 ;;
         -i) INPUT_DIR="$2";     shift 2 ;;
         -p) SPACE="$2";         shift 2 ;;
+        -a) ACQ="$2";           shift 2 ;;
+        -d) BOLD_DESC="$2";     shift 2 ;;
+        -v) N_VOLS="$2";        shift 2 ;;
+        -r) RERUN_MAP="$2";     shift 2 ;;
         --dry-run)      dry_run=1; extra_flags="${extra_flags} --dry-run"; shift ;;
         --use-smoothed) extra_flags="${extra_flags} --use-smoothed"; shift ;;
+        --save-betas)   extra_flags="${extra_flags} --save-betas"; shift ;;
         *) echo "Unknown option: $1"; usage ;;
     esac
 done
@@ -128,6 +141,9 @@ echo "  Space         : ${SPACE}"
 echo "  Input dir     : ${INPUT_DIR}"
 echo "  Strategy YAML : ${STRATEGY_YAML}"
 echo "  Strategy      : ${STRATEGY:-"(all strategies in YAML)"}"
+echo "  Acq filter    : ${ACQ:-"(none)"}"
+echo "  Bold desc     : ${BOLD_DESC:-"(none)"}"
+echo "  N vols        : ${N_VOLS}"
 echo "  Log dir       : ${LOG_DIR}"
 echo "  Mamba env     : ${MAMBA_ENV}  (exe: ${MAMBA_EXE})"
 echo "  Queue         : ${QUEUE}"
@@ -165,6 +181,9 @@ for pair in "${PAIRS[@]}"; do
 
     [[ -n "${STRATEGY}" ]]    && PY_CMD="${PY_CMD} --strategy ${STRATEGY}"
     [[ -n "${RERUN_MAP}" ]]   && PY_CMD="${PY_CMD} --rerun-map ${RERUN_MAP}"
+    [[ -n "${ACQ}" ]]         && PY_CMD="${PY_CMD} --acq ${ACQ}"
+    [[ -n "${BOLD_DESC}" ]]   && PY_CMD="${PY_CMD} --bold-desc ${BOLD_DESC}"
+    [[ "${N_VOLS}" -gt 0 ]]   && PY_CMD="${PY_CMD} --n-vols ${N_VOLS}"
     [[ -n "${extra_flags}" ]] && PY_CMD="${PY_CMD} ${extra_flags}"
 
     QSUB_CMD="qsub \

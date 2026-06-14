@@ -17,9 +17,9 @@ For each requested space × desc × run:
               _hemi-{LR}_space-{space}_desc-{desc}_bold.func.gii
     → {tedana_func}/same_filename
 
-  T1w-like (tedana native BOLD — no space entity, used for volumetric GLM):
+  T1w (from project_to_spaces.py output, used for volumetric GLM):
     {fp_func}/sub-{sub}_ses-{ses}_task-{task}_acq-ME_run-{run}
-              _desc-{desc}_bold.nii.gz
+              _space-T1w_desc-{desc}_bold.nii.gz
     → {tedana_func}/same_filename
 
 Usage
@@ -123,9 +123,9 @@ def _process_subses(
         prefix = _bids_prefix(sub, ses, task, acq, run)
 
         for desc in descs:
-            # ── Volumetric (native BOLD / T1w-like) ──────────────────────
-            src_vol = op.join(tedana_func, f"{prefix}desc-{desc}_bold{VOL_EXT}")
-            dst_vol = op.join(fp_func, f"{prefix}desc-{desc}_bold{VOL_EXT}")
+            # ── Volumetric (T1w space, from project_to_spaces.py) ────────
+            src_vol = op.join(tedana_func, f"{prefix}space-T1w_desc-{desc}_bold{VOL_EXT}")
+            dst_vol = op.join(fp_func, f"{prefix}space-T1w_desc-{desc}_bold{VOL_EXT}")
             status = _make_symlink(src_vol, dst_vol, execute, overwrite)
             console.print(
                 f"  run-{run}  desc-{desc}  vol   {status}\n"
@@ -133,7 +133,7 @@ def _process_subses(
                 f"    dst: {dst_vol}"
             )
             rows.append(
-                {"run": run, "desc": desc, "space": "T1w-like", "status": status}
+                {"run": run, "desc": desc, "space": "T1w", "status": status}
             )
 
             # ── Surface spaces ────────────────────────────────────────────

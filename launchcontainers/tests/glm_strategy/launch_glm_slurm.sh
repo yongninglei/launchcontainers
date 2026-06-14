@@ -56,19 +56,22 @@ usage() {
     echo ""
     echo "Optional:"
     echo "  -p <space>           Space: T1w | fsnative | fsaverage | MNI152NLin2009cAsym (default: ${SPACE})"
+    echo "  -b                   also save per-regressor betas/residuals/fitted (space-tagged GIFTI/NIfTI)"
     exit 1
 }
 
 subses_arg=""
 file_arg=""
 analysis_name=""
+save_betas=0
 
-while getopts ":o:s:f:p:" opt; do
+while getopts ":o:s:f:p:b" opt; do
     case $opt in
         o) analysis_name="$OPTARG"  ;;
         s) subses_arg="$OPTARG"   ;;
         f) file_arg="$OPTARG"     ;;
         p) SPACE="$OPTARG"        ;;
+        b) save_betas=1           ;;
         *) usage ;;
     esac
 done
@@ -145,6 +148,7 @@ for pair in "${PAIRS[@]}"; do
     if [[ -n "${RERUN_MAP}" ]]; then
         PY_CMD="${PY_CMD} --rerun-map ${RERUN_MAP}"
     fi
+    [[ "${save_betas}" -eq 1 ]] && PY_CMD="${PY_CMD} --save-betas"
 
     now=$(date +"%H-%M")
     OUT_FILE="${LOG_DIR}/${now}_%j_sub-${SUB}_ses-${SES}.o"

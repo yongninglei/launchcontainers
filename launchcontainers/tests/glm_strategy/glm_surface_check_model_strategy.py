@@ -121,6 +121,21 @@ def save_timeseries_to_gifti(data: np.ndarray, outname: str) -> None:
     console.print(f"  [dim]  → {op.basename(outname)}[/dim]")
 
 
+def save_timeseries_to_nifti(
+    data: np.ndarray, outname: str, affine: np.ndarray, shape: tuple
+) -> None:
+    """
+    Save a (n_voxels, n_frames) array as a 4D NIfTI, reshaping each frame to ``shape``.
+
+    Used for residuals/fitted timeseries (frame = timepoint) and for
+    per-regressor beta maps (frame = regressor column), volumetric space.
+    """
+    n_frames = data.shape[1]
+    data_4d = np.moveaxis(data.T.reshape((n_frames,) + shape), 0, -1)
+    nib.save(nib.Nifti1Image(data_4d.astype(np.float32), affine), outname)
+    console.print(f"  [dim]  → {op.basename(outname)}[/dim]")
+
+
 def _reconstruct_vertex_array(
     n_tp: int,
     n_vtx: int,
@@ -412,6 +427,7 @@ def glm_l1(
     n_glm_jobs=1,
     vol_affine=None,
     vol_shape=None,
+    save_betas=False,
 ) -> dict[str, float]:
     """
     Fit the GLM and compute contrasts.
@@ -466,39 +482,50 @@ def glm_l1(
     t_glm_fit = time.time() - _t
     console.print(f"  [dim]run_glm: {t_glm_fit:.2f} s[/dim]")
 
-    # # ── Reconstruct vertex arrays + save components ────────────────────────────
-    # # Y = Xθ + ε   (fitted = Xθ,  residuals = ε,  betas = θ per regressor)
-    # t_reconstruct = 0.0
-    # t_save_components = 0.0
-    # if hemi:
-    #     _t = time.time()
-    #     n_tp, n_vtx = Y.shape
-    #     resid = _reconstruct_vertex_array(n_tp, n_vtx, labels, estimates, "resid")
-    #     fitted = _reconstruct_vertex_array(n_tp, n_vtx, labels, estimates, "predicted")
-    #     beta_arr = _reconstruct_betas(X.shape[1], n_vtx, labels, estimates)
-    #     t_reconstruct = time.time() - _t
+    # ── Reconstruct vertex arrays + save components ────────────────────────────
+    # Y = Xθ + ε   (fitted = Xθ,  residuals = ε,  betas = θ per regressor)
+    t_reconstruct = 0.0
+    t_save_components = 0.0
+    if save_betas:
+        _t = time.time()
+        n_vtx, n_tp = Y.shape
+        resid = _reconstruct_vertex_array(n_tp, n_vtx, labels, estimates, "resid")
+        fitted = _reconstruct_vertex_array(n_tp, n_vtx, labels, estimates, "predicted")
+        beta_arr = _reconstruct_betas(X.shape[1], n_vtx, labels, estimates)
+        t_reconstruct = time.time() - _t
 
-    #     def _component_name(desc: str) -> str:
-    #         base = (
-    #             f"sub-{subject}_ses-{session}_task-{task}"
-    #             f"_hemi-{hemi}_space-{space}_desc-{desc}_timeseries.func.gii"
-    #         )
-    #         if use_smoothed:
-    #             base = base.replace(f"_desc-{desc}", f"_desc-{desc}sm{sm}")
-    #         if randrun_idx:
-    #             base = base.replace("_timeseries", f"{randrun_idx}_timeseries")
-    #         return op.join(outdir, base)
+        def _component_name(desc: str, ext: str) -> str:
+            if hemi:
+                base = (
+                    f"sub-{subject}_ses-{session}_task-{task}"
+                    f"_hemi-{hemi}_space-{space}_desc-{desc}_timeseries{ext}"
+                )
+            else:
+                base = (
+                    f"sub-{subject}_ses-{session}_task-{task}"
+                    f"_space-{space}_desc-{desc}_timeseries{ext}"
+                )
+            if use_smoothed:
+                base = base.replace(f"_desc-{desc}", f"_desc-{desc}sm{sm}")
+            if randrun_idx:
+                base = base.replace("_timeseries", f"{randrun_idx}_timeseries")
+            return op.join(outdir, base)
 
-    #     _t = time.time()
-    #     save_timeseries_to_gifti(resid, _component_name("residuals"))
-    #     save_timeseries_to_gifti(fitted, _component_name("fitted"))
-    #     save_timeseries_to_gifti(beta_arr, _component_name("betas"))
-    #     save_array_as_dataframe(
-    #         beta_arr,
-    #         _component_name("betas").replace(".func.gii", ".tsv"),
-    #         col_labels=design_matrix_std.columns.tolist(),
-    #     )
-    #     t_save_components = time.time() - _t
+        _t = time.time()
+        if hemi:
+            save_timeseries_to_gifti(resid, _component_name("residuals", ".func.gii"))
+            save_timeseries_to_gifti(fitted, _component_name("fitted", ".func.gii"))
+            save_timeseries_to_gifti(beta_arr, _component_name("betas", ".func.gii"))
+            save_array_as_dataframe(
+                beta_arr,
+                _component_name("betas", ".tsv"),
+                col_labels=design_matrix_std.columns.tolist(),
+            )
+        else:
+            save_timeseries_to_nifti(resid, _component_name("residuals", ".nii.gz"), vol_affine, vol_shape)
+            save_timeseries_to_nifti(fitted, _component_name("fitted", ".nii.gz"), vol_affine, vol_shape)
+            save_timeseries_to_nifti(beta_arr, _component_name("betas", ".nii.gz"), vol_affine, vol_shape)
+        t_save_components = time.time() - _t
 
     # ── Contrasts: compute then save stat maps ─────────────────────────────────
     timing: dict[str, float] = {}
@@ -571,34 +598,25 @@ def glm_l1(
         title=f"GLM step timing — {hemi_label}", box=box.SIMPLE_HEAD, show_footer=True
     )
     tbl_steps.add_column("step", footer="[bold]total[/bold]")
-    # tbl_steps.add_column(
-    #     "time (s)",
-    #     justify="right",
-    #     footer=f"[bold]{t_save_meta + t_glm_fit + t_reconstruct + t_save_components + t_compute_total + t_save_maps_total:.2f}[/bold]",
-    # )
     tbl_steps.add_column(
         "time (s)",
         justify="right",
-        footer=f"[bold]{t_save_meta + t_glm_fit + t_compute_total + t_save_maps_total:.2f}[/bold]",
+        footer=f"[bold]{t_save_meta + t_glm_fit + t_reconstruct + t_save_components + t_compute_total + t_save_maps_total:.2f}[/bold]",
     )
-    # for step, t in [
-    #     ("save_metadata  (confounds TSV + DM CSV + plots)", t_save_meta),
-    #     ("glm_fit        (run_glm, all vertices)", t_glm_fit),
-    #     ("reconstruct    (resid / fitted / beta arrays)", t_reconstruct),
-    #     ("save_components (residuals + fitted + betas GIFTI)", t_save_components),
-    #     ("compute_contrasts", t_compute_total),
-    #     ("save_maps      (stat-map GIFTIs)", t_save_maps_total),
-    # ]:
-    #     tbl_steps.add_row(step, f"{t:.2f}")
-    # console.print(tbl_steps)
-    # console.print(f"  [green]GLM done[/green] ({hemi_label})")
-
-    for step, t in [
+    steps = [
         ("save_metadata  (confounds TSV + DM CSV + plots)", t_save_meta),
         ("glm_fit        (run_glm, all vertices)", t_glm_fit),
+    ]
+    if save_betas:
+        steps += [
+            ("reconstruct    (resid / fitted / beta arrays)", t_reconstruct),
+            ("save_components (residuals + fitted + betas GIFTI)", t_save_components),
+        ]
+    steps += [
         ("compute_contrasts", t_compute_total),
         ("save_maps      (stat-map GIFTIs)", t_save_maps_total),
-    ]:
+    ]
+    for step, t in steps:
         tbl_steps.add_row(step, f"{t:.2f}")
     console.print(tbl_steps)
     console.print(f"  [green]GLM done[/green] ({hemi_label})")
@@ -1308,6 +1326,7 @@ def process_run_list(
     bold_desc=None,
     n_vols=0,
     acq=None,
+    save_betas=False,
 ) -> dict[str, float]:
     """
     Build GLM inputs and run the GLM for one run-list / hemisphere combination.
@@ -1371,6 +1390,7 @@ def process_run_list(
         n_glm_jobs,
         vol_affine,
         vol_shape,
+        save_betas=save_betas,
     )
 
 
@@ -1400,6 +1420,7 @@ def run_power_analysis(
     bold_desc=None,
     n_vols=0,
     acq=None,
+    save_betas=False,
 ) -> None:
     """Run power analysis: total_runs × n_iterations GLMs."""
     label = f"hemi-{hemi}" if hemi else "volumetric"
@@ -1456,6 +1477,7 @@ def run_power_analysis(
                 bold_desc=bold_desc,
                 n_vols=n_vols,
                 acq=acq,
+                save_betas=save_betas,
             )
 
             elapsed = time.time() - t_iter
@@ -1706,6 +1728,16 @@ def main(
             "0 = no truncation (default)."
         ),
     ),
+    save_betas: bool = typer.Option(
+        False,
+        "--save-betas",
+        help=(
+            "Also save per-regressor betas, residuals, and fitted timeseries "
+            "(GIFTI for surface, NIfTI for volumetric, each tagged with "
+            "space-{space}). Default: only confounds TSV, design matrix, and "
+            "contrast stat maps are saved."
+        ),
+    ),
 ) -> None:
     t0 = time.time()
 
@@ -1856,6 +1888,7 @@ def main(
                         bold_desc=bold_desc,
                         n_vols=n_vols,
                         acq=acq,
+                        save_betas=save_betas,
                     )
             session_times[(sub, ses)] = time.time() - t_ses
             continue
@@ -1935,6 +1968,7 @@ def main(
                         bold_desc=bold_desc,
                         n_vols=n_vols,
                         acq=acq,
+                        save_betas=save_betas,
                     )
             else:
                 console.rule("[bold]Volumetric[/bold]", style="dim")
@@ -1964,6 +1998,7 @@ def main(
                     bold_desc=bold_desc,
                     n_vols=n_vols,
                     acq=acq,
+                    save_betas=save_betas,
                 )
             return strategy_name, t_per_hemi, time.time() - _t
 
