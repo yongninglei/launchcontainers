@@ -38,6 +38,8 @@ LABEL_SUBDIR="manual_label_clusters_analysis_12_v3"
 RERUN_MAP="/scratch/tlei/VOTCLOC/BIDS/sourcedata/qc/rerun_check.tsv"   # leave empty "" to skip
 N_ITER="5"
 SEED="42"
+ACQ=""                # acquisition label: "ME" | "SE" | leave empty "" for no filter
+BOLD_DESC=""          # desc label for bold query: "denoised" | "optcom" | leave empty ""
 
 # ---------------------------------------------------------------------------
 # Per-subject session overrides
@@ -60,6 +62,10 @@ usage() {
     echo "  bash $0 -o <output_name> -s <sub>                   # single subject"
     echo "  bash $0 -o <output_name> -f <path/subseslist>       # batch from file (RUN==True only)"
     echo ""
+    echo "Optional:"
+    echo "  -a <acq>         acquisition filter: ME | SE (default: no filter)"
+    echo "  -d <bold_desc>   bold desc filter: denoised | optcom (default: no filter)"
+    echo ""
     echo "Required:"
     echo "  -o <output_name>   output label and log dir suffix"
     exit 1
@@ -69,11 +75,13 @@ sub_arg=""
 file_arg=""
 output_name=""
 
-while getopts ":o:s:f:" opt; do
+while getopts ":o:s:f:a:d:" opt; do
     case $opt in
         o) output_name="$OPTARG" ;;
         s) sub_arg="$OPTARG"     ;;
         f) file_arg="$OPTARG"    ;;
+        a) ACQ="$OPTARG"         ;;
+        d) BOLD_DESC="$OPTARG"   ;;
         *) usage ;;
     esac
 done
@@ -125,6 +133,7 @@ echo "  Input       : ${SOURCE}"
 echo "  Subjects    : ${#SUBS[@]}  (${SUBS[*]})"
 echo "  Task        : ${TASK}  Space: ${SPACE}"
 echo "  Strategy    : ${STRATEGY}  n_iter: ${N_ITER}  seed: ${SEED}"
+echo "  Acq filter  : ${ACQ:-"(none)"}  Bold desc: ${BOLD_DESC:-"(none)"}"
 echo "  CPUs/job    : ${CPUS}  Mem: ${MEM}  Time: ${TIME}"
 echo "  QOS         : ${QOS}  Partition: ${PARTITION}"
 echo "  Log dir     : ${LOG_DIR}"
@@ -164,7 +173,9 @@ for SUB in "${SUBS[@]}"; do
         PY_CMD="${PY_CMD} -f ${file_arg}"
     fi
 
-    [[ -n "${RERUN_MAP}" ]] && PY_CMD="${PY_CMD} --rerun-map ${RERUN_MAP}"
+    [[ -n "${RERUN_MAP}" ]]  && PY_CMD="${PY_CMD} --rerun-map ${RERUN_MAP}"
+    [[ -n "${ACQ}" ]]        && PY_CMD="${PY_CMD} --acq ${ACQ}"
+    [[ -n "${BOLD_DESC}" ]]  && PY_CMD="${PY_CMD} --bold-desc ${BOLD_DESC}"
 
     now=$(date +"%H-%M")
     OUT_FILE="${LOG_DIR}/${now}_%j_sub-${SUB}.o"

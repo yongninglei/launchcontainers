@@ -157,6 +157,8 @@ def prepare_allses_data(
     confound_strategy: dict,
     rerun_excl: dict,
     hemi: str | None = None,
+    acq: str | None = None,
+    bold_desc: str | None = None,
 ) -> tuple[np.ndarray, np.ndarray, dict, list[tuple[int, int]], list[str]]:
     """Load all sessions / runs, z-score, and build the full concatenated design matrix.
 
@@ -214,10 +216,18 @@ def prepare_allses_data(
             }
             if is_surface and hemi:
                 query["hemi"] = hemi
+            if acq:
+                query["acquisition"] = acq
+            if bold_desc:
+                # explicit desc override (e.g. 'denoised', 'optcom' for tedana outputs)
+                query["desc"] = bold_desc
 
-            func_files = fp_layout.get(**query)
-            # Prefer files without a desc entity (native fMRIprep projection)
-            if func_files:
+            func_files = fp_layout.get(**query, invalid_filters="allow")
+            # When no bold_desc is requested, prefer the file without a desc
+            # entity (fMRIprep's native projection) — without this, tedana
+            # symlinks (desc-denoised, desc-optcom) would contaminate the
+            # result set and [0] would be arbitrary.
+            if func_files and not bold_desc:
                 no_desc = [f for f in func_files if not f.entities.get("desc")]
                 if no_desc:
                     func_files = no_desc
@@ -245,10 +255,13 @@ def prepare_allses_data(
             run_step_times[run_label]["zscore"] = time.time() - _t
 
             # ── TR ────────────────────────────────────────────────────────────
-            json_files = fp_layout.get(
-                subject=subject, session=ses, task=task, run=run_num,
-                suffix="bold", extension=".json",
-            )
+            json_query: dict = {
+                "subject": subject, "session": ses, "task": task, "run": run_num,
+                "suffix": "bold", "extension": ".json",
+            }
+            if acq:
+                json_query["acquisition"] = acq
+            json_files = fp_layout.get(**json_query, invalid_filters="allow")
             if not json_files:
                 console.print(
                     f"  [yellow]WARNING[/yellow]: no sidecar JSON for {run_label} — skipping"
@@ -260,10 +273,18 @@ def prepare_allses_data(
                 t_r_global = t_r
 
             # ── Events ────────────────────────────────────────────────────────
-            ev_files = layout.get(
-                subject=subject, session=ses, task=task, run=run_num,
-                suffix="events", extension=".tsv",
-            )
+            ev_query: dict = {
+                "subject": subject, "session": ses, "task": task, "run": run_num,
+                "suffix": "events", "extension": ".tsv",
+            }
+            if acq:
+                ev_query["acquisition"] = acq
+            ev_files = layout.get(**ev_query, invalid_filters="allow")
+            if not ev_files and acq:
+                ev_files = layout.get(
+                    subject=subject, session=ses, task=task, run=run_num,
+                    suffix="events", extension=".tsv",
+                )
             if not ev_files:
                 console.print(
                     f"  [yellow]WARNING[/yellow]: no events.tsv for {run_label} — skipping"
@@ -275,10 +296,13 @@ def prepare_allses_data(
 
             # ── Confounds ─────────────────────────────────────────────────────
             _t = time.time()
-            conf_files = fp_layout.get(
-                subject=subject, session=ses, task=task, run=run_num,
-                desc="confounds", suffix="timeseries", extension=".tsv",
-            )
+            conf_query: dict = {
+                "subject": subject, "session": ses, "task": task, "run": run_num,
+                "desc": "confounds", "suffix": "timeseries", "extension": ".tsv",
+            }
+            if acq:
+                conf_query["acquisition"] = acq
+            conf_files = fp_layout.get(**conf_query, invalid_filters="allow")
             if not conf_files:
                 console.print(
                     f"  [yellow]WARNING[/yellow]: no confounds TSV for {run_label} — skipping"
@@ -377,32 +401,35 @@ def save_design_matrix_files(
     sub: str,
     task: str,
     hemi: str,
+    tag: str = "",
 ) -> None:
     """Save DM CSV, DM PNG, and one contrast PNG per contrast.
 
     ses_dir is the allses subdir — matches existing l1_surface layout.
+    ``tag`` (e.g. ``_acq-ME_desc-denoised``) keeps different acq/bold_desc
+    combos from overwriting each other's outputs.
     """
     makedirs(ses_dir, exist_ok=True)
 
     # design_matrix.png — plain name, matches existing analysis-final_v3_allses
     ax = plot_design_matrix(design_matrix_std)
     fig = ax.get_figure()
-    fig.suptitle(f"sub-{sub}  all-sessions  task-{task}  hemi-{hemi}", fontsize=9)
-    dm_png = op.join(ses_dir, "design_matrix.png")
+    fig.suptitle(f"sub-{sub}  all-sessions  task-{task}  hemi-{hemi}{tag}", fontsize=9)
+    dm_png = op.join(ses_dir, f"design_matrix{tag}.png")
     fig.savefig(dm_png, bbox_inches="tight", dpi=120)
     plt.close(fig)
     console.print(f"  [dim]DM PNG  → {dm_png}[/dim]")
 
     # DM CSV — BIDS-ish name for clarity
-    csv_path = op.join(ses_dir, f"sub-{sub}_ses-allses_task-{task}_hemi-{hemi}_design_matrix.csv")
+    csv_path = op.join(ses_dir, f"sub-{sub}_ses-allses_task-{task}_hemi-{hemi}{tag}_design_matrix.csv")
     design_matrix_std.to_csv(csv_path)
     console.print(f"  [dim]DM CSV  → {csv_path}[/dim]")
 
     for key, vec in contrasts.items():
         ax = plot_contrast_matrix(vec, design_matrix=design_matrix_std)
         fig = ax.get_figure()
-        fig.suptitle(f"sub-{sub}  {key}  hemi-{hemi}", fontsize=9)
-        c_png = op.join(ses_dir, f"sub-{sub}_ses-allses_task-{task}_hemi-{hemi}_contrast-{key}_contrast_matrix.png")
+        fig.suptitle(f"sub-{sub}  {key}  hemi-{hemi}{tag}", fontsize=9)
+        c_png = op.join(ses_dir, f"sub-{sub}_ses-allses_task-{task}_hemi-{hemi}{tag}_contrast-{key}_contrast_matrix.png")
         fig.savefig(c_png, bbox_inches="tight", dpi=100)
         plt.close(fig)
     console.print(f"  [dim]Contrast PNGs saved ({len(contrasts)} files)[/dim]")
@@ -412,10 +439,10 @@ def save_design_matrix_files(
 # Cache helpers  (Y_full is large ~10 GB; X metadata is tiny)
 # ---------------------------------------------------------------------------
 
-def _cache_paths(outdir: str, sub: str, hemi: str) -> tuple[str, str]:
-    """Return (y_cache_path, x_cache_path) for this subject/hemisphere."""
-    y = op.join(outdir, f"sub-{sub}_hemi-{hemi}_Yfull_cache.npy")
-    x = op.join(outdir, f"sub-{sub}_hemi-{hemi}_Xmeta_cache.npz")
+def _cache_paths(outdir: str, sub: str, hemi: str, tag: str = "") -> tuple[str, str]:
+    """Return (y_cache_path, x_cache_path) for this subject/hemisphere/acq/desc combo."""
+    y = op.join(outdir, f"sub-{sub}_hemi-{hemi}{tag}_Yfull_cache.npy")
+    x = op.join(outdir, f"sub-{sub}_hemi-{hemi}{tag}_Xmeta_cache.npz")
     return y, x
 
 
@@ -428,9 +455,10 @@ def save_cache(
     outdir: str,
     sub: str,
     hemi: str,
+    tag: str = "",
 ) -> None:
     makedirs(outdir, exist_ok=True)
-    y_path, x_path = _cache_paths(outdir, sub, hemi)
+    y_path, x_path = _cache_paths(outdir, sub, hemi, tag)
 
     console.print(
         f"  Saving Y_full cache ({Y_full.nbytes / 1e9:.1f} GB) … this may take a moment"
@@ -456,9 +484,10 @@ def load_cache(
     outdir: str,
     sub: str,
     hemi: str,
+    tag: str = "",
 ) -> tuple[np.ndarray, np.ndarray, dict, list[tuple[int, int]], list[str]] | None:
     """Return (Y_full, X_full, contrasts, run_boundaries, run_labels) or None if cache missing."""
-    y_path, x_path = _cache_paths(outdir, sub, hemi)
+    y_path, x_path = _cache_paths(outdir, sub, hemi, tag)
     if not (op.exists(y_path) and op.exists(x_path)):
         return None
 
@@ -600,11 +629,15 @@ def save_allruns_maps(
     task: str,
     space: str,
     hemi: str,
+    acq_tok: str = "",
+    desc_tok: str = "",
 ) -> None:
     """Fit GLM on ALL runs and save full-brain stat maps (effect + t only).
 
     Files go into ses_dir (the allses subdir) with names matching
     analysis-final_v3_allses convention: ses-allses, stat-effect / stat-t.
+    ``acq_tok``/``desc_tok`` (e.g. ``_acq-ME``/``_desc-denoised``) keep
+    different acq/bold_desc combos from overwriting each other's outputs.
     """
     makedirs(ses_dir, exist_ok=True)
     console.print(f"\n  [bold]Fitting all-runs baseline GLM (hemi-{hemi}) …[/bold]")
@@ -618,8 +651,8 @@ def save_allruns_maps(
 
         for stat_label, arr in [("stat-effect", effect), ("stat-t", t_value)]:
             fname = (
-                f"sub-{sub}_ses-allses_task-{task}"
-                f"_hemi-{hemi}_space-{space}"
+                f"sub-{sub}_ses-allses_task-{task}{acq_tok}"
+                f"_hemi-{hemi}_space-{space}{desc_tok}"
                 f"_contrast-{contrast_id}_{stat_label}_statmap.func.gii"
             )
             save_statmap_to_gifti(arr, op.join(ses_dir, fname))
@@ -640,13 +673,14 @@ def save_results(
     hemi: str,
     seed: int,
     n_iter: int,
+    tag: str = "",
 ) -> None:
     makedirs(outdir, exist_ok=True)
     total_runs = results.shape[0]
     run_counts = np.arange(1, total_runs + 1)
 
     # ── Compact NPZ — everything needed to re-plot ────────────────────────────
-    npz_path = op.join(outdir, f"sub-{sub}_hemi-{hemi}_power_results.npz")
+    npz_path = op.join(outdir, f"sub-{sub}_hemi-{hemi}{tag}_power_results.npz")
     np.savez_compressed(
         npz_path,
         mean_t=results,
@@ -674,7 +708,7 @@ def save_results(
                     "n_iter":      n_iter,
                     "seed":        seed,
                 })
-    tsv_path = op.join(outdir, f"sub-{sub}_hemi-{hemi}_power_summary.tsv")
+    tsv_path = op.join(outdir, f"sub-{sub}_hemi-{hemi}{tag}_power_summary.tsv")
     pd.DataFrame(rows).to_csv(tsv_path, sep="\t", index=False)
     console.print(f"  [dim]TSV  → {tsv_path}[/dim]")
 
@@ -690,6 +724,7 @@ def plot_power_results(
     outdir: str,
     sub: str,
     hemi: str,
+    tag: str = "",
 ) -> None:
     """One subplot per ROI, one line per contrast; x = n_runs, y = mean T ± std."""
     total_runs = results.shape[0]
@@ -719,9 +754,9 @@ def plot_power_results(
     for idx in range(n_rois, nrows * ncols):
         axes[idx // ncols][idx % ncols].set_visible(False)
 
-    fig.suptitle(f"sub-{sub}  power analysis — hemi-{hemi}", fontsize=12)
+    fig.suptitle(f"sub-{sub}  power analysis — hemi-{hemi}{tag}", fontsize=12)
     fig.tight_layout()
-    plot_path = op.join(outdir, f"sub-{sub}_hemi-{hemi}_power_plot.png")
+    plot_path = op.join(outdir, f"sub-{sub}_hemi-{hemi}{tag}_power_plot.png")
     fig.savefig(plot_path, dpi=150, bbox_inches="tight")
     plt.close(fig)
     console.print(f"  [dim]Plot → {plot_path}[/dim]")
@@ -776,6 +811,20 @@ def main(
         False, "--save-allruns",
         help="Also save full-brain GIFTI maps for the all-runs baseline GLM",
     ),
+    acq: Optional[str] = typer.Option(
+        None, "--acq",
+        help=(
+            "acquisition entity to filter bold files, e.g. 'ME' or 'SE'. "
+            "Default (None): no acq filter — BIDSLayout returns all acquisitions."
+        ),
+    ),
+    bold_desc: Optional[str] = typer.Option(
+        None, "--bold-desc",
+        help=(
+            "explicit desc entity to filter bold files, e.g. 'denoised' or "
+            "'optcom' (tedana outputs). Default (None): no desc filter."
+        ),
+    ),
 ) -> None:
     t0 = time.time()
     sub = sub.strip().zfill(2)
@@ -787,8 +836,15 @@ def main(
     is_surface   = space in ["fsnative", "fsaverage"]
 
     sessions          = _parse_sessions(sub, sessions_arg, file_arg)
-    rerun_excl        = _load_rerun_exclusions(rerun_map) if rerun_map else {}
+    rerun_excl        = _load_rerun_exclusions(rerun_map, acq=acq) if rerun_map else {}
     confound_strategy = load_confound_strategy(strategy_yaml, strategy)
+
+    # acq/desc tags — keep outputs from different acq/bold_desc combos
+    # (e.g. acq-SE vs acq-ME desc-denoised vs acq-ME desc-optcom) from
+    # overwriting each other.
+    acq_tok = f"_acq-{acq}" if acq else ""
+    desc_tok = f"_desc-{bold_desc}" if bold_desc else ""
+    tag = f"{acq_tok}{desc_tok}"
 
     outdir = op.join(
         base, "derivatives", "power_analysis_ohbm",
@@ -811,6 +867,8 @@ def main(
     tbl.add_row("Output name", output_name)
     tbl.add_row("ROI config",  roi_yaml)
     tbl.add_row("Strategy",    strategy)
+    tbl.add_row("Acq filter",  acq or "(none)")
+    tbl.add_row("Bold desc",   bold_desc or "(none)")
     tbl.add_row("n_iter",      str(n_iter))
     tbl.add_row("Seed",        str(seed))
     tbl.add_row("Output dir",  outdir)
@@ -824,7 +882,7 @@ def main(
 
     # ── Skip layouts entirely when every hemisphere is already cached ─────────
     _all_cached = (not force) and all(
-        op.exists(_cache_paths(outdir, sub, h)[0]) and op.exists(_cache_paths(outdir, sub, h)[1])
+        op.exists(_cache_paths(outdir, sub, h, tag)[0]) and op.exists(_cache_paths(outdir, sub, h, tag)[1])
         for h in (hemis if hemis[0] is not None else [])
     )
 
@@ -884,7 +942,7 @@ def main(
 
         # ── Load data + build design matrix (or restore from cache) ──────────
         makedirs(outdir, exist_ok=True)
-        cached = None if force else load_cache(outdir, sub, hemi)
+        cached = None if force else load_cache(outdir, sub, hemi, tag)
 
         if cached is not None:
             Y_full, X_full, contrasts, run_boundaries, run_labels = cached
@@ -907,14 +965,16 @@ def main(
                     confound_strategy=confound_strategy,
                     rerun_excl=rerun_excl,
                     hemi=hemi,
+                    acq=acq,
+                    bold_desc=bold_desc,
                 )
             )
             # Save DM diagnostics into allses/ (matches l1_surface layout)
-            save_design_matrix_files(design_matrix_std, contrasts, ses_dir, sub, task, hemi)
+            save_design_matrix_files(design_matrix_std, contrasts, ses_dir, sub, task, hemi, tag=tag)
             del design_matrix_std
 
             # Save big cache so next run skips all BOLD/BIDS loading
-            save_cache(Y_full, X_full, contrasts, run_boundaries, run_labels, outdir, sub, hemi)
+            save_cache(Y_full, X_full, contrasts, run_boundaries, run_labels, outdir, sub, hemi, tag=tag)
 
         # ── Restrict to the contrasts requested via --contrast ────────────────
         # A cached run may carry contrasts from a previous --contrast file
@@ -947,7 +1007,10 @@ def main(
 
         # ── Optional: all-runs full-brain baseline ────────────────────────────
         if save_allruns:
-            save_allruns_maps(Y_full, X_full, contrasts, ses_dir, sub, task, space, hemi)
+            save_allruns_maps(
+                Y_full, X_full, contrasts, ses_dir, sub, task, space, hemi,
+                acq_tok=acq_tok, desc_tok=desc_tok,
+            )
 
         # ── Power analysis loop ───────────────────────────────────────────────
         results, c_names, r_names = run_power_loop(
@@ -957,8 +1020,8 @@ def main(
         gc.collect()
 
         # ── Save results ──────────────────────────────────────────────────────
-        save_results(results, c_names, r_names, outdir, sub, hemi, seed, n_iter)
-        plot_power_results(results, c_names, r_names, outdir, sub, hemi)
+        save_results(results, c_names, r_names, outdir, sub, hemi, seed, n_iter, tag=tag)
+        plot_power_results(results, c_names, r_names, outdir, sub, hemi, tag=tag)
 
     total_elapsed = time.time() - t0
     console.rule("[bold cyan]Done[/bold cyan]")

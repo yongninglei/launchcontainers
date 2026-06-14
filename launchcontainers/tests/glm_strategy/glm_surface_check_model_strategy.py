@@ -378,25 +378,25 @@ def _resolve_confound_columns(cs: dict, available_cols: list) -> list[str]:
 # ---------------------------------------------------------------------------
 
 
-def plot_design_matrix_to_file(design_matrix, outdir, subject, session, task):
-    """Save the design matrix plot to <outdir>/design_matrix_{task}.png."""
+def plot_design_matrix_to_file(design_matrix, outdir, subject, session, task, tag=""):
+    """Save the design matrix plot to <outdir>/design_matrix_{task}{tag}.png."""
     ax = plot_design_matrix(design_matrix)
     fig = ax.get_figure()
     fig.suptitle(f"sub-{subject}  ses-{session}  task-{task}")
-    outpath = op.join(outdir, f"design_matrix_{task}.png")
+    outpath = op.join(outdir, f"design_matrix_{task}{tag}.png")
     fig.savefig(outpath, bbox_inches="tight")
     plt.close(fig)
     console.print(f"  [dim]Design matrix saved → {outpath}[/dim]")
     return outpath
 
 
-def plot_contrast_matrices(contrasts, design_matrix, outdir, subject, session, task):
+def plot_contrast_matrices(contrasts, design_matrix, outdir, subject, session, task, tag=""):
     """Save one contrast-matrix plot per contrast."""
     for key, values in contrasts.items():
         ax = plot_contrast_matrix(values, design_matrix=design_matrix)
         fig = ax.get_figure()
         fig.suptitle(f"sub-{subject}  ses-{session}  task-{task}  {key}")
-        outpath = op.join(outdir, f"contrast_matrix_{task}_{key}.png")
+        outpath = op.join(outdir, f"contrast_matrix_{task}{tag}_{key}.png")
         fig.savefig(outpath, bbox_inches="tight")
         plt.close(fig)
     console.print(f"  [dim]Contrast matrices saved → {outpath}[/dim]")
@@ -428,6 +428,8 @@ def glm_l1(
     vol_affine=None,
     vol_shape=None,
     save_betas=False,
+    acq=None,
+    bold_desc=None,
 ) -> dict[str, float]:
     """
     Fit the GLM and compute contrasts.
@@ -450,17 +452,24 @@ def glm_l1(
     if not op.exists(outdir):
         makedirs(outdir)
 
+    # acq/desc tags — keep outputs from different acq/bold_desc combos
+    # (e.g. acq-SE vs acq-ME desc-denoised vs acq-ME desc-optcom) from
+    # overwriting each other.
+    acq_tok = f"_acq-{acq}" if acq else ""
+    desc_tok = f"_desc-{bold_desc}" if bold_desc else ""
+    tag = f"{acq_tok}{desc_tok}"
+
     confounds_tsv = op.join(
         outdir,
-        f"sub-{subject}_ses-{session}_task-{task}_desc-confounds_timeseries.tsv",
+        f"sub-{subject}_ses-{session}_task-{task}{tag}_desc-confounds_timeseries.tsv",
     )
     # ── Save metadata: confounds TSV + design matrix CSV + plots ─────────────
     _t = time.time()
     confounds_df.to_csv(confounds_tsv, sep="\t")
     console.print(f"  [dim]Confounds TSV → {op.basename(confounds_tsv)}[/dim]")
-    plot_design_matrix_to_file(design_matrix_std, outdir, subject, session, task)
-    plot_contrast_matrices(contrasts, design_matrix_std, outdir, subject, session, task)
-    dm_csv = op.join(outdir, f"design_matrix_{task}_strategy-{strategy_name}.csv")
+    plot_design_matrix_to_file(design_matrix_std, outdir, subject, session, task, tag=tag)
+    plot_contrast_matrices(contrasts, design_matrix_std, outdir, subject, session, task, tag=tag)
+    dm_csv = op.join(outdir, f"design_matrix_{task}{tag}_strategy-{strategy_name}.csv")
     design_matrix_std.to_csv(dm_csv)
     console.print(f"  [dim]Design matrix CSV → {op.basename(dm_csv)}[/dim]")
     t_save_meta = time.time() - _t
@@ -495,18 +504,19 @@ def glm_l1(
         t_reconstruct = time.time() - _t
 
         def _component_name(desc: str, ext: str) -> str:
+            desc_label = f"{bold_desc}{desc.capitalize()}" if bold_desc else desc
             if hemi:
                 base = (
-                    f"sub-{subject}_ses-{session}_task-{task}"
-                    f"_hemi-{hemi}_space-{space}_desc-{desc}_timeseries{ext}"
+                    f"sub-{subject}_ses-{session}_task-{task}{acq_tok}"
+                    f"_hemi-{hemi}_space-{space}_desc-{desc_label}_timeseries{ext}"
                 )
             else:
                 base = (
-                    f"sub-{subject}_ses-{session}_task-{task}"
-                    f"_space-{space}_desc-{desc}_timeseries{ext}"
+                    f"sub-{subject}_ses-{session}_task-{task}{acq_tok}"
+                    f"_space-{space}_desc-{desc_label}_timeseries{ext}"
                 )
             if use_smoothed:
-                base = base.replace(f"_desc-{desc}", f"_desc-{desc}sm{sm}")
+                base = base.replace(f"_desc-{desc_label}", f"_desc-{desc_label}sm{sm}")
             if randrun_idx:
                 base = base.replace("_timeseries", f"{randrun_idx}_timeseries")
             return op.join(outdir, base)
@@ -532,24 +542,27 @@ def glm_l1(
     t_compute_total = 0.0
     t_save_maps_total = 0.0
 
+    desc_parts = []
+    if bold_desc:
+        desc_parts.append(bold_desc)
+    if use_smoothed:
+        desc_parts.append(f"smoothed{sm}")
+    stat_desc_tok = f"_desc-{''.join(desc_parts)}" if desc_parts else ""
+
     for contrast_id, contrast_val in contrasts.items():
         if hemi:
             outname_base = op.join(
                 outdir,
-                f"sub-{subject}_ses-{session}_task-{task}"
-                f"_hemi-{hemi}_space-{space}_contrast-{contrast_id}"
+                f"sub-{subject}_ses-{session}_task-{task}{acq_tok}"
+                f"_hemi-{hemi}_space-{space}{stat_desc_tok}_contrast-{contrast_id}"
                 f"_stat-X_statmap.func.gii",
             )
         else:
             outname_base = op.join(
                 outdir,
-                f"sub-{subject}_ses-{session}_task-{task}"
-                f"_space-{space}_contrast-{contrast_id}"
+                f"sub-{subject}_ses-{session}_task-{task}{acq_tok}"
+                f"_space-{space}{stat_desc_tok}_contrast-{contrast_id}"
                 f"_stat-X_statmap.nii.gz",
-            )
-        if use_smoothed:
-            outname_base = outname_base.replace(
-                "_statmap", f"_desc-smoothed{sm}_statmap"
             )
         if randrun_idx:
             outname_base = outname_base.replace("_statmap", f"{randrun_idx}_statmap")
@@ -1391,6 +1404,8 @@ def process_run_list(
         vol_affine,
         vol_shape,
         save_betas=save_betas,
+        acq=acq,
+        bold_desc=bold_desc,
     )
 
 
