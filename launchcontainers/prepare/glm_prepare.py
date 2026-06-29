@@ -75,17 +75,25 @@ def _parse_events_from_stim_name(stim_basename: str, block_time: float):
     """
     parts = stim_basename.split("_")
     lgn = parts[0]
-    task = parts[1] if len(parts) > 1 else "unknown"
+    raw_task = parts[1] if len(parts) > 1 else "unknown"
 
     # Warn and skip if 'fix' not in task — unexpected stim naming convention
-    if "fix" not in task:
+    if "fix" not in raw_task:
         raise ValueError(
-            f"'fix' not found in task label '{task}' (stim: {stim_basename}). "
+            f"'fix' not found in task label '{raw_task}' (stim: {stim_basename}). "
             "Skipping this run."
         )
 
-    # Normalize task name
-    if "block" in task:
+    # Extract stimulus condition (RW / FF) from the raw task label before normalising
+    if "RW" in raw_task:
+        condition = "RW"
+    elif "FF" in raw_task:
+        condition = "FF"
+    else:
+        condition = raw_task.replace("fix", "").replace("block", "") or "unknown"
+
+    # Normalise task name (used for the BIDS filename, not the trial_type)
+    if "block" in raw_task:
         task = "WCblock"
     else:
         task = "WCnonestop"
@@ -104,13 +112,13 @@ def _parse_events_from_stim_name(stim_basename: str, block_time: float):
         onset = [float(block_time * i) for i in range(n_epochs)]
         duration = [float(block_time)] * n_epochs
         trial_type = [
-            "baseline" if i % 2 == 0 else f"{lgn}_{task}" for i in range(n_epochs)
+            "baseline" if i % 2 == 0 else f"{lgn}_{condition}" for i in range(n_epochs)
         ]
     else:
         # Event design: single event spanning the whole run
         onset = [0.0]
         duration = [float(total_duration)]
-        trial_type = [f"{lgn}_{task}"]
+        trial_type = [f"{lgn}_{condition}"]
 
     return onset, duration, trial_type, lgn, task
 
@@ -132,7 +140,7 @@ class GLMPrepare(BasePrepare):
        read by nilearn to build the first-level model.
     3. **Preprocessed bold** — ``<fmriprep_dir>/sub-X/ses-X/func/*_bold.nii.gz``;
        symlinked with normalised GLM task-run names.
-    4. **Contrast config** — path to contrast YAML under ``container_specific.fMRI-GLM``.
+    4. **Contrast config** — path to contrast YAML under ``container_specific.l1_surface``.
 
     Inherits :attr:`~launchcontainers.prepare.base_prepare.BasePrepare.basedir`,
     :attr:`~launchcontainers.prepare.base_prepare.BasePrepare.bidsdir`, and
@@ -148,10 +156,12 @@ class GLMPrepare(BasePrepare):
 
     def __init__(self, lc_config: dict | None = None):
         super().__init__(lc_config)
-        self._glm_cfg = self.lc_config.get("container_specific", {}).get("fMRI-GLM", {})
+        self._glm_cfg = self.lc_config.get("container_specific", {}).get(
+            "l1_surface", {}
+        )
 
     # ------------------------------------------------------------------
-    # Convenience properties — from container_specific.fMRI-GLM
+    # Convenience properties — from container_specific.l1_surface
     # ------------------------------------------------------------------
     @property
     def is_WC(self) -> bool:
@@ -208,9 +218,9 @@ class GLMPrepare(BasePrepare):
         return self._glm_cfg.get("contrast_yaml")
 
     @property
-    def output_name(self) -> str | None:
-        """Output folder name for the GLM results."""
-        return self._glm_cfg.get("output_name")
+    def analysis_name(self) -> str:
+        """Analysis name for the GLM results, taken from general.analysis_name."""
+        return self.lc_config["general"]["analysis_name"]
 
     @property
     def slice_timing_ref(self) -> float:
@@ -278,19 +288,18 @@ class GLMPrepare(BasePrepare):
 
     @classmethod
     def _example_config_dict(cls) -> dict:
-        """Return the example config dict for the fMRI-GLM pipeline."""
+        """Return the example config dict for the l1_surface pipeline."""
         return {
             "general": {
                 "basedir": "/path/to/basedir",
                 "bidsdir_name": "BIDS",
-                "container": "fMRI-GLM",
+                "container": "l1_surface",
                 "analysis_name": "glm_01",
                 "host": "local",
                 "force": True,
             },
             "container_specific": {
-                "fMRI-GLM": {
-                    "version": "0.1.0",
+                "l1_surface": {
                     "is_WC": False,
                     "output_bids": "BIDS_WC",
                     "fmriprep_analysis_name": "fmriprep-25.1.4",
@@ -298,7 +307,6 @@ class GLMPrepare(BasePrepare):
                     "start_scans": 5,
                     "space": "fsnative",
                     "contrast_yaml": "/path/to/contrast.yaml",
-                    "output_name": "glm_output",
                     "slice_timing_ref": 0.5,
                     "use_smoothed": False,
                     "dry_run": False,
@@ -548,9 +556,9 @@ class GLMPrepare(BasePrepare):
             )
         )
         bids_files = [
-            f for f in bids_files
-            if "task-fLoc" not in op.basename(f)
-            and not op.islink(f)
+            f
+            for f in bids_files
+            if "task-fLoc" not in op.basename(f) and not op.islink(f)
         ]
         if not bids_files:
             console.print(
@@ -730,7 +738,9 @@ class GLMPrepare(BasePrepare):
                     if fp_bold.endswith(bold_suffix):
                         fp_json = fp_bold[: -len(bold_suffix)] + ".json"
                         if op.exists(fp_json):
-                            new_json_basename = new_basename[: -len(bold_suffix)] + ".json"
+                            new_json_basename = (
+                                new_basename[: -len(bold_suffix)] + ".json"
+                            )
                             json_link_path = op.join(func_dir, new_json_basename)
                             if op.islink(json_link_path) or op.exists(json_link_path):
                                 os.remove(json_link_path)
@@ -880,7 +890,7 @@ def run_glm_prepare(
     Run the full GLM preparation pipeline for every subject/session.
 
     Called by :func:`launchcontainers.do_prepare.main` when
-    ``general.container`` is ``fMRI-GLM``.
+    ``general.container`` is ``l1_surface``.
 
     If called with no arguments, writes an example config YAML to the current
     working directory and returns ``False``.

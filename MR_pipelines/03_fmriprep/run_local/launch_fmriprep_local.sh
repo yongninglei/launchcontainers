@@ -6,16 +6,16 @@
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
-basedir="/bcbl/home/public/Gari/VOTCLOC/main_exp"
+basedir="/bcbl/home/public/Gari/IRAKEINU"
 codedir="${basedir}/code"
-analysis_name="sub10"
-fp_version=25.1.3
+analysis_name="IRpilot"
+fp_version=25.1.4
 
 CODE_DIR="${basedir}/code"
 BIDS_DIR="${basedir}/BIDS"
 OUTPUT_DIR=derivatives/fmriprep-${fp_version}_${analysis_name}
 DERIVS_DIR="${BIDS_DIR}/${OUTPUT_DIR}"
-
+LOCAL_FREESURFER_DIR="${basedir}/BIDS/derivatives/freesurfer"
 # ---------------------------------------------------------------------------
 # Parse arguments
 # ---------------------------------------------------------------------------
@@ -76,18 +76,6 @@ mkdir -p "${DERIVS_DIR}"
 export SINGULARITYENV_FS_LICENSE=/export/home/tlei/tlei/linux_settings/license.txt
 export SINGULARITYENV_TEMPLATEFLOW_HOME="/templateflow"
 
-SINGULARITY_CMD="unset PYTHONPATH && singularity run --cleanenv --no-home \
-                     --containall --writable-tmpfs \
-                 -B /bcbl:/bcbl \
-                 -B /export:/export \
-                 -B $BIDS_DIR:/base \
-                 -B $CODE_DIR:/code \
-                 -B ${TEMPLATEFLOW_HOST_HOME}:${SINGULARITYENV_TEMPLATEFLOW_HOME} \
-                 -B ${FMRIPREP_HOST_CACHE}:/work \
-                 /bcbl/home/public/Gari/containers/fmriprep_${fp_version}.sif"
-
-# If you already have FS run, add: -B ${LOCAL_FREESURFER_DIR}:/fsdir
-
 # ---------------------------------------------------------------------------
 # Run fMRIPrep
 # ---------------------------------------------------------------------------
@@ -97,6 +85,22 @@ while IFS=',' read -r sub ses; do
     echo "### fMRIPrep: sub-${sub} (all sessions) ###"
     now=$(date +"%Y-%m-%dT%H:%M")
 
+    # Per-subject isolated work dir: prevents fmriprep from finding other
+    # subjects' config files (avoids skull_strip_template resume bug).
+    SUBJECT_WORK_DIR=${FMRIPREP_HOST_CACHE}/sub-${sub}
+    mkdir -p "${SUBJECT_WORK_DIR}"
+
+    SINGULARITY_CMD="unset PYTHONPATH && singularity run --cleanenv --no-home \
+                         --containall --writable-tmpfs \
+                     -B /bcbl:/bcbl \
+                     -B /export:/export \
+                     -B $BIDS_DIR:/base \
+                     -B $CODE_DIR:/code \
+                     -B ${LOCAL_FREESURFER_DIR}:/fsdir \
+                     -B ${TEMPLATEFLOW_HOST_HOME}:${SINGULARITYENV_TEMPLATEFLOW_HOME} \
+                     -B ${SUBJECT_WORK_DIR}:/work \
+                     /bcbl/home/public/Gari/containers/fmriprep_${fp_version}.sif"
+
     cmd="module load apptainer/latest && \
          ${SINGULARITY_CMD} \
          /base \
@@ -104,11 +108,13 @@ while IFS=',' read -r sub ses; do
          participant --participant-label ${sub} \
          -w /work/ -vv \
          --fs-license-file ${SINGULARITYENV_FS_LICENSE} \
-         --omp-nthreads 10 --nthreads 30 --mem_mb 80000 \
+         --omp-nthreads 20 --nthreads 50 --mem_mb 80000 \
          --skip-bids-validation \
+         --fs-subjects-dir /fsdir \
+         --force bbr \
+         --bold2anat-init t2w \
          --output-spaces T1w func MNI152NLin2009cAsym fsnative fsaverage \
-         --notrack \
-         --stop-on-first-crash \
+         --bids-filter-file /code/bids_filter.json \
          > ${LOG_DIR}/${analysis_name}_sub-${sub}_${now}.o \
          2> ${LOG_DIR}/${analysis_name}_sub-${sub}_${now}.e"
 

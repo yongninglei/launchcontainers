@@ -1,0 +1,228 @@
+strategies:
+
+  # ── Custom yaml-backed strategies ──────────────────────────────────────────
+  # Confound columns are resolved manually from fMRIPrep output using the
+  # column_groups and regex_groups tables below.
+  #
+  # Factors considered:
+  #   motion         : basic (6 params) | full (24 params = 6 + derivatives + quadratics)
+  #                    model_spiking: motion_outlier_XX spike regressors (bad TRs modeled, NOT removed)
+  #                    scrubbing (nilearn only): bad TRs physically removed via sample_mask
+  #   wm_csf         : none | basic (WM + CSF) | full (+ derivatives + quadratics)
+  #   global_signal  : none | basic (GS) | full (+ derivatives + quadratics) (this is controversial mentioned in paper Wang et al 2024 PloS Comp Biol)
+  #   compcor        : anat_combined → all retained ^a_comp_cor_ columns from fMRIPrep
+  #   high_pass      : cosine DCT regressors from fMRIPrep (drift removal) (We take it from fMRIprep not the nilearn built-in)
+  #   include_non_steady_state : non-steady-state outlier regressors from fMRIPrep
+  ME:
+    backend: yaml
+    high_pass: true
+    motion: basic
+    wm_csf: true
+    global_signal: none
+    model_spiking: false
+    compcor: none
+    n_compcor: none
+    include_non_steady_state: false
+  basic_MC:
+    # motion(basic) + aCompCor + cosine high-pass
+    # minimal model: 6 motion params, tissue noise via compcor, no WM/CSF, no spiking
+    backend: yaml
+    high_pass: true
+    motion: basic
+    wm_csf: none
+    global_signal: none
+    model_spiking: false
+    compcor: anat_combined
+    n_compcor: all
+    include_non_steady_state: false
+
+  basic_MC_no_acompcor_wm_csf:
+    # motion(basic) + WM/CSF(basic) + aCompCor + cosine high-pass
+    # adds explicit WM and CSF regressors on top of basic
+    backend: yaml
+    high_pass: true
+    motion: basic
+    wm_csf: basic
+    global_signal: none
+    model_spiking: false
+    compcor: none
+    n_compcor: all
+    include_non_steady_state: false
+
+  basic_MC_no_acompcor_gs:
+    # motion(basic) + global signal + aCompCor + cosine high-pass
+    # includes global signal regression instead of WM/CSF
+    backend: yaml
+    high_pass: true
+    motion: basic
+    wm_csf: none
+    global_signal: basic
+    model_spiking: false
+    compcor: none
+    n_compcor: all
+    include_non_steady_state: false
+
+  MC_spiking:
+    # motion(basic) + aCompCor + cosine high-pass + spike regressors
+    # bad TRs (fMRIPrep motion_outlier_XX) modeled out; volumes kept in timeseries
+    backend: yaml
+    high_pass: true
+    motion: basic
+    wm_csf: none
+    global_signal: none
+    model_spiking: true
+    compcor: anat_combined
+    n_compcor: all
+    include_non_steady_state: false
+
+  full_MC:
+    # motion(full=24 params) + aCompCor + cosine high-pass
+    # extended motion model: adds derivatives and quadratics to basic 6
+    backend: yaml
+    high_pass: true
+    motion: full
+    wm_csf: none
+    global_signal: none
+    model_spiking: false
+    compcor: anat_combined
+    n_compcor: all
+    include_non_steady_state: false
+
+  full_MC_spiking:
+    # motion(full=24 params) + aCompCor + cosine high-pass + spike regressors
+    # extended motion model + bad TRs modeled out; volumes kept in timeseries
+    backend: yaml
+    high_pass: true
+    motion: full
+    wm_csf: none
+    global_signal: none
+    model_spiking: true
+    compcor: anat_combined
+    n_compcor: all
+    include_non_steady_state: false
+
+  # ── nilearn built-in strategies ────────────────────────────────────────────
+  # Confounds loaded via nilearn.interfaces.fmriprep.load_confounds_strategy.
+  # For scrubbing strategies, nilearn returns a sample_mask: bad TRs (+ neighbours)
+  # are physically removed from data and frame_times before GLM (true censoring).
+
+  simple:
+    # motion(full=24) + WM/CSF(basic) + cosine high-pass + non-steady-state
+    # nilearn preset: standard simple denoising, no scrubbing, no compcor
+    backend: nilearn
+    nilearn_strategy: simple
+
+  scrubbing:
+    # motion(full=24) + WM/CSF(full=8) + cosine high-pass + non-steady-state + volume censoring
+    # nilearn preset: FD/DVARS thresholding, ±scrub neighbour volumes removed
+    backend: nilearn
+    nilearn_strategy: scrubbing
+    fd_threshold: 0.5
+    std_dvars_threshold: 1.5
+    scrub: 3  # neighbour volumes to censor around each bad TR
+
+  compcor:
+    # motion(full=24) + aCompCor(all retained) + cosine high-pass + non-steady-state
+    # nilearn preset: replaces WM/CSF with compcor, no scrubbing
+    backend: nilearn
+    nilearn_strategy: compcor
+    n_compcor: all
+
+  scrubbing_MC_basic_compcor:
+    # motion(basic=6) + aCompCor(all retained) + cosine high-pass + volume censoring
+    # custom: scrubbing with minimal motion model, compcor instead of WM/CSF
+    backend: nilearn
+    strategy: [motion, high_pass, compcor, scrub]
+    motion: basic
+    compcor: anat_combined
+    n_compcor: all
+    fd_threshold: 0.5
+    std_dvars_threshold: 1.5
+    scrub: 3
+
+  scrubbing_MC_full_compcor:
+    # motion(full=24) + aCompCor(all retained) + cosine high-pass + volume censoring
+    # custom: scrubbing with full motion model, compcor instead of WM/CSF
+    backend: nilearn
+    strategy: [motion, high_pass, compcor, scrub]
+    motion: full
+    compcor: anat_combined
+    n_compcor: all
+    fd_threshold: 0.5
+    std_dvars_threshold: 1.5
+    scrub: 3
+
+
+column_groups:
+  motion_basic:
+    - trans_x
+    - trans_y
+    - trans_z
+    - rot_x
+    - rot_y
+    - rot_z
+
+  motion_full:
+    - trans_x
+    - trans_y
+    - trans_z
+    - rot_x
+    - rot_y
+    - rot_z
+    - trans_x_derivative1
+    - trans_y_derivative1
+    - trans_z_derivative1
+    - rot_x_derivative1
+    - rot_y_derivative1
+    - rot_z_derivative1
+    - trans_x_power2
+    - trans_y_power2
+    - trans_z_power2
+    - rot_x_power2
+    - rot_y_power2
+    - rot_z_power2
+    - trans_x_derivative1_power2
+    - trans_y_derivative1_power2
+    - trans_z_derivative1_power2
+    - rot_x_derivative1_power2
+    - rot_y_derivative1_power2
+    - rot_z_derivative1_power2
+
+  wm_csf_basic:
+    - white_matter
+    - csf
+
+  wm_csf_full:
+    - white_matter
+    - csf
+    - white_matter_derivative1
+    - csf_derivative1
+    - white_matter_power2
+    - csf_power2
+    - white_matter_derivative1_power2
+    - csf_derivative1_power2
+
+  global_signal_basic:
+    - global_signal
+
+  global_signal_full:
+    - global_signal
+    - global_signal_derivative1
+    - global_signal_power2
+    - global_signal_derivative1_power2
+
+regex_groups:
+  compcor_anat_combined:
+    - "^a_comp_cor_"
+
+  compcor_temporal:
+    - "^t_comp_cor_"
+
+  cosine:
+    - "^cosine"
+
+  non_steady_state:
+    - "^non_steady_state_outlier"
+
+  motion_outlier:
+    - "^motion_outlier"

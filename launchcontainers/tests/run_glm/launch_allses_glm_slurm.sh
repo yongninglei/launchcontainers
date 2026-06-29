@@ -21,7 +21,7 @@
 # Edit these variables before running
 # ---------------------------------------------------------------------------
 PYTHON_SCRIPT="/scratch/tlei/lc/launchcontainers/tests/run_allses_glm.py"
-LOGBASE="/scratch/tlei/dipc_glm_allses"
+LOGBASE="/scratch/tlei/Japan/logs/glm_allses/surface"
 
 # Slurm resource settings
 # first_level_from_bids is replaced by direct file reads, so memory is now
@@ -34,13 +34,14 @@ QOS="regular"           # regular | test
 PARTITION="general"
 
 # run_allses_glm.py arguments
-BASE="/scratch/tlei/VOTCLOC"
-FP_ANA_NAME="25.1.4_newest"
+BASE="/scratch/tlei/Japan"
+FP_ANA_NAME="25.1.4_japan26ses"
 TASK="fLoc"
 SPACE="fsnative"
 START_SCANS="6"
-CONTRAST="/scratch/tlei/lc/launchcontainers/tests/run_glm/contrast_votcloc_all.yaml"
-RERUN_MAP="/scratch/tlei/VOTCLOC/BIDS/sourcedata/qc/rerun_check.tsv"   # leave empty "" to skip
+CONTRAST="/scratch/tlei/lc/launchcontainers/tests/run_glm/contrast_Japan_all.yaml"
+RERUN_MAP=""   # leave empty "" to skip
+INPUT_DIR="BIDS"
 
 # ---------------------------------------------------------------------------
 # Per-subject session overrides
@@ -49,8 +50,8 @@ RERUN_MAP="/scratch/tlei/VOTCLOC/BIDS/sourcedata/qc/rerun_check.tsv"   # leave e
 # Format:  ["<sub>"]="<ses1>,<ses2>,..."   (zero-padded, comma-separated)
 # ---------------------------------------------------------------------------
 declare -A SESSION_OVERRIDES
-SESSION_OVERRIDES["02"]="01,02,03,04,05,06"
-# SESSION_OVERRIDES["05"]="01,02,03"   # example: add more overrides here
+# Add per-subject session overrides here if needed, e.g.:
+# SESSION_OVERRIDES["05"]="day1VA,day1VB,day2VA,day2VB,day3PF"
 
 # Python / conda environment
 CONDA_INIT="/home/tlei/soft/miniconda3/bin/activate"
@@ -157,7 +158,7 @@ job_num=1
 for SUB in "${SUBS[@]}"; do
 
     # Build python command
-    PY_CMD="python ${PYTHON_SCRIPT} --base ${BASE} --sub ${SUB} --fp-ana-name ${FP_ANA_NAME} --task ${TASK} --space ${SPACE} --start-scans ${START_SCANS} --contrast ${CONTRAST} --output-name ${output_name}"
+    PY_CMD="python ${PYTHON_SCRIPT} --base ${BASE} --sub ${SUB} --fp-ana-name ${FP_ANA_NAME} --task ${TASK} --space ${SPACE} --start-scans ${START_SCANS} --contrast ${CONTRAST} --output-name ${output_name} --input-dir ${INPUT_DIR}"
 
     # Session source priority:
     #   1. SESSION_OVERRIDES[sub]  →  pass --sessions explicitly

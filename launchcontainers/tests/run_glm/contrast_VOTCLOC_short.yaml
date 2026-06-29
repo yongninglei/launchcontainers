@@ -1,0 +1,56 @@
+# For RW 
+RWvsLEX:
+  positive: ["RW"]
+  negative: ["CS", "FF"]
+
+RWvsCS:
+  positive: ["RW"]
+  negative: ["CS"]
+
+RWvsFF:
+  positive: ["RW"]
+  negative: ["FF"]
+
+RWvsPER:
+  positive: ["RW"]
+  negative: ["SC"]
+
+## logic for the xx vs all others 
+RWvsAllnoWord:
+  positive: ["RW"]
+  negative: ["CS", "FF", "SC", "bodylimb", "face"]
+
+RWvsAllnoWordnoLEX:
+  positive: ["RW"]
+  negative: ["SC", "bodylimb", "face"]
+
+RWvsAllnoRWnoCS:
+  positive: ["RW"]
+  negative: ["SC", "bodylimb", "face", "FF"]
+
+# For CS 
+CSvsFF:
+  positive: ["CS"]
+  negative: ["FF"]
+
+CSvsRW:
+  positive: ["CS"]
+  negative: ["RW"]
+
+CSvsPER:
+  positive: ["CS"]
+  negative: ["SC"]
+
+
+# Faces
+
+FacesvsAllnoFace:
+  positive: ["face"]
+  negative: ["SC", "CS", "FF", "bodylimb","RW"]
+
+# Bodylimbs
+
+LimbsvsAllnoLimbs:
+  positive: ["bodylimb"]
+  negative: ["SC", "CS", "FF", "face","RW"]
+

@@ -1,0 +1,20 @@
+# roi_config_VOTCLOC.yaml
+# -------------------------
+# FreeSurfer label files for each ROI, relative to:
+#   <base>/derivatives/<fs_ana_name>/sub-<sub>/label/<label_subdir>/
+#
+# Set L or R to null (or omit) when a ROI is only defined on one hemisphere.
+# The label_subdir defaults to manual_label_clusters_analysis_12_v3 (pass
+# --label-subdir on the CLI to override).
+
+rois:
+  aOTS-words:
+    L: lh.aOTS-words.label
+  mFus-words:
+    L: lh.mFus-words.label
+  mOTS-words:
+    L: lh.mOTS-words.label
+  OWA:
+    L: lh.OWA.label
+  pOTS-words:
+    L: lh.pOTS-words.label

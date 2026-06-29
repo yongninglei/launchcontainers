@@ -1,0 +1,6 @@
+sub,ses,RUN
+01,day1VA,True
+02,day1VA,True
+03,day1VA,True
+04,day1VB,True
+05,day6BCBL,True

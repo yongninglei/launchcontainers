@@ -1,0 +1,140 @@
+# For sanity check
+AllvsNull:
+  positive: ["adult", "child", "body", "limb", "word", "FF", "CS", "SC", "CB"]
+  negative: []
+
+PERvsNull:
+  positive: ["CB", "SC"]
+  negative: []
+
+CBvsNull:
+  positive: ["CB"]
+  negative: []  
+SCvsNull:
+  positive: ["SC"]
+  negative: []
+
+LEXvsNull:
+  positive: ["CS", "FF"]
+  negative: []
+
+RWvsNull:
+  positive: ["word"]
+  negative: []
+
+FacesvsNull:
+  positive: ["adult", "child"]
+  negative: []
+
+LimbsvsNull:
+  positive: ["body", "limb"]
+  negative: []
+
+# For main contrasts
+# For RW 
+RWvsLEX:
+  positive: ["word"]
+  negative: ["CS", "FF"]
+
+RWvsCS:
+  positive: ["word"]
+  negative: ["CS"]
+
+RWvsFF:
+  positive: ["word"]
+  negative: ["FF"]
+
+RWvsSC:
+  positive: ["word"]
+  negative: ["SC"]
+
+RWvsCB:
+  positive: ["word"]
+  negative: ["CB"]
+
+RWvsPER:
+  positive: ["word"]
+  negative: ["CB", "SC"]
+
+## logic for the xx vs all others 
+RWvsAllnoWord:
+  positive: ["word"]
+  negative: ["CS", "FF", "SC", "CB", "body", "limb", "adult", "child"]
+
+# For CS 
+CSvsFF:
+  positive: ["CS"]
+  negative: ["FF"]
+
+CSvsRW:
+  positive: ["CS"]
+  negative: ["word"]
+
+CSvsSC:
+  positive: ["CS"]
+  negative: ["SC"]
+
+CSvsCB:
+  positive: ["CS"]
+  negative: ["CB"]
+
+CSvsPER:
+  positive: ["CS"]
+  negative: ["CB", "SC"]
+
+## logic for the xx vs all others 
+CSvsAllnoCS:
+  positive: ["CS"]
+  negative: ["FF", "SC", "body", "limb", "adult", "child","word"]
+
+
+# For FF 
+
+FFvsSC:
+  positive: ["FF"]
+  negative: ["SC"]
+
+FFvsCB:
+  positive: ["FF"]
+  negative: ["CB"]
+
+FFvsPER:
+  positive: ["FF"]
+  negative: ["CB", "SC"]
+
+## logic for the xx vs all others 
+FFvsAllnoFF:
+  positive: ["FF"]
+  negative: ["SC", "body", "limb", "adult", "child","word","CS"]
+
+
+## logic for the xx vs all others 
+CSvsAllnoCS:
+  positive: ["CS"]
+  negative: ["FF", "SC", "body", "limb", "adult", "child","word"]
+
+# LEX and SC
+## logic for the xx vs all others 
+LEXvsAllnoLEX:
+  positive: ["CS", "FF"]
+  negative: ["SC", "body", "limb", "adult", "child", "word"]
+
+PERvsAllnoPER:
+  positive: ["SC", "CB"]
+  negative: ["CS", "FF", "body", "limb", "adult", "child" ,"word"]
+
+
+# Faces
+FacesvsAllnoFace:
+  positive: ["adult", "child"]
+  negative: ["SC", "CS", "FF", "body", "limb","word"]
+
+
+# Bodylimbs
+LimbsvsAllnoLimbs:
+  positive: ["body", "limb"]
+  negative: ["SC", "CS", "FF", "adult", "child","word"]
+
+FacesvsLimbs:
+  positive: ["adult", "child"]
+  negative: ["body", "limb"]

@@ -25,7 +25,7 @@ cmd="singularity run --cleanenv --no-home --containall \
 	    	--bind /bcbl:/bcbl \
 			--bind /export:/export \
         	${sing_path} \
-			-d ${dcm_dir}/sub-{subject}/ses-{session}/*/*.dcm \
+			-d ${dcm_dir}/sub-{subject}/ses-{session}/* \
 	    	--subjects ${sub} \
 			--ses ${ses} \
 			-o ${outputdir} \
