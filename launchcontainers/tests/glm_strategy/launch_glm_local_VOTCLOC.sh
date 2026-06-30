@@ -12,15 +12,14 @@
 # Edit these variables before running
 # ---------------------------------------------------------------------------
 PROJECT="VOTCLOC"
-analysis_space="surface"  # "volume" or "surface"; determines which run_glm script to use
 PYTHON_SCRIPT="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/glm_surface_check_model_strategy.py"
-LOGBASE="/bcbl/home/public/Gari/VOTCLOC/main_exp/logs/glm/${analysis_space}"
+LOGBASE="/bcbl/home/public/Gari/VOTCLOC/main_exp/logs/glm"
 
 # run_glm.py arguments
 BASE="/bcbl/home/public/Gari/VOTCLOC/main_exp"
 FP_ANA_NAME="25.1.4_t2w_fmapsbref_newest"
 TASK="fLoc"
-SPACE="fsnative"
+SPACE="T1w"
 START_SCANS="6"
 CONTRAST="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/contrast_${PROJECT}_short.yaml"
 STRATEGY_YAML="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/strategy.yaml"

@@ -25,7 +25,7 @@ START_SCANS="6"
 CONTRAST="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/contrast_${PROJECT}_new.yaml"
 STRATEGY_YAML="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/strategy.yaml"
 STRATEGY="basic_MC"   # single strategy name to run, or leave empty "" to run all strategies in the YAML
-RERUN_MAP=""          # leave empty "" to skip
+RERUN_MAP="/bcbl/home/public/Gari/IRAKEINU/BIDS/sourcedata/qc/rerun_check.csv"   # leave empty "" to skip
 INPUT_DIR="BIDS"      # input BIDS dir name under BASE; use BIDS_WC for WC runs
 ACQ=""                # acquisition label: "ME" | "SE" | leave empty "" for no filter
 BOLD_DESC=""          # desc label for bold query: "denoised" | "optcom" | leave empty ""
@@ -99,6 +99,10 @@ fi
 #   - otherwise run all combos: SE (no bold_desc), ME+denoised, ME+optcom
 # ---------------------------------------------------------------------------
 if [[ "$acq_set" -eq 1 || "$bold_desc_set" -eq 1 ]]; then
+    # echo1/echo2/echo3 (per-echo fMRIprep desc-preproc) only exist for acq-ME
+    if [[ "${BOLD_DESC}" == echo* && -z "${ACQ}" ]]; then
+        ACQ="ME"
+    fi
     COMBOS=("${ACQ},${BOLD_DESC}")
 else
     COMBOS=("SE," "ME,denoised" "ME,optcom")

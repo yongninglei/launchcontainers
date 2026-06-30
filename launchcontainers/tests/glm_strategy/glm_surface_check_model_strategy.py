@@ -1757,6 +1757,14 @@ def main(
     t0 = time.time()
 
     # ── Parse inputs ─────────────────────────────────────────────────────────
+    if bold_desc and bold_desc.startswith("echo") and acq != "ME":
+        console.print(
+            f"[red]Error:[/red] --bold-desc {bold_desc} is a per-echo fMRIprep "
+            "output that only exists for acq-ME. Pass --acq ME alongside "
+            f"--bold-desc {bold_desc}."
+        )
+        raise typer.Exit(code=1)
+
     pairs = _parse_pairs(subses_arg, file_arg)
 
     selected_runs_list: Optional[List[int]] = None

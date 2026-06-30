@@ -61,9 +61,9 @@ from rich.text import Text
 # ---------------------------------------------------------------------------
 # Defaults
 # ---------------------------------------------------------------------------
-_BIDS_DIR = Path("/bcbl/home/public/Gari/IRAKEINU/BIDS")
+_BIDS_DIR = Path("/bcbl/home/public/Gari/VOTCLOC/main_exp/BIDS")
 _RERUN_MAP_DEFAULT = Path("sourcedata/qc/rerun_check.tsv")  # relative to bids_dir
-_TASK_DEFAULT = "BfLocVideo"
+_TASK_DEFAULT = "fLoc"
 
 # Automatic onset-keyword per task label (overridable via --onset-keyword)
 _TASK_ONSET_KEYWORD: dict[str, str] = {

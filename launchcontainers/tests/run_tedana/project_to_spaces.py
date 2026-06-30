@@ -231,6 +231,27 @@ def _find_t1w_to_fsnative_xfm(fp_anat_dir: str, sub: str, ses: str) -> str | Non
     return found[0] if found else None
 
 
+def _find_echo_input_files(
+    fp_func_dir, sub, ses, task, acq, echo
+) -> list[tuple[str | None, str]]:
+    """Find fMRIprep per-echo native-BOLD desc-preproc files (echo-N, no space entity)."""
+    acq_token = f"_acq-{acq}" if acq else ""
+    found = sorted(
+        glob.glob(
+            op.join(
+                fp_func_dir,
+                f"sub-{sub}_ses-{ses}_task-{task}{acq_token}_run-*_echo-{echo}_desc-preproc_bold.nii.gz",
+            )
+        )
+    )
+    pairs = []
+    for f in found:
+        m = re.search(r"_run-(\w+)_", op.basename(f))
+        if m:
+            pairs.append((m.group(1), f))
+    return pairs
+
+
 def _find_input_files(
     func_dir, sub, ses, task, acq, desc
 ) -> list[tuple[str | None, str]]:
@@ -855,7 +876,13 @@ def main(
 
         for task in task_list:
             for desc in desc_list:
-                pairs = _find_input_files(func_dir, sub, ses, task, acq, desc)
+                m_echo = re.match(r"^echo(\d+)$", desc)
+                if m_echo:
+                    # Per-echo inputs come straight from fMRIprep's native-BOLD
+                    # desc-preproc output (not the tedana func_dir).
+                    pairs = _find_echo_input_files(fp_func_dir, sub, ses, task, acq, m_echo.group(1))
+                else:
+                    pairs = _find_input_files(func_dir, sub, ses, task, acq, desc)
                 if not pairs:
                     console.print(
                         f"  [yellow]⚠ task-{task} desc-{desc}: no input files found[/yellow]"
