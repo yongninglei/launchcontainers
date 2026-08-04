@@ -24,6 +24,7 @@ from os import makedirs
 from typing import List, Optional
 
 import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import nibabel as nib
@@ -89,12 +90,18 @@ def save_statmap_to_gifti(data, outname):
     """Save a stat-map array to a GIFTI file."""
     gii = nib.gifti.gifti.GiftiImage()
     gii.add_gifti_data_array(
-        nib.gifti.gifti.GiftiDataArray(data=data, datatype="NIFTI_TYPE_FLOAT32"),
+        nib.gifti.gifti.GiftiDataArray(
+            data=data,
+            datatype="NIFTI_TYPE_FLOAT32",
+            coordsys=None,  # overlays carry no coordinate system
+        ),
     )
     nib.save(gii, outname)
 
 
-def save_statmap_to_nifti(data: np.ndarray, outname: str, affine: np.ndarray, shape: tuple) -> None:
+def save_statmap_to_nifti(
+    data: np.ndarray, outname: str, affine: np.ndarray, shape: tuple
+) -> None:
     """Save a flat (n_voxels,) stat-map array to a NIfTI file, reshaping to ``shape``."""
     data_3d = data.reshape(shape)
     nib.save(nib.Nifti1Image(data_3d.astype(np.float32), affine), outname)
@@ -390,7 +397,9 @@ def plot_design_matrix_to_file(design_matrix, outdir, subject, session, task, ta
     return outpath
 
 
-def plot_contrast_matrices(contrasts, design_matrix, outdir, subject, session, task, tag=""):
+def plot_contrast_matrices(
+    contrasts, design_matrix, outdir, subject, session, task, tag=""
+):
     """Save one contrast-matrix plot per contrast."""
     for key, values in contrasts.items():
         ax = plot_contrast_matrix(values, design_matrix=design_matrix)
@@ -428,6 +437,7 @@ def glm_l1(
     vol_affine=None,
     vol_shape=None,
     save_betas=False,
+    conc_data_raw=None,
     acq=None,
     bold_desc=None,
 ) -> dict[str, float]:
@@ -467,8 +477,12 @@ def glm_l1(
     _t = time.time()
     confounds_df.to_csv(confounds_tsv, sep="\t")
     console.print(f"  [dim]Confounds TSV → {op.basename(confounds_tsv)}[/dim]")
-    plot_design_matrix_to_file(design_matrix_std, outdir, subject, session, task, tag=tag)
-    plot_contrast_matrices(contrasts, design_matrix_std, outdir, subject, session, task, tag=tag)
+    plot_design_matrix_to_file(
+        design_matrix_std, outdir, subject, session, task, tag=tag
+    )
+    plot_contrast_matrices(
+        contrasts, design_matrix_std, outdir, subject, session, task, tag=tag
+    )
     dm_csv = op.join(outdir, f"design_matrix_{task}{tag}_strategy-{strategy_name}.csv")
     design_matrix_std.to_csv(dm_csv)
     console.print(f"  [dim]Design matrix CSV → {op.basename(dm_csv)}[/dim]")
@@ -532,10 +546,25 @@ def glm_l1(
                 col_labels=design_matrix_std.columns.tolist(),
             )
         else:
-            save_timeseries_to_nifti(resid, _component_name("residuals", ".nii.gz"), vol_affine, vol_shape)
-            save_timeseries_to_nifti(fitted, _component_name("fitted", ".nii.gz"), vol_affine, vol_shape)
-            save_timeseries_to_nifti(beta_arr, _component_name("betas", ".nii.gz"), vol_affine, vol_shape)
+            save_timeseries_to_nifti(
+                resid, _component_name("residuals", ".nii.gz"), vol_affine, vol_shape
+            )
+            save_timeseries_to_nifti(
+                fitted, _component_name("fitted", ".nii.gz"), vol_affine, vol_shape
+            )
+            save_timeseries_to_nifti(
+                beta_arr, _component_name("betas", ".nii.gz"), vol_affine, vol_shape
+            )
         t_save_components = time.time() - _t
+
+    # ── Pre-compute per-vertex mean/std for PSC (once, before contrast loop) ────
+    # The GLM fits on z-scored data, so effect (β_z) is in z-score units.
+    # PSC = β_z × (σ_BOLD / μ_BOLD) × 100
+    _mean_bold: np.ndarray | None = None
+    _std_bold: np.ndarray | None = None
+    if conc_data_raw is not None:
+        _mean_bold = np.mean(conc_data_raw, axis=1)  # shape: (n_vertices,)
+        _std_bold = np.std(conc_data_raw, axis=1, ddof=1)
 
     # ── Contrasts: compute then save stat maps ─────────────────────────────────
     timing: dict[str, float] = {}
@@ -586,6 +615,13 @@ def glm_l1(
         _t = time.time()
         if hemi:
             save_statmap_to_gifti(effect, outname_base.replace("stat-X", "stat-effect"))
+            if _mean_bold is not None:
+                with np.errstate(divide="ignore", invalid="ignore"):
+                    _cv = np.where(
+                        np.abs(_mean_bold) > 1e-6, _std_bold / _mean_bold, np.nan
+                    )
+                psc = (effect * _cv * 100.0).astype(np.float32)
+                save_statmap_to_gifti(psc, outname_base.replace("stat-X", "stat-PSC"))
             save_statmap_to_gifti(t_value, outname_base.replace("stat-X", "stat-t"))
             if not randrun_idx:
                 save_statmap_to_gifti(z_score, outname_base.replace("stat-X", "stat-z"))
@@ -594,12 +630,34 @@ def glm_l1(
                     variance, outname_base.replace("stat-X", "stat-variance")
                 )
         else:
-            save_statmap_to_nifti(effect, outname_base.replace("stat-X", "stat-effect"), vol_affine, vol_shape)
-            save_statmap_to_nifti(t_value, outname_base.replace("stat-X", "stat-t"), vol_affine, vol_shape)
+            save_statmap_to_nifti(
+                effect,
+                outname_base.replace("stat-X", "stat-effect"),
+                vol_affine,
+                vol_shape,
+            )
+            save_statmap_to_nifti(
+                t_value, outname_base.replace("stat-X", "stat-t"), vol_affine, vol_shape
+            )
             if not randrun_idx:
-                save_statmap_to_nifti(z_score, outname_base.replace("stat-X", "stat-z"), vol_affine, vol_shape)
-                save_statmap_to_nifti(p_value, outname_base.replace("stat-X", "stat-p"), vol_affine, vol_shape)
-                save_statmap_to_nifti(variance, outname_base.replace("stat-X", "stat-variance"), vol_affine, vol_shape)
+                save_statmap_to_nifti(
+                    z_score,
+                    outname_base.replace("stat-X", "stat-z"),
+                    vol_affine,
+                    vol_shape,
+                )
+                save_statmap_to_nifti(
+                    p_value,
+                    outname_base.replace("stat-X", "stat-p"),
+                    vol_affine,
+                    vol_shape,
+                )
+                save_statmap_to_nifti(
+                    variance,
+                    outname_base.replace("stat-X", "stat-variance"),
+                    vol_affine,
+                    vol_shape,
+                )
         t_save = time.time() - _t
         t_save_maps_total += t_save
 
@@ -879,6 +937,9 @@ def prepare_glm_input(
     is_surface = space in ["fsnative", "fsaverage"]
 
     data_allrun = []
+    raw_allrun: list[
+        np.ndarray
+    ] = []  # raw BOLD (after start_scans trim, before z-score) for PSC
     frame_time_allrun = []
     events_allrun = []
     confounds_allrun = []
@@ -982,6 +1043,7 @@ def prepare_glm_input(
                 mask = np.zeros((n_features, 1))
                 mask[surf_mask] = 1
                 data_std = data_std * mask
+                data_remove_first = data_remove_first * mask
                 data_float = data_float * mask
             else:
                 console.print(
@@ -989,6 +1051,9 @@ def prepare_glm_input(
                 )
 
         n_scans_full = np.shape(data_std)[1]
+        raw_allrun.append(
+            data_remove_first
+        )  # raw (masked, trimmed) — used for PSC normalisation
         run_step_times[run_num]["zscore_mask"] = time.time() - _t
 
         # ── Step 3: look up prefetched events + confounds + TR ───────────────
@@ -1203,7 +1268,16 @@ def prepare_glm_input(
         f"  [dim]design_matrix build: {t_design:.2f} s[/dim]"
     )
 
-    return conc_data_std, design_matrix_std, contrasts, nonan_confounds, vol_affine, vol_shape
+    conc_data_raw = np.concatenate(raw_allrun, axis=1) if raw_allrun else None
+    return (
+        conc_data_std,
+        design_matrix_std,
+        contrasts,
+        nonan_confounds,
+        vol_affine,
+        vol_shape,
+        conc_data_raw,
+    )
 
 
 def _load_rerun_exclusions(
@@ -1352,7 +1426,15 @@ def process_run_list(
     label = f"hemi-{hemi}" if hemi else "volumetric"
     console.print(f"\n[bold]Processing {label}[/bold]  runs: {run_list}")
 
-    conc_data_std, design_matrix_std, contrasts, nonan_confounds, vol_affine, vol_shape = prepare_glm_input(
+    (
+        conc_data_std,
+        design_matrix_std,
+        contrasts,
+        nonan_confounds,
+        vol_affine,
+        vol_shape,
+        conc_data_raw,
+    ) = prepare_glm_input(
         bids_dir,
         fmriprep_dir,
         fp_layout,
@@ -1404,6 +1486,7 @@ def process_run_list(
         vol_affine,
         vol_shape,
         save_betas=save_betas,
+        conc_data_raw=conc_data_raw,
         acq=acq,
         bold_desc=bold_desc,
     )
@@ -1948,8 +2031,8 @@ def main(
             f"  [dim]Metadata prefetched in {time.time() - _t_fetch:.1f} s[/dim]"
         )
 
-        # n_glm_jobs: split the vertex-level parallelism budget across concurrent strategies
-        n_glm_jobs = max(1, 4 // n_workers)
+        # n_glm_jobs: divide worker budget equally across strategies running in parallel
+        n_glm_jobs = max(1, n_workers // len(strategy_names))
 
         def _run_one_strategy(strategy_name: str):
             """Run the full GLM pipeline for one strategy. Safe to call from a thread."""

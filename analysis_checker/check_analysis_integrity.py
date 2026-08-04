@@ -55,6 +55,7 @@ try:
     from .glm import GLMSpec
     from .prf_analyze import PRFAnalyzeSpec
     from .prf_prepare import PRFPrepareSpec
+    from .qmri import BIDSQMRISpec
     from .rtp import RTPSpec, RTP2PipelineSpec
 except ImportError:
     import sys
@@ -67,6 +68,7 @@ except ImportError:
     from glm import GLMSpec
     from prf_analyze import PRFAnalyzeSpec
     from prf_prepare import PRFPrepareSpec
+    from qmri import BIDSQMRISpec
     from rtp import RTPSpec
 
 # Import all specs from analysis_checker package.
@@ -1051,6 +1053,7 @@ SPEC_REGISTRY: dict[str, AnalysisSpec] = {
     "dwinii": DWINiiSpec(),
     "funcsbref": FuncSBRefSpec(),
     "bidsfunc": BIDSfuncSpec(),
+    "qmri": BIDSQMRISpec(),
     "fmriprep": FMRIPrepSpec(),
     "glm": GLMSpec(),
     "rtp": RTPSpec(),
@@ -1133,7 +1136,7 @@ def check(
     analysis_type: str = typer.Argument(
         ...,
         help="Analysis type: prfprepare, prfanalyze, bids, bidsfunc, "
-        "dwinii, funcsbref, fmriprep, glm, rtp, rtp2pipeline",
+        "dwinii, funcsbref, qmri, fmriprep, glm, rtp, rtp2pipeline",
     ),
     subses: list[str] | None = typer.Option(
         None,

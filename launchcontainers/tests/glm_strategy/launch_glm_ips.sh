@@ -10,21 +10,20 @@
 # ---------------------------------------------------------------------------
 # Edit these variables before running
 # ---------------------------------------------------------------------------
-PROJECT="IRAKEINU"
-analysis_space="volume"  # "volume" or "surface"; determines which run_glm script to use
+PROJECT="VOTCLOC"
 PYTHON_SCRIPT="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/glm_surface_check_model_strategy.py"
-LOGBASE="/bcbl/home/public/Gari/${PROJECT}/logs/glm/${analysis_space}"
+LOGBASE="/bcbl/home/public/Gari/VOTCLOC/main_exp/logs/glm"
 
 # run_glm.py arguments
-BASE="/bcbl/home/public/Gari/${PROJECT}"
-FP_ANA_NAME="25.1.4_IRpilot "
-TASK="BfLocVideo"
+BASE="/bcbl/home/public/Gari/VOTCLOC/main_exp"
+FP_ANA_NAME="25.1.4_t2w_fmapsbref_newest"
+TASK="fLoc"
 SPACE="fsnative"
 START_SCANS="6"
-CONTRAST="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/contrast_${PROJECT}_all.yaml"
+CONTRAST="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/contrast_${PROJECT}_short.yaml"
 STRATEGY_YAML="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/strategy.yaml"
 STRATEGY="basic_MC"   # single strategy name to run, or leave empty "" to run all strategies in the YAML
-RERUN_MAP=""   # leave empty "" to skip
+RERUN_MAP="/bcbl/home/public/Gari/VOTCLOC/main_exp/BIDS/sourcedata/qc/rerun_check.tsv"   # leave empty "" to skip
 INPUT_DIR="BIDS"           # input BIDS dir name under BASE; use BIDS_WC for WC runs
 ACQ=""                # acquisition label: "ME" | "SE" | leave empty "" for no filter
 BOLD_DESC=""          # desc label for bold query: "denoised" | "optcom" | leave empty ""

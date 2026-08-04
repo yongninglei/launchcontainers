@@ -11,6 +11,13 @@ LEXvsNull:
   positive: ["CS", "FF"]
   negative: []
 
+FFvsNull:
+  positive: ["FF"]
+  negative: []
+
+CSvsNull:
+  positive: ["CS"]
+  negative: []
 RWvsNull:
   positive: ["RW"]
   negative: []
@@ -28,7 +35,7 @@ LEXvsPER:
   positive: ["CS", "FF"]
   negative: ["SC"]
 
-# For RW 
+# For RW
 RWvsLEX:
   positive: ["RW"]
   negative: ["CS", "FF"]
@@ -66,7 +73,7 @@ RWvsFacesLimbs:
   positive: ["RW"]
   negative: ["face", "bodylimb"]
 
-## logic for the xx vs all others 
+## logic for the xx vs all others
 RWvsAllnoWord:
   positive: ["RW"]
   negative: ["CS", "FF", "SC", "bodylimb", "face"]
@@ -79,7 +86,7 @@ RWvsAllnoRWnoCS:
   positive: ["RW"]
   negative: ["SC", "bodylimb", "face", "FF"]
 
-# For CS 
+# For CS
 CSvsFF:
   positive: ["CS"]
   negative: ["FF"]
@@ -100,7 +107,7 @@ CSvsLimbs:
   positive: ["CS"]
   negative: ["bodylimb"]
 
-CSvsFaces:  
+CSvsFaces:
   positive: ["CS"]
   negative: ["face"]
 
@@ -108,7 +115,7 @@ CSvsFacesLimbs:
   positive: ["CS"]
   negative: ["bodylimb", "face"]
 
-## logic for the xx vs all others 
+## logic for the xx vs all others
 CSvsAllnoCS:
   positive: ["CS"]
   negative: ["FF", "SC", "bodylimb", "face","RW"]
@@ -121,33 +128,7 @@ CSvsAllnoCSnoWordnoFF:
   positive: ["CS"]
   negative: ["SC", "bodylimb", "face"]
 
-# LEX and PER
-## logic for the xx vs all others 
-LEXvsAllnoLEXnoRW:
-  positive: ["CS", "FF"]
-  negative: ["SC", "bodylimb", "face"]
-
-LEXvsAllnoLEXnoRWnoPER:
-  positive: ["CS", "FF"]
-  negative: ["bodylimb", "face"]
-
-PERvsAllnoPER:
-  positive: ["SC"]
-  negative: ["CS", "FF", "bodylimb", "face", "RW"]
-
-PERvsAllnoPERnoRW:
-  positive: ["SC"]
-  negative: ["CS", "FF", "bodylimb", "face"]
-
-PERvsAllnoPERnoRWnoLEX:
-  positive: ["SC"]
-  negative: ["bodylimb", "face"]
-
 # Faces
-FacesvsLEX:
-  positive: ["face"]
-  negative: ["CS", "FF"]
-
 FacesvsCS:
   positive: ["face"]
   negative: ["CS"]
@@ -159,10 +140,6 @@ FacesvsRW:
 FacesvsPER:
   positive: ["face"]
   negative: ["SC"]
-
-FacesvsLEXPER:
-  positive: ["face"]
-  negative: ["SC", "CS", "FF"]
 
 FacesvsAllnoFace:
   positive: ["face"]
@@ -177,11 +154,6 @@ FacesvsAllnoFacenoCS:
   negative: ["SC", "FF", "bodylimb","RW"]
 
 # Bodylimbs
-
-LimbsvsLEX:
-  positive: ["bodylimb"]
-  negative: ["CS", "FF"]
-
 LimbsvsCS:
   positive: ["bodylimb"]
   negative: ["CS"]
@@ -194,10 +166,6 @@ LimbsvsPER:
   positive: ["bodylimb"]
   negative: ["SC"]
 
-LimbsvsLEXPER:
-  positive: ["bodylimb"]
-  negative: ["SC", "CS", "FF"]
-
 LimbsvsAllnoLimbs:
   positive: ["bodylimb"]
   negative: ["SC", "CS", "FF", "face","RW"]
@@ -209,7 +177,6 @@ LimbsvsAllnoLimbsnoRW:
 LimbsvsAllnoLimbsnoCS:
   positive: ["bodylimb"]
   negative: ["SC", "FF", "face","RW"]
-
 
 FacesvsLimbs:
   positive: ["face"]

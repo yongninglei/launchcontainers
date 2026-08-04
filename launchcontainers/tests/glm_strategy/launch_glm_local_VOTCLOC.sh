@@ -19,7 +19,7 @@ LOGBASE="/bcbl/home/public/Gari/VOTCLOC/main_exp/logs/glm"
 BASE="/bcbl/home/public/Gari/VOTCLOC/main_exp"
 FP_ANA_NAME="25.1.4_t2w_fmapsbref_newest"
 TASK="fLoc"
-SPACE="T1w"
+SPACE="fsnative"
 START_SCANS="6"
 CONTRAST="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/contrast_${PROJECT}_short.yaml"
 STRATEGY_YAML="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/strategy.yaml"
@@ -147,7 +147,7 @@ for pair in "${PAIRS[@]}"; do
         --analysis-name ${analysis_name} \
         --input-dir ${INPUT_DIR} \
         --strategy-yaml ${STRATEGY_YAML} \
-        --n-workers 20"
+        --n-workers 60"
 
     [[ -n "${STRATEGY}" ]]  && PY_CMD="${PY_CMD} --strategy ${STRATEGY}"
     [[ -n "${RERUN_MAP}" ]] && PY_CMD="${PY_CMD} --rerun-map ${RERUN_MAP}"

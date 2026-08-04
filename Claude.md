@@ -4,6 +4,9 @@ This file is read automatically by Claude Code. It provides full context
 about the project so you can contribute effectively without needing to
 re-explain the architecture each session.
 
+Shared neuroimaging script conventions (typer/rich CLI, one-sub-per-call,
+parallel option, timing, bash launcher skeleton) are in `../CLAUDE.md`.
+
 ---
 
 ## Project overview

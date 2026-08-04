@@ -23,6 +23,7 @@ Output:
     1. <type>_incomplete.csv  — brief sub,ses,RUN for every sub/ses
     2. <type>_detailed.log    — indexed detailed log of missing files
 """
+
 from __future__ import annotations
 
 import csv
@@ -126,14 +127,14 @@ class GroupResult:
     # [DEV] appending different type of errors below
     corrupted_files: list[str] = field(default_factory=list)
     timing_issues: list[str] = field(default_factory=list)
-    
+
     # [DEV] appending different type of errors below
     @property
     def is_complete(self) -> bool:
         return (
             len(self.missing_files) == 0
             and len(self.corrupted_files) == 0
-            and len(self.timing_issues) == 0  
+            and len(self.timing_issues) == 0
         )
 
 
@@ -167,29 +168,31 @@ class SessionResult:
     @property
     def total_missing(self) -> int:
         return sum(len(g.missing_files) for g in self.groups.values())
+
     # [DEV] appending different type of errors below
     @property
-    def total_corrupted(self) -> int: 
-        return sum(len(g.corrupted_files) for g in self.groups.values())   
-     
+    def total_corrupted(self) -> int:
+        return sum(len(g.corrupted_files) for g in self.groups.values())
+
     @property
     def total_timing_issues(self) -> int:
         return sum(len(g.timing_issues) for g in self.groups.values())
+
 
 # =============================================================================
 # 3. GENERIC CHECKER ENGINE
 # =============================================================================
 
+
 def _check_file_exists(session_dir: Path, fname: str, use_glob: bool) -> bool:
     """Check if a file exists, with optional glob support."""
     if use_glob and ("*" in fname or "?" in fname):
         fpath = Path(fname)
-        parent = (
-            session_dir / fpath.parent if str(fpath.parent) != "." else session_dir
-        )
+        parent = session_dir / fpath.parent if str(fpath.parent) != "." else session_dir
         return len(list(parent.glob(fpath.name))) > 0 if parent.is_dir() else False
     else:
         return (session_dir / fname).exists()
+
 
 # add the helper function to check matfile
 def check_broken_mat(filepath: Path) -> tuple[bool, str]:
@@ -204,6 +207,7 @@ def check_broken_mat(filepath: Path) -> tuple[bool, str]:
     except Exception as e_scipy:
         try:
             with h5py.File(str(filepath), "r") as f:
+
                 def _read_all(obj):
                     for key in obj:
                         item = obj[key]
@@ -211,12 +215,14 @@ def check_broken_mat(filepath: Path) -> tuple[bool, str]:
                             _read_all(item)
                         else:
                             _ = item[()]
+
                 _read_all(f)
             return True, ""
         except Exception:
             return False, str(e_scipy)
-        
-# add the helper function to check if json is broken        
+
+
+# add the helper function to check if json is broken
 def check_broken_json(filepath: Path) -> tuple[bool, str]:
     """Check if a JSON file is valid and non-empty."""
     try:
@@ -230,22 +236,26 @@ def check_broken_json(filepath: Path) -> tuple[bool, str]:
     except Exception as e:
         return False, str(e)
 
-# add the helper function to check if nii.gz is broken 
+
+# add the helper function to check if nii.gz is broken
 def check_broken_nii(filepath: Path) -> tuple[bool, str]:
     """Check if a .nii.gz has a valid header (fast) without loading all data."""
     try:
         import nibabel as nib
+
         img = nib.load(str(filepath))
         shape = img.header.get_data_shape()
         if len(shape) == 0:
             return False, "empty shape in header"
         # Read only first volume to test decompression without loading all data
         import numpy as np
+
         proxy = img.dataobj
         _ = np.asarray(proxy[..., 0]) if len(shape) == 4 else np.asarray(proxy)
         return True, ""
     except Exception as e:
         return False, str(e)
+
 
 # helper function to read json
 def read_json(p: Path) -> dict:
@@ -253,10 +263,12 @@ def read_json(p: Path) -> dict:
         return json.loads(p.read_text())
     except Exception:
         return {}
-    
+
+
 # helper function to get json sidercar for nii.gz
 def json_for(nii: Path) -> Path:
-    return nii.with_name(nii.name.replace('.nii.gz', '.json'))
+    return nii.with_name(nii.name.replace(".nii.gz", ".json"))
+
 
 # helper function to parse acq time from json or from scants.tsv rows
 def parse_hms(ts: str) -> str:
@@ -273,15 +285,16 @@ def parse_hms(ts: str) -> str:
     plain HH:MM:SS, 17:50:30
     """
     s = str(ts).strip()
-    if 'T' in s:
-        s = s.split('T')[1]
-    s = s.split('.')[0]
-    for fmt in ('%H:%M:%S', '%H:%M'):
+    if "T" in s:
+        s = s.split("T")[1]
+    s = s.split(".")[0]
+    for fmt in ("%H:%M:%S", "%H:%M"):
         try:
-            return datetime.strptime(s, fmt).strftime('%H:%M:%S')
+            return datetime.strptime(s, fmt).strftime("%H:%M:%S")
         except ValueError:
             continue
     return s
+
 
 # time match check
 def times_match(t1: str, t2: str, max_diff_sec: int = 30) -> bool:
@@ -320,6 +333,7 @@ def times_match(t1: str, t2: str, max_diff_sec: int = 30) -> bool:
 
     diff = abs((dt1 - dt2).total_seconds())
     return diff <= max_diff_sec
+
 
 # check single session wrapper
 def check_one_session(
@@ -379,7 +393,6 @@ def check_one_session(
             found_files=found,
             missing_files=missing,
             corrupted_files=corrupted,
-
         )
     # [DEV] appending different type of modality specific errors below
     # Timing check — only for specs that implement _check_timing
@@ -411,8 +424,11 @@ def run_integrity_check_single(
         for sub_raw, ses_raw in progress:
             sub = f"sub-{sub_raw}" if not sub_raw.startswith("sub-") else sub_raw
             ses = f"ses-{ses_raw}" if not ses_raw.startswith("ses-") else ses_raw
-            results.append(check_one_session(spec, analysis_dir, sub, ses, check_corruption))
+            results.append(
+                check_one_session(spec, analysis_dir, sub, ses, check_corruption)
+            )
     return results
+
 
 def run_integrity_check_parallel(
     spec: AnalysisSpec,
@@ -422,7 +438,7 @@ def run_integrity_check_parallel(
     check_corruption: bool = False,
 ) -> list[SessionResult]:
     """Run integrity check across all sub/ses pairs in parallel (I/O-bound)."""
-    
+
     def _check(sub_raw: str, ses_raw: str) -> SessionResult:
         sub = f"sub-{sub_raw}" if not sub_raw.startswith("sub-") else sub_raw
         ses = f"ses-{ses_raw}" if not ses_raw.startswith("ses-") else ses_raw
@@ -456,6 +472,8 @@ def run_integrity_check_parallel(
                 progress.update(1)
 
     return results  # type: ignore[return-value]
+
+
 # =============================================================================
 # 4. OUTPUT WRITERS
 # =============================================================================
@@ -474,6 +492,7 @@ def write_brief_csv(results: list[SessionResult], output_path: Path) -> pd.DataF
             rows.append({"sub": sub_num, "ses": ses_num, "RUN": r.is_complete})
 
     return pd.DataFrame(rows, columns=["sub", "ses", "RUN"])
+
 
 def write_matrix_from_brief_csv(
     source: "pd.DataFrame | Path",
@@ -504,7 +523,7 @@ def write_matrix_from_brief_csv(
         df["RUN"] = df["RUN"].astype(str)
 
     # Preserve order of appearance
-    subs     = list(dict.fromkeys(df["sub"].tolist()))
+    subs = list(dict.fromkeys(df["sub"].tolist()))
     sessions = list(dict.fromkeys(df["ses"].tolist()))
 
     # Build lookup (sub, ses) -> value
@@ -523,7 +542,8 @@ def write_matrix_from_brief_csv(
             writer.writerow(row)
 
     console.print(f"[bold]Matrix CSV:[/bold]   {output_path}")
-    
+
+
 # [DEV] appending different type of errors below
 def write_matrix_from_result(results: list[SessionResult], output_path: Path) -> None:
     """
@@ -578,6 +598,7 @@ def write_matrix_from_result(results: list[SessionResult], output_path: Path) ->
                 row.append(_fmt(val) if val != "" else "")
             writer.writerow(row)
 
+
 # [DEV] appending different type of errors below
 def write_detailed_log(
     results: list[SessionResult],
@@ -621,22 +642,27 @@ def write_detailed_log(
                 if gresult.is_complete:
                     continue
                 if gresult.missing_files:
-                    f.write(f"      [{glabel}] — {len(gresult.missing_files)} missing:\n")
+                    f.write(
+                        f"      [{glabel}] — {len(gresult.missing_files)} missing:\n"
+                    )
                     for mf in gresult.missing_files:
                         f.write(f"        - {mf}\n")
                 # [DEV] appending different type of errors below
                 if gresult.corrupted_files:
-                    f.write(f"      [{glabel}] — {len(gresult.corrupted_files)} corrupted:\n")
+                    f.write(
+                        f"      [{glabel}] — {len(gresult.corrupted_files)} corrupted:\n"
+                    )
                     for cf in gresult.corrupted_files:
                         f.write(f"        ! {cf}\n")
                 if gresult.timing_issues:
                     f.write(f"      [{glabel}] — timing mismatch:\n")
                     for ti in gresult.timing_issues:
-                        f.write(f"        ~ {ti}\n")                        
+                        f.write(f"        ~ {ti}\n")
 
             f.write("\n")
 
-# add function to write corrupted file list only for review and remove later            
+
+# add function to write corrupted file list only for review and remove later
 def write_corrupted_list(
     results: list[SessionResult],
     output_path: Path,
@@ -651,6 +677,7 @@ def write_corrupted_list(
                 for cf in gresult.corrupted_files:
                     fname = cf.split(" (")[0]
                     f.write(f"{session_dir / fname}\n")
+
 
 def write_time_mismatch_list(
     results: list[SessionResult],
@@ -669,9 +696,11 @@ def write_time_mismatch_list(
                     for issue in gresult.timing_issues:
                         f.write(f"{bold_path}  {issue.strip()}\n")
 
+
 # =============================================================================
 # 5. RICH CONSOLE OUTPUT
 # =============================================================================
+
 
 # [DEV] appending different type of errors below
 def print_summary(results: list[SessionResult], spec: AnalysisSpec) -> None:
@@ -679,9 +708,7 @@ def print_summary(results: list[SessionResult], spec: AnalysisSpec) -> None:
     n_complete = sum(1 for r in results if r.is_complete)
     n_incomplete = sum(1 for r in results if not r.is_complete)
     n_no_dir = sum(1 for r in results if not r.session_dir_exists)
-    n_no_groups = sum(
-        1 for r in results if r.session_dir_exists and r.num_groups == 0
-    )
+    n_no_groups = sum(1 for r in results if r.session_dir_exists and r.num_groups == 0)
     total_groups = sum(r.num_groups for r in results)
     complete_groups = sum(r.complete_groups for r in results)
     total_corrupted = sum(r.total_corrupted for r in results)
@@ -723,7 +750,8 @@ def print_summary(results: list[SessionResult], spec: AnalysisSpec) -> None:
             )
             timing_str = (
                 f"[yellow bold]{r.total_timing_issues}[/yellow bold]"
-                if r.total_timing_issues > 0 else "0"
+                if r.total_timing_issues > 0
+                else "0"
             )
         table.add_row(
             r.sub.replace("sub-", ""),
@@ -744,7 +772,7 @@ def print_summary(results: list[SessionResult], spec: AnalysisSpec) -> None:
     )
     if total_groups > 0:
         console.print(f"Groups: {complete_groups}/{total_groups} complete overall")
-    # [DEV] appending different type of errors below        
+    # [DEV] appending different type of errors below
     if total_corrupted > 0:
         console.print(f"[red bold]Corrupted .mat files: {total_corrupted}[/red bold]")
     if total_timing > 0:
@@ -754,10 +782,9 @@ def print_summary(results: list[SessionResult], spec: AnalysisSpec) -> None:
     if n_no_groups > 0:
         console.print(f"[yellow]Empty session dirs: {n_no_groups}[/yellow]")
 
+
 # [DEV] appending different type of errors below
-def print_detailed_results(
-    results: list[SessionResult], verbose: bool = False
-) -> None:
+def print_detailed_results(results: list[SessionResult], verbose: bool = False) -> None:
     """Print missing file details for incomplete sessions."""
     incomplete = [r for r in results if not r.is_complete]
     if not incomplete:
@@ -770,9 +797,7 @@ def print_detailed_results(
             console.print(f"  [yellow]{r.sub}/{r.ses}[/yellow] — directory missing")
             continue
         if r.num_groups == 0:
-            console.print(
-                f"  [yellow]{r.sub}/{r.ses}[/yellow] — no file groups found"
-            )
+            console.print(f"  [yellow]{r.sub}/{r.ses}[/yellow] — no file groups found")
             continue
 
         console.print(
@@ -793,19 +818,18 @@ def print_detailed_results(
                 for mf in gresult.missing_files:
                     console.print(f"      - {mf}")
             # [DEV] appending different type of errors below
-            if gresult.corrupted_files: 
+            if gresult.corrupted_files:
                 console.print(
                     f"    [magenta]⚠ {glabel}[/magenta] — {len(gresult.corrupted_files)} corrupted:"
                 )
                 for cf in gresult.corrupted_files:
                     console.print(f"      - {cf}")
             if gresult.timing_issues:
-                console.print(
-                    f"    [yellow]⏱ {glabel}[/yellow] — timing mismatch:"
-                )
+                console.print(f"    [yellow]⏱ {glabel}[/yellow] — timing mismatch:")
                 for ti in gresult.timing_issues:
                     console.print(f"      [yellow]{ti}[/yellow]")
     console.print()
+
 
 def print_group_distribution(results: list[SessionResult]) -> None:
     """Print distribution of groups per session."""
@@ -871,6 +895,7 @@ class PRFAnalyzeSpec(AnalysisSpec):
         "testdata.nii.gz",
         "theta.nii.gz",
     ]
+
     @property
     def name(self) -> str:
         return "prfanalyze"
@@ -904,9 +929,9 @@ class PRFAnalyzeSpec(AnalysisSpec):
             groups[prefix] = expected
 
         return groups
-    
+
     def get_default_combinations(self) -> list[tuple[str, str]]:
-        return default_combinations()    
+        return default_combinations()
 
 
 # =============================================================================
@@ -1026,9 +1051,7 @@ class PRFPrepareSpec(AnalysisSpec):
 
     @property
     def description(self) -> str:
-        n_mask = len(self.MASKINFO_SUFFIXES_HEMI_L) + len(
-            self.MASKINFO_SUFFIXES_HEMI_R
-        )
+        n_mask = len(self.MASKINFO_SUFFIXES_HEMI_L) + len(self.MASKINFO_SUFFIXES_HEMI_R)
         return (
             f"PRF prepare outputs — {n_mask} maskinfo (fixed) + "
             f"events & bold per discovered task"
@@ -1036,7 +1059,7 @@ class PRFPrepareSpec(AnalysisSpec):
 
     def get_session_dir(self, analysis_dir: Path, sub: str, ses: str) -> Path:
         return analysis_dir / sub / ses / "func"
-    
+
     def _discover_tasks(
         self, session_dir: Path, prefix: str
     ) -> tuple[set[str], set[str]]:
@@ -1055,9 +1078,7 @@ class PRFPrepareSpec(AnalysisSpec):
         event_tasks: set[str] = set()
         bold_tasks: set[str] = set()
 
-        task_pattern = re.compile(
-            re.escape(prefix) + r"_task-([^_]+)_run-"
-        )
+        task_pattern = re.compile(re.escape(prefix) + r"_task-([^_]+)_run-")
 
         for f in session_dir.iterdir():
             if not f.is_file():
@@ -1176,7 +1197,8 @@ class BIDSSpec(AnalysisSpec):
                 expected.append(f"{modality}/{resolved}")
             groups[modality] = expected
         return groups
-    
+
+
 class BIDSDWISpec(AnalysisSpec):
     """
     BIDS DWI check: analysis_dir / sub-XX / ses-XX / dwi / <files>
@@ -1224,9 +1246,7 @@ class BIDSDWISpec(AnalysisSpec):
         prefix = f"{sub}_{ses}"
 
         # Discover unique acq labels
-        acq_pattern = re.compile(
-            re.escape(prefix) + r"_acq-([^_]+)_dir-"
-        )
+        acq_pattern = re.compile(re.escape(prefix) + r"_acq-([^_]+)_dir-")
         acq_labels: set[str] = set()
         for f in session_dir.iterdir():
             if f.is_file():
@@ -1240,20 +1260,17 @@ class BIDSDWISpec(AnalysisSpec):
             expected = []
             # AP
             for ext in self.AP_EXTENSIONS:
-                expected.append(
-                    f"{prefix}_acq-{acq}_dir-AP_run-01_dwi{ext}"
-                )
+                expected.append(f"{prefix}_acq-{acq}_dir-AP_run-01_dwi{ext}")
             # PA
             for ext in self.PA_EXTENSIONS:
-                expected.append(
-                    f"{prefix}_acq-{acq}_dir-PA_run-01_dwi{ext}"
-                )
+                expected.append(f"{prefix}_acq-{acq}_dir-PA_run-01_dwi{ext}")
             groups[f"acq-{acq}"] = expected
 
         return groups
 
     def get_default_combinations(self) -> list[tuple[str, str]]:
         return default_combinations()
+
 
 class BIDSFuncSBRefSpec(AnalysisSpec):
     """
@@ -1274,9 +1291,7 @@ class BIDSFuncSBRefSpec(AnalysisSpec):
 
     @property
     def description(self) -> str:
-        return (
-            f"BIDS func sbref↔bold pairing — timing gap <= {self.max_diff_sec}s"
-        )
+        return f"BIDS func sbref↔bold pairing — timing gap <= {self.max_diff_sec}s"
 
     def get_session_dir(self, analysis_dir: Path, sub: str, ses: str) -> Path:
         return analysis_dir / sub / ses / "func"
@@ -1298,8 +1313,9 @@ class BIDSFuncSBRefSpec(AnalysisSpec):
         groups: dict[str, list[str]] = {}
 
         bold_files = sorted(
-            f for f in session_dir.iterdir()
-            if f.is_file()                        # excludes symlinks
+            f
+            for f in session_dir.iterdir()
+            if f.is_file()  # excludes symlinks
             and not f.is_symlink()
             and f.name.endswith("_bold.nii.gz")
         )
@@ -1321,13 +1337,13 @@ class BIDSFuncSBRefSpec(AnalysisSpec):
         Called separately from validate_timing_mismatches().
         """
         sbref_json_path = session_dir / bold_name.replace("_bold.nii.gz", "_sbref.json")
-        bold_json_path  = session_dir / bold_name.replace(".nii.gz", ".json")
+        bold_json_path = session_dir / bold_name.replace(".nii.gz", ".json")
 
         sbref_meta = read_json(sbref_json_path)
-        bold_meta  = read_json(bold_json_path)
+        bold_meta = read_json(bold_json_path)
 
         t_sbref = sbref_meta.get("AcquisitionTime")
-        t_bold  = bold_meta.get("AcquisitionTime")
+        t_bold = bold_meta.get("AcquisitionTime")
 
         if t_sbref is None or t_bold is None:
             return f"  AcquisitionTime missing (sbref={t_sbref}, bold={t_bold})"
@@ -1335,7 +1351,7 @@ class BIDSFuncSBRefSpec(AnalysisSpec):
         if not times_match(t_sbref, t_bold, self.max_diff_sec):
             try:
                 dt1 = datetime.strptime(parse_hms(t_sbref), "%H:%M:%S")
-                dt2 = datetime.strptime(parse_hms(t_bold),  "%H:%M:%S")
+                dt2 = datetime.strptime(parse_hms(t_bold), "%H:%M:%S")
                 diff = abs((dt1 - dt2).total_seconds())
             except ValueError:
                 diff = -1
@@ -1348,7 +1364,8 @@ class BIDSFuncSBRefSpec(AnalysisSpec):
 
     def get_default_combinations(self) -> list[tuple[str, str]]:
         return default_combinations()
-    
+
+
 class BIDSScanstsvSpec(AnalysisSpec):
     """
     BIDS scans.tsv ↔ file acquisition time consistency check.
@@ -1449,14 +1466,15 @@ class BIDSScanstsvSpec(AnalysisSpec):
         if modality == "fmap" and name.endswith("_epi.nii.gz"):
             # normalise run-01 -> run-1 for tsv lookup
             import re
+
             normalised = re.sub(r"run-0*(\d+)", lambda m: f"run-{m.group(1)}", name)
             return [f"fmap/{normalised}"]
 
         # --- func bold: maps to _magnitude AND _phase ---
         if name.endswith("_bold.nii.gz"):
-            mag  = name.replace("_bold.nii.gz", "_magnitude.nii.gz")
+            mag = name.replace("_bold.nii.gz", "_magnitude.nii.gz")
             phase = name.replace("_bold.nii.gz", "_phase.nii.gz")
-            return [f"func/{mag}", f"func/{phase}"] 
+            return [f"func/{mag}", f"func/{phase}"]
 
         # --- func sbref: direct match ---
         if name.endswith("_sbref.nii.gz"):
@@ -1497,7 +1515,7 @@ class BIDSScanstsvSpec(AnalysisSpec):
     # Timing issues populated separately via _check_timing
     # ------------------------------------------------------------------
 
-    @property  
+    @property
     def uses_glob(self) -> bool:
         return False
 
@@ -1557,7 +1575,7 @@ class BIDSScanstsvSpec(AnalysisSpec):
             if not times_match(t_json, t_tsv, self.max_diff_sec):
                 try:
                     dt1 = datetime.strptime(t_json, "%H:%M:%S")
-                    dt2 = datetime.strptime(t_tsv,  "%H:%M:%S")
+                    dt2 = datetime.strptime(t_tsv, "%H:%M:%S")
                     diff = abs((dt1 - dt2).total_seconds())
                 except Exception:
                     diff = -1
@@ -1572,9 +1590,109 @@ class BIDSScanstsvSpec(AnalysisSpec):
 
     def get_default_combinations(self) -> list[tuple[str, str]]:
         return default_combinations()
-    
+
+
 # =============================================================================
-# 10. ANALYSIS SPEC: fMRIPrep
+# 10. ANALYSIS SPEC: BIDS qMRI (MRF)
+# =============================================================================
+
+
+class BIDSQMRISpec(AnalysisSpec):
+    """
+    qMRI MRF outputs under BIDS anat:
+      analysis_dir / sub-XX / ses-XX / anat / sub-XX_ses-XX / <MRF files>
+
+    The MRF prefix (e.g. MRF_X4g_LONG_HIGHSNR_534) varies per session and is
+    discovered from files on disk using known anchor suffixes. All files must
+    be present.
+    """
+
+    # Suffixes appended to the per-session MRF prefix
+    MRF_SUFFIXES: list[str] = [
+        "_B0B1.mat",
+        "_B1cor_PDmap.nii",
+        "_B1cor_sync_DIR.nii",
+        "_B1cor_sync_T1mprage.nii",
+        "_B1cor_sync_T2flair.nii",
+        "_B1cor_sync_T2W.nii",
+        "_B1cor_T1map.nii",
+        "_B1cor_T2map.nii",
+        "_coeff.mat",
+        "_navi.mat",
+        "_PDmap.nii",
+        "_T1map.nii",
+        "_T1T2P_B1cor.mat",
+        "_T1T2P.mat",
+        "_T2map.nii",
+    ]
+
+    # Fixed filenames independent of the MRF prefix
+    FIXED_FILES: list[str] = [
+        "my_diary.txt",
+        "myinfo.mat",
+        "myscript_recon_v16.m",
+    ]
+
+    # acq label used in the subject/session-specific .dat filename
+    DAT_ACQ: str = "MRFxa60"
+
+    # Anchor suffixes used to discover the MRF prefix from whatever is on disk
+    _PREFIX_ANCHORS: list[str] = ["_T1map.nii", "_T2map.nii", "_PDmap.nii", "_B0B1.mat"]
+
+    @property
+    def name(self) -> str:
+        return "qmri"
+
+    @property
+    def description(self) -> str:
+        n = len(self.MRF_SUFFIXES) + len(self.FIXED_FILES) + 1
+        return f"qMRI MRF outputs — {n} files under anat/sub-XX_ses-XX/"
+
+    def get_session_dir(self, analysis_dir: Path, sub: str, ses: str) -> Path:
+        return analysis_dir / sub / ses / "anat" / f"{sub}_{ses}"
+
+    def get_expected_subfolders(
+        self, analysis_dir: Path, sub: str, ses: str
+    ) -> list[Path]:
+        return [
+            analysis_dir / sub / ses / "anat",
+            self.get_session_dir(analysis_dir, sub, ses),
+        ]
+
+    def _discover_mrf_prefix(self, session_dir: Path) -> str | None:
+        """Return the MRF prefix by matching any known anchor suffix on disk."""
+        for f in session_dir.iterdir():
+            if not f.is_file():
+                continue
+            for anchor in self._PREFIX_ANCHORS:
+                if f.name.endswith(anchor):
+                    return f.name[: -len(anchor)]
+        return None
+
+    def get_expected_groups(self, session_dir: Path) -> dict[str, list[str]]:
+        if not session_dir.is_dir():
+            return {}
+
+        # Path layout: .../sub-XX/ses-XX/anat/sub-XX_ses-XX
+        ses = session_dir.parent.parent.name  # ses-XX
+        sub = session_dir.parent.parent.parent.name  # sub-XX
+
+        prefix = self._discover_mrf_prefix(session_dir)
+        if prefix is None:
+            # Directory exists but no MRF anchor file found — report as missing
+            return {"mrf": ["<MRF_prefix>_T1map.nii"]}
+
+        mrf_files = [f"{prefix}{s}" for s in self.MRF_SUFFIXES]
+        dat_file = f"{sub}_{ses}_acq-{self.DAT_ACQ}_run-01.dat"
+
+        return {"mrf": mrf_files + self.FIXED_FILES + [dat_file]}
+
+    def get_default_combinations(self) -> list[tuple[str, str]]:
+        return default_combinations()
+
+
+# =============================================================================
+# 11. ANALYSIS SPEC: fMRIPrep
 # =============================================================================
 class FMRIPrepSpec(AnalysisSpec):
     """fMRIPrep derivatives: analysis_dir / sub-XX / ses-XX / {anat,func,figures}"""
@@ -1609,12 +1727,10 @@ class FMRIPrepSpec(AnalysisSpec):
         self, analysis_dir: Path, sub: str, ses: str
     ) -> list[Path]:
         session = analysis_dir / sub / ses
-        return [session / mod for mod in self.MODALITY_PATTERNS] + [
-            session / "figures"
-        ]
+        return [session / mod for mod in self.MODALITY_PATTERNS] + [session / "figures"]
 
     def get_expected_groups(self, session_dir: Path) -> dict[str, list[str]]:
-        # sub and ses are going with session_dir, if session_dir is func/ then parent is ses and grandparent is sub        
+        # sub and ses are going with session_dir, if session_dir is func/ then parent is ses and grandparent is sub
         sub = session_dir.parent.name
         ses = session_dir.name
         groups: dict[str, list[str]] = {}
@@ -1628,12 +1744,13 @@ class FMRIPrepSpec(AnalysisSpec):
 
 
 # =============================================================================
-# 11. ANALYSIS SPEC: GLM, RTP — placeholders
+# 12. ANALYSIS SPEC: GLM, RTP — placeholders
 # =============================================================================
 
 
 class GLMSpec(AnalysisSpec):
     """GLM analysis — customize EXPECTED_SUFFIXES for your pipeline."""
+
     EXPECTED_contrasts = [
         "AllvsNull",
         "PERvsNull",
@@ -1666,11 +1783,12 @@ class GLMSpec(AnalysisSpec):
         "RWvsFace",
         "RWvsLimbs",
         "RWvsSD",
-        "FacesvsLimbs"
+        "FacesvsLimbs",
     ]
     EXPECTED_SUFFIXES = [
         "stat-*.func.gii",  # placeholder — edit for your pipeline
     ]
+
     @property
     def name(self) -> str:
         return "glm"
@@ -1687,10 +1805,16 @@ class GLMSpec(AnalysisSpec):
         return analysis_dir / sub / ses
 
     def get_expected_groups(self, session_dir: Path) -> dict[str, list[str]]:
-        # sub and ses are going with session_dir, if session_dir is func/ then parent is ses and grandparent is sub        
+        # sub and ses are going with session_dir, if session_dir is func/ then parent is ses and grandparent is sub
         sub = session_dir.parent.name
         ses = session_dir.name
-        return {"glm_outputs": [f"{sub}_{ses}_*{c}_{s}" for c in self.EXPECTED_contrasts for s in self.EXPECTED_SUFFIXES]}
+        return {
+            "glm_outputs": [
+                f"{sub}_{ses}_*{c}_{s}"
+                for c in self.EXPECTED_contrasts
+                for s in self.EXPECTED_SUFFIXES
+            ]
+        }
 
     def get_default_combinations(self) -> list[tuple[str, str]]:
         return default_combinations()
@@ -1717,14 +1841,14 @@ class RTPSpec(AnalysisSpec):
         return analysis_dir / sub / ses
 
     def get_expected_groups(self, session_dir: Path) -> dict[str, list[str]]:
-        # sub and ses are going with session_dir, if session_dir is func/ then parent is ses and grandparent is sub        
+        # sub and ses are going with session_dir, if session_dir is func/ then parent is ses and grandparent is sub
         sub = session_dir.parent.name
         ses = session_dir.name
         return {"rtp_outputs": [f"{sub}_{ses}_{s}" for s in self.EXPECTED_SUFFIXES]}
 
 
 # =============================================================================
-# 12. SPEC REGISTRY
+# 13. SPEC REGISTRY
 # =============================================================================
 # [DEV] append here new modality
 SPEC_REGISTRY: dict[str, AnalysisSpec] = {
@@ -1734,6 +1858,7 @@ SPEC_REGISTRY: dict[str, AnalysisSpec] = {
     "bidsdwi": BIDSDWISpec(),
     "bidsfuncsbref": BIDSFuncSBRefSpec(),
     "bidsscantsv": BIDSScanstsvSpec(),
+    "qmri": BIDSQMRISpec(),
     "fmriprep": FMRIPrepSpec(),
     "glm": GLMSpec(),
     "rtp": RTPSpec(),
@@ -1741,7 +1866,7 @@ SPEC_REGISTRY: dict[str, AnalysisSpec] = {
 
 
 # =============================================================================
-# 13. CLI
+# 14. CLI
 # =============================================================================
 
 
@@ -1761,44 +1886,62 @@ def load_subseslist_from_file(filepath: Path) -> list[tuple[str, str]]:
             if not row or row[0].strip().lower() in ("sub", "subject", "#", ""):
                 continue
             if len(row) >= 2:
-                pairs.append((
-                    row[0].strip().replace("sub-", ""),
-                    row[1].strip().replace("ses-", ""),
-                ))
+                pairs.append(
+                    (
+                        row[0].strip().replace("sub-", ""),
+                        row[1].strip().replace("ses-", ""),
+                    )
+                )
     return pairs
 
 
 @app.command()
 def check(
     analysis_dir: Path = typer.Argument(
-        ..., help="Path to analysis root directory.", exists=True,
+        ...,
+        help="Path to analysis root directory.",
+        exists=True,
     ),
     analysis_type: str = typer.Argument(
-        ..., help=f"Analysis type: {', '.join(SPEC_REGISTRY.keys())}",
+        ...,
+        help=f"Analysis type: {', '.join(SPEC_REGISTRY.keys())}",
     ),
     subseslist: Optional[list[str]] = typer.Option(
-        None, "--subseslist", "-s", help="Sub,ses pairs: -s 01,02 -s 03,04",
+        None,
+        "--subseslist",
+        "-s",
+        help="Sub,ses pairs: -s 01,02 -s 03,04",
     ),
     subseslist_file: Optional[Path] = typer.Option(
-        None, "--subseslist-file", "-f", help="CSV with sub,ses columns.",
+        None,
+        "--subseslist-file",
+        "-f",
+        help="CSV with sub,ses columns.",
     ),
     output_dir: Path = typer.Option(
-        Path("."), "--output-dir", "-o", help="Directory for output reports.",
+        Path("."),
+        "--output-dir",
+        "-o",
+        help="Directory for output reports.",
     ),
     verbose: bool = typer.Option(
-        False, "--verbose", "-v", help="Show complete groups too.",
+        False,
+        "--verbose",
+        "-v",
+        help="Show complete groups too.",
     ),
     show_distribution: bool = typer.Option(
-        True, "--show-distribution/--no-distribution",
+        True,
+        "--show-distribution/--no-distribution",
         help="Show group count distribution.",
     ),
     max_workers: int = typer.Option(
         30, "--workers", "-j", help="Parallel workers for I/O (default: 30)."
     ),
     check_corrupted: bool = typer.Option(
-        False, "--check-corrupted", help="Check for corrupted files (slow).")
+        False, "--check-corrupted", help="Check for corrupted files (slow)."
+    ),
 ) -> None:
-
     """Check analysis integrity against expected file/folder specs."""
 
     if analysis_type not in SPEC_REGISTRY:
@@ -1819,20 +1962,17 @@ def check(
             raise typer.Exit(code=1)
         pairs = load_subseslist_from_file(subseslist_file)
     else:
-        defaults = spec.get_default_combinations() #default_combinations()
+        defaults = spec.get_default_combinations()  # default_combinations()
         if defaults:
             pairs = [
-                (s.replace("sub-", ""), ss.replace("ses-", ""))
-                for s, ss in defaults
+                (s.replace("sub-", ""), ss.replace("ses-", "")) for s, ss in defaults
             ]
             console.print(
                 f"[dim]Using default sub/ses from {spec.name} spec "
                 f"({len(pairs)} combinations)[/dim]"
             )
         else:
-            console.print(
-                "[red]Error:[/red] Provide --subseslist or --subseslist-file"
-            )
+            console.print("[red]Error:[/red] Provide --subseslist or --subseslist-file")
             raise typer.Exit(code=1)
 
     if not pairs:
@@ -1847,9 +1987,11 @@ def check(
     console.print(f"Sessions: {len(pairs)}\n")
 
     if max_workers:
-        results = run_integrity_check_parallel(spec, analysis_dir, pairs, max_workers,check_corrupted)
+        results = run_integrity_check_parallel(
+            spec, analysis_dir, pairs, max_workers, check_corrupted
+        )
     else:
-        results = run_integrity_check_single(spec, analysis_dir, pairs,check_corrupted)
+        results = run_integrity_check_single(spec, analysis_dir, pairs, check_corrupted)
     # Output
     print_summary(results, spec)
     if show_distribution:
@@ -1859,9 +2001,9 @@ def check(
     output_dir.mkdir(parents=True, exist_ok=True)
     brief_path = output_dir / f"{spec.name}_subses_summary.txt"
     detail_path = output_dir / f"{spec.name}_detailed.log"
-    brief_df=write_brief_csv(results, brief_path)
+    brief_df = write_brief_csv(results, brief_path)
     write_detailed_log(results, spec, detail_path)
-    #[DEV] add more outputs here as needed, e.g. corrupted list, timing mismatch list, matrix CSV, etc.]
+    # [DEV] add more outputs here as needed, e.g. corrupted list, timing mismatch list, matrix CSV, etc.]
     # write the corrupted txt
     corrupted_path = output_dir / f"{spec.name}_corrupted.txt"
     # write the corrupted txt
@@ -1879,11 +2021,12 @@ def check(
     matrix_path = output_dir / f"{spec.name}_matrix_detailed.csv"
     write_matrix_from_result(results, matrix_path)
     matrix_path_simple = output_dir / f"{spec.name}_matrix_simple.csv"
-    write_matrix_from_brief_csv(brief_df, matrix_path_simple)  
-    
+    write_matrix_from_brief_csv(brief_df, matrix_path_simple)
+
     console.print(f"\n[bold]Brief CSV:[/bold]    {brief_path}")
     console.print(f"[bold]Detailed log:[/bold] {detail_path}")
     console.print(f"[bold]Matrix CSV:[/bold]   {matrix_path}")
+
 
 if __name__ == "__main__":
     app()
