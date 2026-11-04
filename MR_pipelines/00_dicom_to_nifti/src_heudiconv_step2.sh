@@ -20,10 +20,12 @@ module list
 echo "Subject: ${sub} "
 # try the no session thing Feb 09 2025
 echo "Session: ${ses} "
+bind_export=""
+[[ -d /export ]] && bind_export="--bind /export:/export"
 cmd="singularity run --cleanenv --no-home --containall \
         	--bind ${basedir}:/base \
 	    	--bind /bcbl:/bcbl \
-			--bind /export:/export \
+			${bind_export} \
         	${sing_path} \
 			-d ${dcm_dir}/sub-{subject}/ses-{session}/* \
 	    	--subjects ${sub} \

@@ -7,6 +7,8 @@ re-explain the architecture each session.
 Shared neuroimaging script conventions (typer/rich CLI, one-sub-per-call,
 parallel option, timing, bash launcher skeleton) are in `../CLAUDE.md`.
 
+**Open / handed-off work is tracked in `HANDOFF.md`. Read it first.**
+
 ---
 
 ## Project overview
@@ -17,7 +19,7 @@ BIDS-compliant way. Developed at BCBL (Basque Center on Cognition, Brain
 and Language). Right know it is under development.
 
 - **Repo**: https://github.com/garikoitz/launchcontainers
-- **Package manager**: Poetry (`pyproject.toml`)
+- **Package manager**: uv (`pyproject.toml` + `uv.lock`, hatchling backend)
 - **Entry points**: `lc` (pipeline launcher), `checker` (integrity checker)
 - **Python**: 3.10+
 
@@ -26,12 +28,41 @@ and Language). Right know it is under development.
 ## Install (development)
 
 ```bash
-pip install pipx && pipx install poetry
 git clone https://github.com/garikoitz/launchcontainers.git
 cd launchcontainers
-poetry env use python3 && poetry install
-poetry shell
+uv sync                       # .venv from pyproject.toml + uv.lock
+uv run lc --help              # no activation needed
 ```
+
+Launchers (`launchcontainers/tests/glm_strategy/*.sh`):
+- local: `uv run --project <repo> python <script>`
+- SGE / Slurm: `uv sync` once on the submit host, jobs call
+  `<repo>/.venv/bin/python` directly (uv cannot lock files on cajal03,
+  and parallel `uv run`s race on the same `.venv`).
+
+`requirements.txt` and `environment.yml` are derived from `pyproject.toml`;
+update all three together.
+
+---
+
+## Host paths — `/export/home` vs `/home`
+
+The same user home is mounted under different prefixes per machine:
+
+| Machine | Home prefix |
+|---|---|
+| ips, lmc02, cajal03, cajal04 | `/export/home/tlei/...` |
+| brodmann (where Claude runs) | `/home/tlei/...` (`/export` does not exist) |
+
+- Swap the prefix (`/export/home/tlei` ↔ `/home/tlei`) when moving a path
+  between these machines; `/bcbl/...` paths are the same everywhere.
+- On brodmann, `/home/tlei/tlei` resolves to `/bcbl/home/home_n-z/tlei`.
+- Lab DICOMs: symlinks in `VOTCLOC/main_exp/dicom` written on the cluster
+  point to `/export/home/tlei/lab/MRI/VOTCLOC_22324/...`; on brodmann the same
+  data is at `/bcbl/data/MRI/VOTCLOC_22324/...` (use this form for new links —
+  it works on every machine).
+- The heudiconv `src_heudiconv_step*.sh` scripts bind `/export` only when it
+  exists, so they run on both kinds of host.
 
 ---
 
