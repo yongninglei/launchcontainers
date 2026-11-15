@@ -22,10 +22,10 @@ or substantial portions of the Software.
 from __future__ import annotations
 
 import os
-import os.path as op
 import subprocess as sp
 
 from launchcontainers.log_setup import console
+from launchcontainers.utils import resolve_deriv_dir
 
 
 def cli_show_folder_struc(analysis_dir, sub, ses):
@@ -81,7 +81,6 @@ def print_option_for_review(
     containerdir = lc_config["general"]["containerdir"]
     version = lc_config["container_specific"][container]["version"]
     analysis_name = lc_config["general"]["analysis_name"]
-    deriv_layout = lc_config["general"]["deriv_layout"]
     all_containers = os.listdir(containerdir)
     # add a check to see if container is there
     container_sif_name = f"{container}_{version}.sif"
@@ -116,21 +115,9 @@ def print_option_for_review(
             "anat_analysis_name"
         ]
 
-        if deriv_layout == "legacy":
-            pre_anatrois_dir = op.join(
-                basedir,
-                bidsdir_name,
-                "derivatives",
-                f"{precontainer_anat}",
-                "analysis-" + anat_analysis_name,
-            )
-        else:
-            pre_anatrois_dir = op.join(
-                basedir,
-                bidsdir_name,
-                "derivatives",
-                f"{precontainer_anat}_{anat_analysis_name}",
-            )
+        pre_anatrois_dir = resolve_deriv_dir(
+            lc_config, precontainer_anat, anat_analysis_name
+        )
 
         console.print(
             f"\n ### The source FSMASK and T1w dir: {pre_anatrois_dir}",
@@ -151,37 +138,13 @@ def print_option_for_review(
             "preproc_analysis_name"
         ]
         # define the pre containers
-        if deriv_layout == "legacy":
-            pre_anatrois_dir = op.join(
-                basedir,
-                bidsdir_name,
-                "derivatives",
-                f"{precontainer_anat}",
-                "analysis-" + anat_analysis_name,
-            )
-        else:
-            pre_anatrois_dir = op.join(
-                basedir,
-                bidsdir_name,
-                "derivatives",
-                f"{precontainer_anat}_{anat_analysis_name}",
-            )
+        pre_anatrois_dir = resolve_deriv_dir(
+            lc_config, precontainer_anat, anat_analysis_name
+        )
 
-        if deriv_layout == "legacy":
-            pre_preproc_dir = op.join(
-                basedir,
-                bidsdir_name,
-                "derivatives",
-                precontainer_preproc,
-                "analysis-" + preproc_analysis_name,
-            )
-        else:
-            pre_preproc_dir = op.join(
-                basedir,
-                bidsdir_name,
-                "derivatives",
-                f"{precontainer_preproc}_{preproc_analysis_name}",
-            )
+        pre_preproc_dir = resolve_deriv_dir(
+            lc_config, precontainer_preproc, preproc_analysis_name
+        )
 
         console.print(
             f"\n### The source FSMASK and ROI dir is: {pre_anatrois_dir} \n"

@@ -28,6 +28,7 @@ import zipfile
 from datetime import datetime
 
 from launchcontainers.log_setup import console, log_info
+from launchcontainers.utils import resolve_deriv_dir
 
 
 def check_tractparam(lc_config, sub, ses, tractparam_df):
@@ -75,9 +76,7 @@ def check_tractparam(lc_config, sub, ses, tractparam_df):
     required_rois = set(roi_list)
 
     # Define the zip file
-    basedir = lc_config["general"]["basedir"]
     container = lc_config["general"]["container"]
-    bidsdir_name = lc_config["general"]["bidsdir_name"]
     precontainer_anat = lc_config["container_specific"][container]["precontainer_anat"]
     anat_analysis_name = lc_config["container_specific"][container][
         "anat_analysis_name"
@@ -85,11 +84,7 @@ def check_tractparam(lc_config, sub, ses, tractparam_df):
 
     # Define where the fs.zip file is
     fs_zip = op.join(
-        basedir,
-        bidsdir_name,
-        "derivatives",
-        f"{precontainer_anat}",
-        "analysis-" + anat_analysis_name,
+        resolve_deriv_dir(lc_config, precontainer_anat, anat_analysis_name),
         "sub-" + sub,
         "ses-" + ses,
         "output",

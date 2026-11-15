@@ -121,13 +121,14 @@ def gen_RTP2_cmd(
     deriv_subses_dir = os.path.join(analysis_dir, f"sub-{sub}", f"ses-{ses}")
     # get the cmd prefix
     cmd_prefix = gen_cmd_prefix(lc_config)
+    cmd = None
     if container in ["anatrois", "rtppreproc", "rtp-pipeline"]:
         cmd = (
             f"{cmd_prefix} "
             f"--bind {deriv_subses_dir}/input:/flywheel/v0/input:ro "
             f"--bind {deriv_subses_dir}/output:/flywheel/v0/output "
             f"--bind {deriv_subses_dir}/output/log/config.json:/flywheel/v0/config.json "
-            f"{container_name} 1>> {logfilename}.log 2>> {logfilename}.err  "
+            f"{container_name} 1> {logfilename}.log 2> {logfilename}.err  "
         )
 
     if container == "freesurferator":

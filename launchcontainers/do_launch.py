@@ -283,10 +283,16 @@ def main(workdir: str, run_lc: bool = False):
     os.makedirs(job_script_dir, exist_ok=True)
     # 6. generate command to print
     # === Ask user to confirm before launching anything ===
-    ans = input(
-        "You are about to launch jobs, please review the "
-        "commandline info. Continue? [y / N]: ",
-    )
+    # Only a real submission (-R) needs confirmation; a dry run changes nothing.
+    ans = "y"
+    if run_lc:
+        try:
+            ans = input(
+                "You are about to launch jobs, please review the "
+                "commandline info. Continue? [y / N]: ",
+            )
+        except EOFError:
+            ans = ""
     if ans.strip().lower() not in ("y", "yes"):
         console.print("Aborted by user.", style="cyan")
         sys.exit(0)

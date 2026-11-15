@@ -59,7 +59,11 @@ def _create_analysis_dir(lc_config: dict) -> str:
 
     if container == "l1_surface":
         analysis_dir = op.join(
-            basedir, bidsdir_name, "derivatives", "l1_surface", f"analysis-{analysis_name}"
+            basedir,
+            bidsdir_name,
+            "derivatives",
+            "l1_surface",
+            f"analysis-{analysis_name}",
         )
     elif deriv_layout == "legacy":
         version = lc_config["container_specific"][container]["version"]
@@ -120,6 +124,11 @@ def _chmod777(path: str) -> None:
                 pass
 
 
+# Set as soon as the analysis dir exists, so the CLI can copy the logs there
+# even when prepare fails afterwards.
+LAST_ANALYSIS_DIR: str | None = None
+
+
 def main(parse_namespace) -> tuple[bool, str | None]:
     """
     Run the full prepare workflow.
@@ -144,6 +153,7 @@ def main(parse_namespace) -> tuple[bool, str | None]:
         ``(success, analysis_dir)`` where *analysis_dir* is ``None`` only
         when the GLM config section is missing.
     """
+    global LAST_ANALYSIS_DIR
     lc_config = do.read_yaml(parse_namespace.lc_config)
     container = lc_config["general"]["container"]
     basedir = lc_config["general"]["basedir"]
@@ -153,7 +163,7 @@ def main(parse_namespace) -> tuple[bool, str | None]:
     df_subses = do.parse_subses_list(sub_ses_list_path)
 
     if container in _DWI_PIPELINES:
-        analysis_dir = _create_analysis_dir(lc_config)
+        analysis_dir = LAST_ANALYSIS_DIR = _create_analysis_dir(lc_config)
         _prepare_analysis_dir(parse_namespace, analysis_dir, lc_config)
 
         console.print("Reading the BIDS layout...", style="blue")
@@ -163,8 +173,8 @@ def main(parse_namespace) -> tuple[bool, str | None]:
         console.print(f"{container}: running RTP2 prepare", style="dim")
         success = dwi_prepare.main(parse_namespace, analysis_dir, df_subses, layout)
         console.print(
-            f"\n #####\n \U0001f37a Analysis dir is \n{analysis_dir}\n",
-            style="bold red",
+            f"Analysis dir is {analysis_dir}",
+            style="bold cyan",
         )
         _chmod777(analysis_dir)
         return success, analysis_dir
@@ -181,7 +191,7 @@ def main(parse_namespace) -> tuple[bool, str | None]:
             GLMPrepare.write_example_config()
             return False, None
 
-        analysis_dir = _create_analysis_dir(lc_config)
+        analysis_dir = LAST_ANALYSIS_DIR = _create_analysis_dir(lc_config)
         _prepare_analysis_dir(parse_namespace, analysis_dir, lc_config)
 
         console.print("Reading the BIDS layout...", style="blue")
@@ -191,8 +201,8 @@ def main(parse_namespace) -> tuple[bool, str | None]:
         console.print(f"{container}: running GLM prepare", style="dim")
         success = run_glm_prepare(lc_config, df_subses, layout)
         console.print(
-            f"\n #####\n \U0001f37a Analysis dir is \n{analysis_dir}\n",
-            style="bold red",
+            f"Analysis dir is {analysis_dir}",
+            style="bold cyan",
         )
         _chmod777(analysis_dir)
         return success, analysis_dir

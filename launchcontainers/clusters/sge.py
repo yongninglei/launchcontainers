@@ -43,8 +43,8 @@ def gen_sge_array_job_script(
     job_script = f"""#!/bin/bash
 #$ -t 1-{n_jobs}
 #$ -N {job_name}
-#$ -o {log_dir}/{job_name}_$JOB_ID_$TASK_ID.out
-#$ -e {log_dir}/{job_name}_$JOB_ID_$TASK_ID.err
+#$ -o {log_dir}/{job_name}_$JOB_ID.$TASK_ID.out
+#$ -e {log_dir}/{job_name}_$JOB_ID.$TASK_ID.err
 #$ -l h_rt={walltime}
 #$ -S /bin/bash
 #$ -q {queue}

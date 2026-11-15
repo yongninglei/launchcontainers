@@ -64,14 +64,13 @@ echo "Job ID: $SLURM_JOB_ID"
 COMMAND="your_command_here"
 echo "Executing: $COMMAND"
 eval $COMMAND
-
-echo "Task $SLURM_ARRAY_TASK_ID completed successfully"
-
 exitcode=$?
 
+echo "Task $SLURM_ARRAY_TASK_ID completed with exit code $exitcode"
+
 # Output results to a table
-echo "sub-$subject $SLURM_ARRAY_TASK_ID $exitcode" \
-    >> $LOG_DIR/$SLURM_JOB_NAME_$SLURM_ARRAY_JOB_ID.tsv
+echo "$SLURM_ARRAY_TASK_ID $exitcode" \
+    >> $LOG_DIR/${{SLURM_JOB_NAME}}_${{SLURM_ARRAY_JOB_ID}}.tsv
 echo Finished tasks $SLURM_ARRAY_TASK_ID with exit code $exitcode
 exit $exitcode
 

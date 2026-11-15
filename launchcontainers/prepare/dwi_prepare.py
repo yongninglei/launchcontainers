@@ -261,7 +261,9 @@ def gen_config_dict_and_copy(parser_namespace, analysis_dir):
             )
             config_json_dict[container]["tractparams"] = f"tractparams/{config_fname}"
         if fsmask:
-            config_fname = copy_rtp2_configs(container, fsmask, analysis_dir, "fsmask")
+            config_fname = copy_rtp2_configs(
+                container, fsmask, analysis_dir, force, "fsmask"
+            )
             config_json_dict[container]["fsmask"] = f"fsmask/{config_fname}"
         if use_qmap:
             config_fname = "qmap.zip"
@@ -467,113 +469,133 @@ def main(parser_namespace, analysis_dir, df_subses, layout):
         style="cyan",
     )
 
+    # anatrois/freesurferator retest sessions are symlinks to the src session,
+    # so every src session must be staged before the sessions that link to it.
+    use_src_session = None
+    if container in ["anatrois", "freesurferator"]:
+        use_src_session = lc_config["container_specific"][container].get(
+            "use_src_session"
+        )
+        if use_src_session is not None:
+            use_src_session = str(use_src_session).removeprefix("ses-")
+            if use_src_session.isdigit():
+                use_src_session = use_src_session.zfill(2)
+            df_subses = sorted(df_subses, key=lambda p: p[1] != use_src_session)
+
+    failed = []
     for sub, ses in df_subses:
-
-        console.print(
-            "\n"
-            + "The current ses is: \n"
-            + f"sub-{sub}_ses-{ses}_{container}_{version}\n",
-            style="bold red",
-        )
-
-        tmpdir = op.join(
-            analysis_dir,
-            "sub-" + sub,
-            "ses-" + ses,
-            "output",
-            "tmp",
-        )
-        # Tiger: for now, the log dir for container is under output folder,
-        # mainly bc RTP will wrote RTP.txt to output/log
-        # don't change this
-        container_logdir = op.join(
-            analysis_dir,
-            "sub-" + sub,
-            "ses-" + ses,
-            "output",
-            "log",
-        )
-        # For all the container, create ses-/log and ses-/output/tmp
-        # if we will use 1 session anatrois/freesurferator as ref,
-        # we will not creat outoput dir for other session
-
-        if container not in ["anatrois", "freesurferator"]:
-            os.makedirs(tmpdir, exist_ok=True)
-            os.makedirs(container_logdir, exist_ok=True)
-        else:
-            use_src_session = lc_config["container_specific"][container][
-                "use_src_session"
-            ]
-            current_session_dir = op.join(analysis_dir, "sub-" + sub, "ses-" + ses)
-            src_session_dir = op.join(
-                analysis_dir, "sub-" + sub, "ses-" + use_src_session
-            )
-
-            if ses == use_src_session:
-                # this is src session, we will create tmp and log for this session,
-                # and other session will link to this session
-                os.makedirs(tmpdir, exist_ok=True)
-                os.makedirs(container_logdir, exist_ok=True)
-            elif os.path.islink(current_session_dir) or os.path.exists(src_session_dir):
-                # retest session and src already exists, skip
-                console.print(
-                    f"\n You are preparing for the session:{ses} that are"
-                    + f"not the reference session:{use_src_session}",
-                    style="yellow",
-                )
-                console.print("\n Not creating tmp dir, skip", style="yellow")
-            else:
-                # retest session but src doesn't exist yet, warn loudly
-                console.print(
-                    f"src session {use_src_session} not found, cannot skip!",
-                    style="yellow",
-                )
         try:
-            do.copy_file(
-                parser_namespace.lc_config,
-                op.join(container_logdir, "lc_config.yaml"),
+            _prepare_one_session(
+                parser_namespace,
+                analysis_dir,
+                lc_config,
+                config_json_dict,
+                layout,
+                container,
+                version,
                 force,
+                use_src_session,
+                sub,
+                ses,
             )
-            config_json_path = config_json_dict["config_path"]
-            do.copy_file(
-                config_json_path, op.join(container_logdir, "config.json"), force
-            )
-        except Exception:
+        except Exception as e:
             console.print(
-                f"\n copy config file and create tmp failed for sub-{sub}_ses-{ses}",
-                style="red",
+                f"FAILED sub-{sub}_ses-{ses}: {type(e).__name__}: {e}", style="red"
             )
+            failed.append((sub, ses))
 
-        if container in ["rtppreproc", "rtp2-preproc"]:
-            prepare_input.rtppreproc(
-                config_json_dict,
-                analysis_dir,
-                lc_config,
-                sub,
-                ses,
-                layout,
-            )
-        elif container in ["rtp-pipeline", "rtp2-pipeline"]:
-            prepare_input.rtppipeline(
-                config_json_dict,
-                analysis_dir,
-                lc_config,
-                sub,
-                ses,
-            )
-        elif container in ["anatrois", "freesurferator"]:
-            prepare_input.anatrois(
-                config_json_dict,
-                analysis_dir,
-                lc_config,
-                sub,
-                ses,
-                layout,
-            )
-        else:
-            console.print(
-                f"\n{container} is not created, check for typos or "
-                "contact admin for singularity images\n",
-                style="red",
-            )
+    if failed:
+        console.print(
+            f"{len(failed)} of {len(df_subses)} session(s) failed to prepare: "
+            + ", ".join(f"sub-{s}_ses-{e}" for s, e in failed),
+            style="red",
+        )
+        return False
     return True
+
+
+def _prepare_one_session(
+    parser_namespace,
+    analysis_dir,
+    lc_config,
+    config_json_dict,
+    layout,
+    container,
+    version,
+    force,
+    use_src_session,
+    sub,
+    ses,
+):
+    """Stage the inputs of one sub/ses; raise on any failure."""
+    console.print(
+        f"The current ses is: sub-{sub}_ses-{ses}_{container}_{version}",
+        style="bold cyan",
+    )
+
+    tmpdir = op.join(
+        analysis_dir,
+        "sub-" + sub,
+        "ses-" + ses,
+        "output",
+        "tmp",
+    )
+    # Tiger: for now, the log dir for container is under output folder,
+    # mainly bc RTP will wrote RTP.txt to output/log
+    # don't change this
+    container_logdir = op.join(
+        analysis_dir,
+        "sub-" + sub,
+        "ses-" + ses,
+        "output",
+        "log",
+    )
+    # A retest session of anatrois/freesurferator is a symlink to the src
+    # session (made in prepare_input.anatrois); it gets no dirs or configs
+    # of its own. Everything else gets output/tmp and output/log.
+    is_retest = use_src_session is not None and ses != use_src_session
+    if not is_retest:
+        os.makedirs(tmpdir, exist_ok=True)
+        os.makedirs(container_logdir, exist_ok=True)
+        do.copy_file(
+            parser_namespace.lc_config,
+            op.join(container_logdir, "lc_config.yaml"),
+            force,
+        )
+        do.copy_file(
+            config_json_dict["config_path"],
+            op.join(container_logdir, "config.json"),
+            force,
+        )
+
+    if container in ["rtppreproc", "rtp2-preproc"]:
+        prepare_input.rtppreproc(
+            config_json_dict,
+            analysis_dir,
+            lc_config,
+            sub,
+            ses,
+            layout,
+        )
+    elif container in ["rtp-pipeline", "rtp2-pipeline"]:
+        prepare_input.rtppipeline(
+            config_json_dict,
+            analysis_dir,
+            lc_config,
+            sub,
+            ses,
+        )
+    elif container in ["anatrois", "freesurferator"]:
+        prepare_input.anatrois(
+            config_json_dict,
+            analysis_dir,
+            lc_config,
+            sub,
+            ses,
+            layout,
+        )
+    else:
+        raise ValueError(
+            f"{container} is not supported, check for typos or "
+            "contact admin for singularity images"
+        )

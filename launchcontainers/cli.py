@@ -24,7 +24,7 @@ from datetime import datetime
 
 import typer
 
-from launchcontainers.log_setup import console, setup_verbosity, set_log_files
+from launchcontainers.log_setup import _logger, console, setup_verbosity, set_log_files
 
 app = typer.Typer()
 
@@ -62,15 +62,27 @@ def prepare(
     )
     from launchcontainers import do_prepare
 
-    console.print("\n....running prepare mode", style="bold red")
-    _, analysis_dir = do_prepare.main(parse_namespace)
-    # Copy logs to analysis_dir/prepare_log/ only when an analysis dir was created
-    if analysis_dir is not None:
-        console.print("Copied console log to analysis_dir", style="bold cyan")
-        prepare_log_dir = op.join(analysis_dir, "prepare_log")
-        os.makedirs(prepare_log_dir, exist_ok=True)
-        shutil.copy(log_fpath, op.join(prepare_log_dir, op.basename(log_fpath)))
-        shutil.copy(err_fpath, op.join(prepare_log_dir, op.basename(err_fpath)))
+    console.print("....running prepare mode", style="bold cyan")
+    success, analysis_dir = False, None
+    try:
+        success, analysis_dir = do_prepare.main(parse_namespace)
+    except Exception:
+        _logger.exception("lc prepare crashed")
+        raise
+    finally:
+        # Copy logs to analysis_dir/prepare_log/ whenever an analysis dir exists,
+        # including when prepare failed — that is when the logs matter most.
+        if analysis_dir is None:
+            analysis_dir = getattr(do_prepare, "LAST_ANALYSIS_DIR", None)
+        if analysis_dir is not None and op.isdir(analysis_dir):
+            prepare_log_dir = op.join(analysis_dir, "prepare_log")
+            os.makedirs(prepare_log_dir, exist_ok=True)
+            shutil.copy(log_fpath, op.join(prepare_log_dir, op.basename(log_fpath)))
+            shutil.copy(err_fpath, op.join(prepare_log_dir, op.basename(err_fpath)))
+            console.print(f"Copied prepare logs to {prepare_log_dir}", style="cyan")
+    if not success:
+        console.print("lc prepare finished with failures", style="red")
+        raise typer.Exit(1)
 
 
 @app.command()
@@ -93,7 +105,7 @@ def run(
     )
     from launchcontainers import do_launch
 
-    console.print("\n....running run mode\n", style="bold red")
+    console.print("....running run mode", style="bold cyan")
     do_launch.main(workdir, run_lc)
 
 

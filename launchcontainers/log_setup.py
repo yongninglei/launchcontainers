@@ -49,6 +49,7 @@ Color scheme (mirrors color_codes.txt)
 - WARNING       ``"yellow"``     Warning messages
 - ERROR         ``"red"``        Error messages
 - CRITICAL      ``"bold red"``   Critical messages and important notifications
+                 (plain console.print with "bold red" is logged as INFO)
 - BLUE_INFO     ``"blue"``       Specific info (e.g. container layout)
 """
 
@@ -71,7 +72,8 @@ class _LoggingConsole(Console):
         if not objects:
             return
         msg = " ".join(str(o) for o in objects)
-        if style in ("red", "bold red"):
+        # "bold red" is used package-wide as emphasis for headers, not errors
+        if style == "red":
             _logger.error(msg)
         elif style in ("yellow",):
             _logger.warning(msg)
@@ -80,6 +82,12 @@ class _LoggingConsole(Console):
 
 
 console = _LoggingConsole()
+
+
+def _echo(msg: str, style: str) -> None:
+    """Print to the terminal only; the log_* helpers log to file themselves."""
+    Console.print(console, msg, style=style)
+
 
 # ---------------------------------------------------------------------------
 # Color-scheme constants (mirrors color_codes.txt)
@@ -168,31 +176,31 @@ def set_log_files(log_fpath: str, err_fpath: str) -> None:
 def log_debug(msg: str) -> None:
     """Print a debug message (green). Only shown when --debug is set."""
     if _debug:
-        console.print(msg, style=DEBUG)
+        _echo(msg, DEBUG)
     _logger.debug(msg)
 
 
 def log_info(msg: str) -> None:
     """Print an info message (cyan). Suppressed in --quiet mode."""
     if not _quiet:
-        console.print(msg, style=INFO)
+        _echo(msg, INFO)
     _logger.info(msg)
 
 
 def log_warning(msg: str) -> None:
     """Print a warning message (yellow). Always logged to file."""
     if not _quiet:
-        console.print(msg, style=WARNING)
+        _echo(msg, WARNING)
     _logger.warning(msg)
 
 
 def log_error(msg: str) -> None:
     """Print an error message (red). Always shown and logged."""
-    console.print(msg, style=ERROR)
+    _echo(msg, ERROR)
     _logger.error(msg)
 
 
 def log_critical(msg: str) -> None:
     """Print a critical message (bold red). Always shown and logged."""
-    console.print(msg, style=CRITICAL)
+    _echo(msg, CRITICAL)
     _logger.critical(msg)

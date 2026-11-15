@@ -16,7 +16,6 @@
 # """
 from __future__ import annotations
 
-import csv
 import json
 import os
 import os.path as op
@@ -28,7 +27,6 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
-import pandas as pd
 import yaml
 from yaml.loader import SafeLoader
 
@@ -100,9 +98,12 @@ def parse_subses_list(path: str | Path) -> list[tuple[str, str]]:
     Read a subseslist CSV or TSV file and return (sub, ses) pairs.
 
     The file must have a header row with at least ``sub`` and ``ses`` columns.
-    If a ``RUN`` column is present, only rows where ``RUN == "True"`` are
-    returned; otherwise all rows are included.
-    Values are stripped of whitespace and zero-padded to two digits.
+    If a ``RUN`` column is present, only rows where ``RUN`` is True are
+    returned (case-insensitive); otherwise all rows are included.
+    Blank lines and ``#`` comments are ignored, ``sub-``/``ses-`` prefixes are
+    stripped, and numeric labels are zero-padded to two digits.
+    A malformed row, a RUN value other than True/False, or a duplicate
+    sub/ses is a hard error (``ValueError``): a typo must stop the run.
     TSV files (``.tsv`` extension) are auto-detected; everything else is
     treated as comma-separated.
 
@@ -118,14 +119,50 @@ def parse_subses_list(path: str | Path) -> list[tuple[str, str]]:
     """
     path = Path(path)
     delimiter = "\t" if path.suffix.lower() == ".tsv" else ","
+
+    def _bare(value: str, prefix: str) -> str:
+        v = value.strip()
+        if v.startswith(f"{prefix}-"):
+            v = v[len(prefix) + 1 :]
+        return v.zfill(2) if v.isdigit() else v
+
+    rows = [
+        (lineno, line)
+        for lineno, line in enumerate(path.read_text().splitlines(), start=1)
+        if line.strip() and not line.lstrip().startswith("#")
+    ]
+    if not rows:
+        raise ValueError(f"{path}: subseslist is empty")
+    header = [c.strip() for c in rows[0][1].split(delimiter)]
+    if "sub" not in header or "ses" not in header:
+        raise ValueError(
+            f"{path}:{rows[0][0]}: header must contain 'sub' and 'ses', got {header}"
+        )
+    i_sub, i_ses = header.index("sub"), header.index("ses")
+    i_run = header.index("RUN") if "RUN" in header else None
+
     pairs: list[tuple[str, str]] = []
-    with open(path, newline="") as fh:
-        for row in csv.DictReader(fh, delimiter=delimiter):
-            if "RUN" in row and str(row["RUN"]).strip() != "True":
+    seen: set[tuple[str, str]] = set()
+    for lineno, line in rows[1:]:
+        cols = [c.strip() for c in line.split(delimiter)]
+        needed = max(i for i in (i_sub, i_ses, i_run) if i is not None)
+        if len(cols) <= needed or not cols[i_sub] or not cols[i_ses]:
+            raise ValueError(f"{path}:{lineno}: malformed row {line!r}")
+        if i_run is not None:
+            run = cols[i_run].lower()
+            if run not in ("true", "false"):
+                raise ValueError(
+                    f"{path}:{lineno}: RUN must be True or False, got {cols[i_run]!r}"
+                )
+            if run == "false":
                 continue
-            sub = str(row["sub"]).strip().zfill(2)
-            ses = str(row["ses"]).strip().zfill(2)
-            pairs.append((sub, ses))
+        pair = (_bare(cols[i_sub], "sub"), _bare(cols[i_ses], "ses"))
+        if pair in seen:
+            raise ValueError(
+                f"{path}:{lineno}: duplicate row for sub-{pair[0]} ses-{pair[1]}"
+            )
+        seen.add(pair)
+        pairs.append(pair)
     return pairs
 
 
@@ -300,8 +337,6 @@ def read_yaml(path_to_config_file):
     return config
 
 
-
-
 def copy_file(src_file, dst_file, force):
     """
     Copy a file to a destination path with optional overwrite behavior.
@@ -431,7 +466,7 @@ def force_symlink(file1, file2, force):
                 console.print(
                     "\n" + "Input files are missing, please check \n", style="red"
                 )
-                pass
+                raise
             # If raise [errno 17] the symlink exist,
             # we don't force and print that we keep the original one
             elif n.errno == errno.EEXIST:
@@ -516,3 +551,55 @@ def check_symlink(path: str) -> None:
 
     else:
         console.print(f" {path!r} is not a symlink", style="cyan")
+
+
+# Container names whose derivative dirs are created by ``_create_analysis_dir``.
+# Sorted longest first so "rtp2-preproc" wins over a hypothetical "rtp2".
+_DERIV_CONTAINERS = sorted(
+    (
+        "anatrois",
+        "rtppreproc",
+        "rtp-pipeline",
+        "freesurferator",
+        "rtp2-preproc",
+        "rtp2-pipeline",
+    ),
+    key=len,
+    reverse=True,
+)
+
+
+def resolve_deriv_dir(lc_config: dict, dir_name: str, analysis_name: str) -> str:
+    """
+    Return the derivatives analysis dir of an upstream container run.
+
+    Mirrors ``do_prepare._create_analysis_dir``:
+
+    - ``legacy``: ``derivatives/<container>_<version>/analysis-<analysis>``
+    - otherwise:  ``derivatives/<container>-<version>_<analysis>``
+
+    ``dir_name`` is the config value naming the upstream run (e.g.
+    ``precontainer_anat: freesurferator_0.2.1_7.4.1``). It is accepted in either
+    ``<container>_<version>`` or ``<container>-<version>`` form; for the new
+    layout the first form is converted to the second. Names that do not start
+    with a known container (e.g. a qmap derivative) are used unchanged.
+    """
+    basedir = lc_config["general"]["basedir"]
+    bidsdir_name = lc_config["general"]["bidsdir_name"]
+    deriv_layout = lc_config["general"].get("deriv_layout", "legacy")
+    deriv_root = op.join(basedir, bidsdir_name, "derivatives")
+
+    if deriv_layout == "legacy":
+        return op.join(deriv_root, dir_name, f"analysis-{analysis_name}")
+
+    for cont in _DERIV_CONTAINERS:
+        if dir_name.startswith(cont + "_"):
+            dir_name = f"{cont}-{dir_name[len(cont) + 1 :]}"
+            break
+    return op.join(deriv_root, f"{dir_name}_{analysis_name}")
+
+
+def is_old_anatrois(name: str) -> bool:
+    """True for ``anatrois_4.5.x`` / ``anatrois-4.5.x`` (minor version < 6)."""
+    m = re.match(r"anatrois[-_]\d+\.(\d+)", name)
+    return bool(m) and int(m.group(1)) < 6

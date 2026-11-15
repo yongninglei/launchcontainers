@@ -32,7 +32,7 @@ import nibabel as nib
 import pandas as pd
 
 from launchcontainers.check import check_dwi_pipelines as check
-from launchcontainers.utils import force_symlink
+from launchcontainers.utils import force_symlink, is_old_anatrois, resolve_deriv_dir
 from launchcontainers.log_setup import console
 
 
@@ -62,9 +62,7 @@ def anatrois(dict_store_cs_configs, analysis_dir, lc_config, sub, ses, layout):
     """
 
     # General level variables:
-    basedir = lc_config["general"]["basedir"]
     container = lc_config["general"]["container"]
-    bidsdir_name = lc_config["general"]["bidsdir_name"]
     # If force is False, then we don't want to overwrite anything
     # If force is true, and we didn't run_lc(in the prepare mode),
     # we will do the overwrite and so on
@@ -88,6 +86,10 @@ def anatrois(dict_store_cs_configs, analysis_dir, lc_config, sub, ses, layout):
     # if have retest session and the src session id is specified, then
     # for each src_session_id, we will do the normal procedure
     # for each not src_session_id, we will create symlink to the src_session_id
+    if use_src_session is not None:
+        use_src_session = str(use_src_session).removeprefix("ses-")
+        if use_src_session.isdigit():
+            use_src_session = use_src_session.zfill(2)
     if use_src_session is not None and ses != use_src_session:
         # This is a retest session — symlink to the src session
         src_session_dpath = op.join(
@@ -98,12 +100,15 @@ def anatrois(dict_store_cs_configs, analysis_dir, lc_config, sub, ses, layout):
         console.print(
             "\n### Going to create symlinks for repeated sessions\n", style="cyan"
         )
+        if not op.isdir(src_session_dpath):
+            raise FileNotFoundError(
+                f"src session not prepared yet: {src_session_dpath} "
+                f"(needed by retest session ses-{ses})"
+            )
         force_symlink(src_session_dpath, dst_session_dpath, force)
 
         if not os.path.islink(dst_session_dpath):
-            console.print(
-                f"***Symbolic link missing: {dst_session_dpath}", style="yellow"
-            )
+            raise FileNotFoundError(f"Symbolic link missing: {dst_session_dpath}")
     # if not going to use 1 src session for retest, do the normal thing
     else:
         # define input output folder for this container
@@ -165,11 +170,7 @@ def anatrois(dict_store_cs_configs, analysis_dir, lc_config, sub, ses, layout):
         # If we ran freesurfer before:
         if "pre_fs" in required_inputfiles:
             pre_fs_path = op.join(
-                basedir,
-                bidsdir_name,
-                "derivatives",
-                f"{prefs_dir_name}",
-                "analysis-" + prefs_analysis_name,
+                resolve_deriv_dir(lc_config, prefs_dir_name, prefs_analysis_name),
                 "sub-" + sub,
                 "ses-" + ses,
                 "output",
@@ -185,23 +186,36 @@ def anatrois(dict_store_cs_configs, analysis_dir, lc_config, sub, ses, layout):
                 style="cyan",
             )
             zips = []
+            unzipped_dirs = []
             for filename in os.listdir(pre_fs_path):
-                if filename.endswith(".zip") and re.match(prefs_zipname, filename):
+                full = op.join(pre_fs_path, filename)
+                if (
+                    filename.endswith(".zip")
+                    and op.isfile(full)
+                    and re.match(prefs_zipname, filename)
+                ):
                     zips.append(filename)
-                    if "control_points" in required_inputfiles:
-                        if op.isdir(op.join(pre_fs_path, filename)) and re.match(
-                            prefs_unzipname, filename
-                        ):
-                            src_path_ControlPoints = op.join(
-                                pre_fs_path,
-                                filename,
-                                "tmp",
-                                "control.dat",
-                            )
-                        else:
-                            raise FileNotFoundError(
-                                "Didn't found control_points .zip file"
-                            )
+                elif (
+                    "control_points" in required_inputfiles
+                    and op.isdir(full)
+                    and re.match(prefs_unzipname, filename)
+                ):
+                    # the unzipped freesurfer subject dir holding tmp/control.dat
+                    unzipped_dirs.append(filename)
+
+            if "control_points" in required_inputfiles:
+                cp_candidates = [
+                    op.join(pre_fs_path, d, "tmp", "control.dat")
+                    for d in sorted(unzipped_dirs)
+                    if op.isfile(op.join(pre_fs_path, d, "tmp", "control.dat"))
+                ]
+                if len(cp_candidates) != 1:
+                    raise FileNotFoundError(
+                        f"control_points: expected exactly one dir matching "
+                        f"prefs_unzipname {prefs_unzipname!r} with tmp/control.dat "
+                        f"under {pre_fs_path}, found {cp_candidates}"
+                    )
+                src_path_ControlPoints = cp_candidates[0]
 
             if len(zips) == 0:
                 console.print(
@@ -218,11 +232,14 @@ def anatrois(dict_store_cs_configs, analysis_dir, lc_config, sub, ses, layout):
             else:
                 src_paths_fszip = [op.join(pre_fs_path, fszip) for fszip in zips]
                 zips_by_time = sorted(src_paths_fszip, key=op.getmtime)
-                answer = input(
-                    f"Do you want to use the newset fs.zip: \n{zips_by_time[-1]} \n \
-                        we get for you? \n input y for yes, n for no",
-                )
-                if answer in "y":
+                try:
+                    answer = input(
+                        f"Do you want to use the newset fs.zip: \n{zips_by_time[-1]} \n \
+                            we get for you? \n input y for yes, n for no",
+                    )
+                except EOFError:  # no TTY (batch/CI): treat as 'no'
+                    answer = ""
+                if answer.strip().lower() in ("y", "yes"):
                     src_path_fszip = zips_by_time[-1]
                 else:
                     console.print(
@@ -246,7 +263,7 @@ def anatrois(dict_store_cs_configs, analysis_dir, lc_config, sub, ses, layout):
                 dst_fname_cp = config_json_instance["inputs"]["control_points"][
                     "location"
                 ]["name"]
-                dst_path_cp = op.join(dstDir_input, "pre_fs", dst_fname_cp)
+                dst_path_cp = op.join(dstDir_input, "control_points", dst_fname_cp)
                 if not op.exists(op.join(dstDir_input, "control_points")):
                     os.makedirs(op.join(dstDir_input, "control_points"))
                 force_symlink(src_path_ControlPoints, dst_path_cp, force)
@@ -302,9 +319,7 @@ def rtppreproc(dict_store_cs_configs, analysis_dir, lc_config, sub, ses, layout)
     """
 
     # general level variables:
-    basedir = lc_config["general"]["basedir"]
     container = lc_config["general"]["container"]
-    bidsdir_name = lc_config["general"]["bidsdir_name"]
     force = lc_config["general"]["force"]
 
     # container specific:
@@ -352,12 +367,13 @@ def rtppreproc(dict_store_cs_configs, analysis_dir, lc_config, sub, ses, layout)
         RPE_direction = "AP"
     elif PE_direction == "AP":
         RPE_direction = "PA"
+    else:
+        raise ValueError(
+            f"Unexpected phase-encoding direction {PE_direction!r} in "
+            f"{json_under_analysis_dir}; expected 'AP' or 'PA'"
+        )
     precontainer_anat_dir = op.join(
-        basedir,
-        bidsdir_name,
-        "derivatives",
-        f"{precontainer_anat}",
-        "analysis-" + anat_analysis_name,
+        resolve_deriv_dir(lc_config, precontainer_anat, anat_analysis_name),
         "sub-" + sub,
         "ses-" + ses,
         "output",
@@ -379,10 +395,7 @@ def rtppreproc(dict_store_cs_configs, analysis_dir, lc_config, sub, ses, layout)
     # if the container is rtppreproc, and if the version of the precontainer_anat
     # is anatrois 4.5.x,
     # we will use brainmask, otherwise, we will use brain.nii.gz
-    if (container != "rtp2-preproc") and (
-        precontainer_anat.split("_")[0] == "anatrois"
-        and int(precontainer_anat.split(".")[1]) < 6
-    ):
+    if (container != "rtp2-preproc") and (is_old_anatrois(precontainer_anat)):
         src_path_FSMASK = op.join(precontainer_anat_dir, "brainmask.nii.gz")
     else:
         src_path_FSMASK = op.join(precontainer_anat_dir, "brain.nii.gz")
@@ -542,10 +555,7 @@ def rtppreproc(dict_store_cs_configs, analysis_dir, lc_config, sub, ses, layout)
         os.makedirs(op.join(dstDir_input, "BVEC"))
     # Create the destination paths
     dst_path_ANAT = op.join(dstDir_input, "ANAT", "T1.nii.gz")
-    if (container != "rtp2-preproc") and (
-        precontainer_anat.split("_")[0] == "anatrois"
-        and int(precontainer_anat.split(".")[1]) < 6
-    ):
+    if (container != "rtp2-preproc") and (is_old_anatrois(precontainer_anat)):
         dst_path_FSMASK = op.join(dstDir_input, "FSMASK", "brainmask.nii.gz")
     else:
         dst_path_FSMASK = op.join(dstDir_input, "FSMASK", "brain.nii.gz")
@@ -585,7 +595,12 @@ def rtppreproc(dict_store_cs_configs, analysis_dir, lc_config, sub, ses, layout)
         )
 
         if len(src_path_RBVL_lst) == 0:
-            src_path_RBVL = src_path_RDIF.replace("dwi.nii.gz", "dwi.bval")
+            # never write into the raw BIDS dataset: generate it in the analysis dir
+            src_path_RBVL = op.join(
+                dstDir_input,
+                "_generated",
+                op.basename(src_path_RDIF).replace("dwi.nii.gz", "dwi.bval"),
+            )
             console.print(
                 "\n the bval Reverse file are not find by BIDS, create empty file !!!",
                 style="yellow",
@@ -610,7 +625,11 @@ def rtppreproc(dict_store_cs_configs, analysis_dir, lc_config, sub, ses, layout)
             return_type="filename",
         )
         if len(src_path_RBVC_lst) == 0:
-            src_path_RBVC = src_path_RDIF.replace("dwi.nii.gz", "dwi.bvec")
+            src_path_RBVC = op.join(
+                dstDir_input,
+                "_generated",
+                op.basename(src_path_RDIF).replace("dwi.nii.gz", "dwi.bvec"),
+            )
             console.print(
                 "\n the bvec Reverse file are not find by BIDS, create empty file !!!",
                 style="yellow",
@@ -632,6 +651,7 @@ def rtppreproc(dict_store_cs_configs, analysis_dir, lc_config, sub, ses, layout)
         volumes = img.shape[3]  # type: ignore
         # if one of the bvec and bval are not there, re-write them
         if (not op.isfile(src_path_RBVL)) or (not op.isfile(src_path_RBVC)):
+            os.makedirs(op.join(dstDir_input, "_generated"), exist_ok=True)
             # Write bval file
             f = open(src_path_RBVL, "x")
             f.write(volumes * "0 ")
@@ -678,11 +698,7 @@ def rtppreproc(dict_store_cs_configs, analysis_dir, lc_config, sub, ses, layout)
             "qmap_analysis_name"
         ]
         qmap_path = op.join(
-            basedir,
-            bidsdir_name,
-            "derivatives",
-            f"{qmap_dir_name}",
-            "analysis-" + qmap_analysis_name,
+            resolve_deriv_dir(lc_config, qmap_dir_name, qmap_analysis_name),
             "sub-" + sub,
             "ses-" + ses,
             "output",
@@ -714,12 +730,17 @@ def rtppreproc(dict_store_cs_configs, analysis_dir, lc_config, sub, ses, layout)
         elif len(zips) == 1:
             src_path_qmap = op.join(qmap_path, zips[0])
         else:
-            zips_by_time = sorted(zips, key=op.getmtime)
-            answer = input(
-                f"Do you want to use the newset fs.zip: \n{zips_by_time[-1]} \n we get for you? \
-                      \n input y for yes, n for no",
+            zips_by_time = sorted(
+                (op.join(qmap_path, z) for z in zips), key=op.getmtime
             )
-            if answer in "y":
+            try:
+                answer = input(
+                    f"Do you want to use the newset fs.zip: \n{zips_by_time[-1]} \n we get for you? \
+                          \n input y for yes, n for no",
+                )
+            except EOFError:  # no TTY (batch/CI): treat as 'no'
+                answer = ""
+            if answer.strip().lower() in ("y", "yes"):
                 src_path_qmap = zips_by_time[-1]
             else:
                 console.print(
@@ -767,9 +788,7 @@ def rtppipeline(dict_store_cs_configs, analysis_dir, lc_config, sub, ses):
     # define local variables from config dict
     # input from get_parser
     # general level variables:
-    basedir = lc_config["general"]["basedir"]
     container = lc_config["general"]["container"]
-    bidsdir_name = lc_config["general"]["bidsdir_name"]
     force = lc_config["general"]["force"]
 
     # rtppipeline specefic variables
@@ -818,11 +837,7 @@ def rtppipeline(dict_store_cs_configs, analysis_dir, lc_config, sub, ses):
     # fs
     # The source directory
     src_dir_fs = op.join(
-        basedir,
-        bidsdir_name,
-        "derivatives",
-        f"{precontainer_anat}",
-        "analysis-" + anat_analysis_name,
+        resolve_deriv_dir(lc_config, precontainer_anat, anat_analysis_name),
         "sub-" + sub,
         "ses-" + ses,
         "output",
@@ -830,11 +845,7 @@ def rtppipeline(dict_store_cs_configs, analysis_dir, lc_config, sub, ses):
     src_path_fszip = op.join(src_dir_fs, "fs.zip")
 
     src_dir_preproc = op.join(
-        basedir,
-        bidsdir_name,
-        "derivatives",
-        precontainer_preproc,
-        "analysis-" + preproc_analysis_num,
+        resolve_deriv_dir(lc_config, precontainer_preproc, preproc_analysis_num),
         "sub-" + sub,
         "ses-" + ses,
         "output",
@@ -904,11 +915,7 @@ def rtppipeline(dict_store_cs_configs, analysis_dir, lc_config, sub, ses):
             "qmap_analysis_name"
         ]
         qmap_path = op.join(
-            basedir,
-            bidsdir_name,
-            "derivatives",
-            f"{qmap_dir_name}",
-            "analysis-" + qmap_analysis_name,
+            resolve_deriv_dir(lc_config, qmap_dir_name, qmap_analysis_name),
             "sub-" + sub,
             "ses-" + ses,
             "output",
@@ -940,12 +947,17 @@ def rtppipeline(dict_store_cs_configs, analysis_dir, lc_config, sub, ses):
         elif len(zips) == 1:
             src_path_qmap = op.join(qmap_path, zips[0])
         else:
-            zips_by_time = sorted(zips, key=op.getmtime)
-            answer = input(
-                f"Do you want to use the newset fs.zip: \n{zips_by_time[-1]} \n we get for you?\
-                      \n input y for yes, n for no",
+            zips_by_time = sorted(
+                (op.join(qmap_path, z) for z in zips), key=op.getmtime
             )
-            if answer in "y":
+            try:
+                answer = input(
+                    f"Do you want to use the newset fs.zip: \n{zips_by_time[-1]} \n we get for you?\
+                          \n input y for yes, n for no",
+                )
+            except EOFError:  # no TTY (batch/CI): treat as 'no'
+                answer = ""
+            if answer.strip().lower() in ("y", "yes"):
                 src_path_qmap = zips_by_time[-1]
             else:
                 console.print(
