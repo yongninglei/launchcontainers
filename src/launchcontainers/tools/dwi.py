@@ -19,7 +19,7 @@ from typing import Any
 
 from analysis_core import AnalysisCoreError
 from analysis_core.config import LCConfig
-from analysis_core.tool import QCCheck, QCResult, SessionResult, ToolConfig
+from analysis_core.tool import Figure, QCCheck, QCResult, SessionResult, ToolConfig
 
 from launchcontainers import __version__ as LC_VERSION
 
@@ -232,7 +232,144 @@ class DWIContainer:
             )
         else:
             checks.append(QCCheck("container log", "warn", "no .err log yet"))
-        return QCResult(sub, ses, checks)
+        if self.name in ("rtp-pipeline", "rtp2-pipeline"):
+            checks.append(_rtp_log_check(out / "log" / "RTP_log.txt"))
+        res = QCResult(sub, ses, checks)
+        try:
+            res.figures += self._figures(tc, sub, ses, out)
+        except Exception as exc:  # noqa: BLE001 — a figure problem is a warning, not a crash
+            checks.append(QCCheck("figures", "warn", f"{type(exc).__name__}: {exc}"))
+        return res
+
+    # -- pre-rendered QC images (analysis_core.slices) ---------------------------
+    def _figures(self, tc: ToolConfig, sub: str, ses: str, out: Path) -> list[Figure]:
+        """One rated item per session, rendered once (fingerprinted) under qc/<item>/:
+
+        - anatrois / freesurferator  ``segmentation``: aparc+aseg (or the brain
+          mask outline when there is no aparc+aseg) on the output T1
+        - rtppreproc / rtp2-preproc   ``dwi_on_t1``: mean b0 on the output t1,
+          i.e. the DWI→T1 registration
+        - rtp(2)-pipeline: no figure yet (checks only)
+        """
+        from analysis_core.slices import Layer, render_item
+
+        ana = self.analysis_dirs(tc)[0]
+        overwrite = bool(tc.extra.get("qc_overwrite"))
+        if self.name in ("anatrois", "freesurferator"):
+            t1 = out / "T1.nii.gz"
+            if not t1.is_file():
+                return []
+            layers = []
+            seg = _first(out, ("aparc+aseg.nii.gz", "aseg.nii.gz"))
+            if seg is not None:
+                layers.append(
+                    Layer("seg", seg.name.split(".")[0], "labels", seg, opacity=0.4)
+                )
+                layers.append(
+                    Layer("edge", "label borders", "outline", seg, show=False)
+                )
+            mask = out / "brainmask.nii.gz"
+            if mask.is_file():
+                layers.append(
+                    Layer(
+                        "mask", "brain mask outline", "outline", mask, show=seg is None
+                    )
+                )
+            if not layers:
+                return []
+            item, question = (
+                "segmentation",
+                "Is the segmentation / brain mask right on the T1?",
+            )
+            r = render_item(
+                ana,
+                item,
+                sub,
+                ses,
+                base=t1,
+                base_label="T1",
+                layers=layers,
+                mask=mask if mask.is_file() else None,
+                question=question,
+                overwrite=overwrite,
+            )
+        elif self.name in ("rtppreproc", "rtp2-preproc"):
+            t1, dwi, bvals = out / "t1.nii.gz", out / "dwi.nii.gz", out / "dwi.bvals"
+            if not (t1.is_file() and dwi.is_file() and bvals.is_file()):
+                return []
+            layers = [
+                Layer(
+                    "b0",
+                    "mean b0",
+                    "map",
+                    lambda: _mean_b0(dwi, bvals),
+                    cmap="hot",
+                    opacity=0.5,
+                )
+            ]
+            mask = _first(
+                out,
+                ("brainmask.nii.gz", "dwi_brainmask.nii.gz", "b0_brain_mask.nii.gz"),
+            )
+            if mask is not None:
+                layers.append(Layer("mask", "DWI brain mask outline", "outline", mask))
+            r = render_item(
+                ana,
+                "dwi_on_t1",
+                sub,
+                ses,
+                base=t1,
+                base_label="t1",
+                layers=layers,
+                inputs={
+                    "t1": t1,
+                    "dwi": dwi,
+                    "bvals": bvals,
+                    **({"mask": mask} if mask is not None else {}),
+                },
+                question="Is the DWI (mean b0) aligned with the T1?",
+                overwrite=overwrite,
+            )
+        else:
+            return []
+        return [Figure(r.out.parts[-3], "", r.preview)] if r.preview else []
+
+
+_RTP_EXIT = "Sending exit(0) signal."
+
+
+def _rtp_log_check(log: Path) -> QCCheck:
+    """rtp(2)-pipeline finished when RTP_log.txt ends with the exit(0) line
+    (from analysis_checker.rtp.RTP2PipelineSpec)."""
+    if not log.is_file():
+        return QCCheck("RTP_log", "fail", "output/log/RTP_log.txt missing")
+    lines = [
+        ln.rstrip() for ln in log.read_text(errors="replace").splitlines() if ln.strip()
+    ]
+    if not lines:
+        return QCCheck("RTP_log", "fail", "RTP_log.txt is empty")
+    if lines[-1] != _RTP_EXIT:
+        return QCCheck("RTP_log", "fail", f"last line: {lines[-1][:120]!r}")
+    return QCCheck("RTP_log", "ok", _RTP_EXIT)
+
+
+def _first(folder: Path, names) -> Path | None:
+    return next((folder / n for n in names if (folder / n).is_file()), None)
+
+
+def _mean_b0(dwi: Path, bvals: Path):
+    """Mean of the b<=50 volumes (all volumes if none), as a 3-D nibabel image."""
+    import nibabel as nib
+    import numpy as np
+
+    img = nib.load(str(dwi))
+    data = np.asanyarray(img.dataobj)
+    if data.ndim == 3:
+        return img
+    b = np.loadtxt(str(bvals)).ravel()
+    sel = np.where(b <= 50)[0] if b.size == data.shape[3] else np.array([], int)
+    vols = data[..., sel] if sel.size else data
+    return nib.Nifti1Image(vols.astype(np.float32).mean(axis=3), img.affine)
 
 
 ANATROIS = DWIContainer("anatrois")

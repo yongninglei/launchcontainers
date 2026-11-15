@@ -108,7 +108,17 @@ sections below where they disagree.
   `<name>.json` has `inputs`, back up `RTP_log.txt`). Optional host keys:
   `n_workers`, `mem_per_job` (local), `sge_extra` / `slurm_extra` (directive lines).
   Tests: `tests/test_run.py`.
-- Still to port: `lc qc`, GLM.
+- `lc qc -w <analysis_dir> [-ssl] [--overwrite] [--serve --port --host]` is
+  `lc_qc.py`: per session `tool.qc()` + a `last run` check from sessions.tsv →
+  `qc/index.html`, `qc/sub-XX_ses-YY.html`, `qc/qc.tsv`,
+  `qc/failed_subseslist.txt` (feed to `lc run -ssl`). Following QC-registration,
+  `tool.qc()` pre-renders PNGs with `analysis_core.slices` (fingerprinted, so
+  unchanged items are skipped); `--serve` opens core's rating page
+  (`qc/qc_rater-<name>.tsv`). DWI items: `segmentation` (anatrois /
+  freesurferator: aparc+aseg / brainmask on T1), `dwi_on_t1` (preproc: mean b0
+  on t1); rtp(2)-pipeline: `RTP_log` exit-line check, no figure yet.
+  Tests: `tests/test_qc.py`.
+- Still to port: GLM (`l1_surface` has no Tool, so `lc qc` refuses it).
 
 ## Code structure (pre-restructure)
 

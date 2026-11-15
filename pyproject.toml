@@ -54,7 +54,7 @@ dependencies = [
     "rich>=13.0",
     "tqdm",
     "tedana==26.0.3",
-    "analysis-core>=0.1.2",
+    "analysis-core>=0.1.3",
 ]
 
 [project.urls]

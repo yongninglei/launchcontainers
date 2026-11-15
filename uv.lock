@@ -57,7 +57,7 @@ wheels = [
 
 [[package]]
 name = "analysis-core"
-version = "0.1.2"
+version = "0.1.3"
 source = { editable = "../analysis-core" }
 dependencies = [
     { name = "pyyaml" },
@@ -67,12 +67,17 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "matplotlib", marker = "extra == 'render'" },
+    { name = "nibabel", marker = "extra == 'render'" },
+    { name = "numpy", marker = "extra == 'render'" },
+    { name = "pillow", marker = "extra == 'render'" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "rich", specifier = ">=13.0" },
+    { name = "scipy", marker = "extra == 'render'" },
     { name = "typer", specifier = ">=0.12" },
 ]
-provides-extras = ["dev"]
+provides-extras = ["dev", "render"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = ">=8.0" }]

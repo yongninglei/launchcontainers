@@ -255,23 +255,62 @@ def _run_with_tool(workdir, submit, sub_ses_list, yes):
 
 @app.command()
 def qc(
-    workdir: str = typer.Option(..., "--workdir", "-w", help="Working directory"),
-    log_dir: str = typer.Option(
-        "./logs", "--log-dir", "-log", help="Directory to write logs"
+    workdir: str = typer.Option(..., "--workdir", "-w", help="Analysis directory"),
+    sub_ses_list: str | None = typer.Option(
+        None,
+        "--sub-ses-list",
+        "-ssl",
+        help="Only these sessions (default: <workdir>/subseslist.txt)",
+    ),
+    overwrite: bool = typer.Option(
+        False, "--overwrite", help="Re-render figures even when up to date"
+    ),
+    serve: bool = typer.Option(
+        False, "--serve", help="Then open the rating page on the rendered figures"
+    ),
+    port: int = typer.Option(8000, "--port", help="Port for --serve"),
+    host: str = typer.Option(
+        "127.0.0.1", "--host", help="Bind address for --serve (use an ssh tunnel)"
     ),
     debug: bool = typer.Option(False, "--debug", "-d", help="Debug mode"),
 ):
-    setup_verbosity(debug=debug)
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    os.makedirs(log_dir, exist_ok=True)
-    set_log_files(
-        op.join(log_dir, f"qc_{timestamp}.log"),
-        op.join(log_dir, f"qc_{timestamp}.err"),
-    )
-    from launchcontainers import do_qc
+    """Checks + pre-rendered PNGs per session → qc/index.html; --serve to rate them."""
+    import time
 
-    console.print("\n....running quality check mode\n", style="bold red")
-    do_qc.main(workdir, log_dir, debug)
+    from analysis_core import AnalysisCoreError
+
+    from launchcontainers import lc_qc
+
+    setup_verbosity(debug=debug)
+    console.rule(f"[bold]lc qc — {workdir}[/bold]")
+    t0 = time.time()
+    try:
+        rep = lc_qc.qc(workdir, sub_ses_list, overwrite=overwrite, console=console)
+    except AnalysisCoreError as exc:
+        console.print(f"[red]ERROR[/red] {exc}")
+        raise typer.Exit(2) from None
+    n = {k: sum(rep.worst(r) == k for r in rep.results) for k in ("ok", "warn", "fail")}
+    n_fig = sum(len(r.figures) for r in rep.results)
+    console.print(
+        f"{rep.tool}: {len(rep.results)} sessions — ok {n['ok']}, warn {n['warn']}, "
+        f"fail {n['fail']}; {n_fig} figure(s)  [dim]({time.time() - t0:.1f} s)[/dim]"
+    )
+    console.print(f"[green]saved[/green] {rep.index}")
+    if rep.failed:
+        console.print(
+            f"[yellow]{len(rep.failed)} failed[/yellow] → {rep.failed_list} "
+            f"(re-run: lc run -w {workdir} -ssl {rep.failed_list})"
+        )
+    if serve:
+        from analysis_core.viewer import serve as serve_viewer
+
+        serve_viewer(
+            rep.workdir,
+            port=port,
+            host=host,
+            title=f"{rep.tool} — {rep.workdir.name}",
+            out=console,
+        )
 
 
 # Add other commands similarly...
