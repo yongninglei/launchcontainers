@@ -118,7 +118,16 @@ sections below where they disagree.
   freesurferator: aparc+aseg / brainmask on T1), `dwi_on_t1` (preproc: mean b0
   on t1); rtp(2)-pipeline: `RTP_log` exit-line check, no figure yet.
   Tests: `tests/test_qc.py`.
-- Still to port: GLM (`l1_surface` has no Tool, so `lc qc` refuses it).
+- GLM: **pyGLM is the reference** (MRI-hub/pyGLM, tool `pyGLM`, `uv sync
+  --extra glm`). `lc prepare` with `container: l1_surface` still runs the GLM
+  *input* preparation (`prepare/glm_prepare.py` via `do_prepare`: events.tsv
+  from vistadisp logs, BIDS/fMRIPrep BOLD symlinks), which pyGLM does not
+  have; `lc run` / `lc qc` on l1_surface exit 2 pointing to pyGLM. The old
+  launch path (`do_launch`, `do_qc`, `clusters/`, `gen_py_cmd`,
+  `gen_matlab_cmd`) and the checker's `glm` spec are no longer used.
+  Study scripts that still load `tests/glm_strategy/glm_surface_check_model_strategy.py`
+  by path: FIR (`run_allses_glm_FIR.py`, `fir_curve_metrics.py`) and
+  `power_analysis_ohbm/` — pyGLM has not ported these yet, so that file stays.
 
 ## Code structure (pre-restructure)
 

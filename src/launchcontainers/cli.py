@@ -19,7 +19,6 @@ from __future__ import annotations
 import os
 import os.path as op
 import shutil
-from argparse import Namespace
 from datetime import datetime
 
 import typer
@@ -56,13 +55,17 @@ def prepare(
     set_log_files(log_fpath, err_fpath)
 
     console.print("....running prepare mode", style="bold cyan")
-    if _uses_tool_prepare(lc_config):
+    if _tool_name(lc_config) not in _GLM_INPUT_PREP:
         _prepare_with_tool(
             lc_config, sub_ses_list, container_specific_config, log_fpath, err_fpath
         )
         return
 
-    # legacy path: GLM (l1_surface) until it is ported to a Tool
+    # l1_surface: GLM *input* preparation (events.tsv from vistadisp logs, BIDS /
+    # fMRIPrep BOLD symlinks; prepare/glm_prepare.py). pyGLM has no equivalent;
+    # the GLM itself is pyGLM (general.tool: pyGLM).
+    from argparse import Namespace
+
     parse_namespace = Namespace(
         lc_config=lc_config,
         sub_ses_list=sub_ses_list,
@@ -92,16 +95,35 @@ def prepare(
         raise typer.Exit(1)
 
 
-_LEGACY_PREPARE = {"l1_surface"}
+# `lc prepare` only: GLM input preparation (no Tool; not part of pyGLM).
+_GLM_INPUT_PREP = {"l1_surface"}
+
+# `lc run` / `lc qc`: names whose computation lives in another repo's Tool.
+_MOVED = {
+    "l1_surface": (
+        "the GLM itself is pyGLM (MRI-hub/pyGLM): `lc prepare` with l1_surface "
+        "only prepares its inputs; to fit, use an lc_config with general.tool: pyGLM "
+        "and container_specific.pyGLM (see pyGLM's README and examples/), with pyGLM "
+        "installed in the same environment as lc (uv sync --extra glm)"
+    ),
+}
 
 
-def _uses_tool_prepare(lc_config: str) -> bool:
+def _tool_name(lc_config: str) -> str | None:
     from launchcontainers import utils as do
 
     if not op.isfile(lc_config):
-        return True  # the Tool path reports the missing file
+        return None  # the Tool path reports the missing file
     general = (do.read_yaml(lc_config) or {}).get("general") or {}
-    return general.get("tool", general.get("container")) not in _LEGACY_PREPARE
+    return general.get("tool", general.get("container"))
+
+
+def _refuse_moved(lc_config: str) -> None:
+    """Exit 2 with a pointer when the config names work that lives in another tool."""
+    name = _tool_name(lc_config)
+    if name in _MOVED:
+        console.print(f"[red]ERROR[/red] {lc_config}: {name!r}: {_MOVED[name]}")
+        raise typer.Exit(2)
 
 
 def _prepare_with_tool(lc_config, sub_ses_list, container_config, log_fpath, err_fpath):
@@ -167,19 +189,7 @@ def run(
     debug: bool = typer.Option(False, "--debug", "-d", help="Debug mode"),
 ):
     setup_verbosity(quiet=quiet, verbose=verbose, debug=debug)
-    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    run_log_dir = op.join(workdir, "run_log")
-    log_fpath = op.join(run_log_dir, f"lc_run_{timestamp}.log")
-    err_fpath = op.join(run_log_dir, f"lc_run_{timestamp}.err")
-    if not _uses_tool_prepare(op.join(workdir, "lc_config.yaml")):
-        # legacy path: GLM (l1_surface) until it is ported to a Tool
-        os.makedirs(run_log_dir, exist_ok=True)
-        set_log_files(log_fpath, err_fpath)
-        from launchcontainers import do_launch
-
-        console.print("....running run mode", style="bold cyan")
-        do_launch.main(workdir, run_lc)
-        return
+    _refuse_moved(op.join(workdir, "lc_config.yaml"))
     _run_with_tool(workdir, run_lc, sub_ses_list, yes)
 
 
@@ -284,6 +294,7 @@ def qc(
     setup_verbosity(debug=debug)
     console.rule(f"[bold]lc qc — {workdir}[/bold]")
     t0 = time.time()
+    _refuse_moved(op.join(workdir, "lc_config.yaml"))
     try:
         rep = lc_qc.qc(workdir, sub_ses_list, overwrite=overwrite, console=console)
     except AnalysisCoreError as exc:

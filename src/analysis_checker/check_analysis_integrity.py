@@ -52,7 +52,6 @@ try:
     from .base import AnalysisSpec
     from .bids import DWINiiSpec, FuncSBRefSpec, BIDSfuncSpec, BIDSSpec
     from .fmriprep import FMRIPrepSpec
-    from .glm import GLMSpec
     from .prf_analyze import PRFAnalyzeSpec
     from .prf_prepare import PRFPrepareSpec
     from .qmri import BIDSQMRISpec
@@ -65,7 +64,6 @@ except ImportError:
     from base import AnalysisSpec
     from bids import DWINiiSpec, FuncSBRefSpec, BIDSfuncSpec, BIDSSpec
     from fmriprep import FMRIPrepSpec
-    from glm import GLMSpec
     from prf_analyze import PRFAnalyzeSpec
     from prf_prepare import PRFPrepareSpec
     from qmri import BIDSQMRISpec
@@ -1055,7 +1053,8 @@ SPEC_REGISTRY: dict[str, AnalysisSpec] = {
     "bidsfunc": BIDSfuncSpec(),
     "qmri": BIDSQMRISpec(),
     "fmriprep": FMRIPrepSpec(),
-    "glm": GLMSpec(),
+    # "glm" was removed: GLM outputs are checked by pyGLM's qc() (`lc qc -w <strategy dir>`),
+    # which takes the contrasts from the config instead of a hard-coded list.
     "rtp": RTPSpec(),
     "rtp2pipeline": RTP2PipelineSpec(),
     # [DEV] register new spec here ↓

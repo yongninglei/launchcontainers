@@ -57,7 +57,7 @@ wheels = [
 
 [[package]]
 name = "analysis-core"
-version = "0.1.3"
+version = "0.1.4"
 source = { editable = "../analysis-core" }
 dependencies = [
     { name = "pyyaml" },
@@ -1644,6 +1644,11 @@ dependencies = [
     { name = "typer" },
 ]
 
+[package.optional-dependencies]
+glm = [
+    { name = "pyglm", marker = "python_full_version >= '3.11' and python_full_version < '3.13'" },
+]
+
 [package.dev-dependencies]
 dev = [
     { name = "black" },
@@ -1684,6 +1689,7 @@ requires-dist = [
     { name = "openpyxl", specifier = ">=3.1.5" },
     { name = "pandas", specifier = ">=2.1" },
     { name = "pybids", specifier = ">=0.16.1,<0.17" },
+    { name = "pyglm", marker = "python_full_version >= '3.11' and python_full_version < '3.13' and extra == 'glm'", editable = "../pyGLM" },
     { name = "pyyaml" },
     { name = "requests", specifier = ">=2.26,<3.0" },
     { name = "rich", specifier = ">=13.0" },
@@ -1693,6 +1699,7 @@ requires-dist = [
     { name = "tqdm" },
     { name = "typer", specifier = ">=0.15.3" },
 ]
+provides-extras = ["glm"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -3087,6 +3094,42 @@ sdist = { url = "https://files.pythonhosted.org/packages/6e/07/587d938ce8ffea54a
 wheels = [
     { url = "https://files.pythonhosted.org/packages/3e/f3/2664f53ab17a9249c58317a00aabf76acdd18d4b1b98b3a0a36af7763950/pyflakes-4.0.0-py2.py3-none-any.whl", hash = "sha256:0f7b7a78e8fcffd78b205200f045a70911f4179be1b42eac82c3323e0bf5c8aa", size = 65907, upload-time = "2026-09-22T22:37:00.744Z" },
 ]
+
+[[package]]
+name = "pyglm"
+version = "0.1.0"
+source = { editable = "../pyGLM" }
+dependencies = [
+    { name = "analysis-core" },
+    { name = "matplotlib", version = "3.11.2", source = { registry = "https://pypi.org/simple" } },
+    { name = "nibabel" },
+    { name = "nilearn" },
+    { name = "numpy" },
+    { name = "pandas" },
+    { name = "pybids" },
+    { name = "pyyaml" },
+    { name = "rich" },
+    { name = "scipy" },
+    { name = "typer" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "analysis-core", editable = "../analysis-core" },
+    { name = "matplotlib", specifier = "==3.11.2" },
+    { name = "nibabel", specifier = "==5.4.2" },
+    { name = "nilearn", specifier = "==0.14.1" },
+    { name = "numpy", specifier = "==2.2.6" },
+    { name = "pandas", specifier = "==2.3.2" },
+    { name = "pybids", specifier = "==0.16.5" },
+    { name = "pyyaml", specifier = "==6.0.3" },
+    { name = "rich", specifier = "==15.0.0" },
+    { name = "scipy", specifier = "==1.15.3" },
+    { name = "typer", specifier = "==0.27.2" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = "==9.1.1" }]
 
 [[package]]
 name = "pygments"

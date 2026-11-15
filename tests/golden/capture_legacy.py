@@ -6,6 +6,11 @@ Run once, from the commit the snapshots should describe:
 
 Writes ``tests/golden/data/<scenario>.json``. Re-running on the same commit
 must reproduce them byte for byte.
+
+The goldens describe commit a7448d9. This script drives the legacy code
+(``do_prepare``, ``clusters/sge.py``, ``clusters/slurm.py``), which current
+``lc`` no longer calls; to re-capture, run it from a checkout of a7448d9
+(``git worktree add /tmp/lc-a7448d9 a7448d9``), not from the current tree.
 """
 
 from __future__ import annotations

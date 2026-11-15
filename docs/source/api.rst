@@ -17,11 +17,19 @@ Core CLI
    :members:
    :undoc-members: False
 
-.. automodule:: launchcontainers.do_launch
+.. automodule:: launchcontainers.lc_prepare
    :members:
    :undoc-members: False
 
-.. automodule:: launchcontainers.do_qc
+.. automodule:: launchcontainers.lc_run
+   :members:
+   :undoc-members: False
+
+.. automodule:: launchcontainers.lc_qc
+   :members:
+   :undoc-members: False
+
+.. automodule:: launchcontainers.tools.dwi
    :members:
    :undoc-members: False
 
@@ -47,13 +55,6 @@ Job-script generation
    :members:
    :undoc-members: False
 
-.. automodule:: launchcontainers.gen_jobscript.gen_matlab_cmd
-   :members:
-   :undoc-members: False
-
-.. automodule:: launchcontainers.gen_jobscript.gen_py_cmd
-   :members:
-   :undoc-members: False
 
 Preparation
 -----------
@@ -68,17 +69,8 @@ For full documentation of the prepare pipelines see the tutorial pages:
 Schedulers
 ----------
 
-.. automodule:: launchcontainers.clusters.local
-   :members:
-   :undoc-members: False
-
-.. automodule:: launchcontainers.clusters.slurm
-   :members:
-   :undoc-members: False
-
-.. automodule:: launchcontainers.clusters.sge
-   :members:
-   :undoc-members: False
+The local / SGE / SLURM backends are in :mod:`launchcontainers.lc_run`
+(chosen by ``host_options.<host>.manager``).
 
 Checks And QC
 -------------

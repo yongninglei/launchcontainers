@@ -48,7 +48,6 @@ def _comparable(snap: dict) -> dict:
 @pytest.mark.parametrize("scenario", SCENARIOS, ids=[s[0] for s in SCENARIOS])
 def test_prepare_matches_golden(root, scenario):
     from launchcontainers import lc_prepare
-    from launchcontainers.clusters import sge, slurm  # noqa: F401
 
     name, container, layout, host, overrides = scenario
     overrides = {
