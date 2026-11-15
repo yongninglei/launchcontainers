@@ -161,6 +161,31 @@ class DWIContainer:
             sub, ses, "prepared", msg, [ana / f"sub-{sub}" / f"ses-{ses}"]
         )
 
+    # -- before lc run (launchcontainers-only hook) -----------------------------
+    def before_run(self, tc: ToolConfig, pairs, submit: bool) -> list[str]:
+        """The container config must carry the staged inputs; on a real run,
+        an old RTP_log.txt is renamed so the new run does not append to it."""
+        import json
+        from datetime import datetime
+
+        ana = self.analysis_dirs(tc)[0]
+        cc = ana / f"{self.name}.json"
+        if not cc.is_file():
+            raise AnalysisCoreError(f"{cc} missing: run `lc prepare` first")
+        if "inputs" not in json.loads(cc.read_text()):
+            raise AnalysisCoreError(f"{cc} has no 'inputs': run `lc prepare` first")
+        notes = []
+        if submit and self.name in ("rtp-pipeline", "rtp2-pipeline"):
+            stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            for sub, ses in pairs:
+                old = (
+                    ana / f"sub-{sub}" / f"ses-{ses}" / "output" / "log" / "RTP_log.txt"
+                )
+                if old.exists():
+                    old.rename(old.with_name(f"RTP_log_backup_at_{stamp}.txt"))
+                    notes.append(f"sub-{sub} ses-{ses}: old RTP_log.txt backed up")
+        return notes
+
     def shell_command(self, tc: ToolConfig, sub: str, ses: str) -> str:
         """The apptainer command line, with its own stdout/stderr redirection."""
         from launchcontainers.gen_jobscript.gen_container_cmd import gen_RTP2_cmd

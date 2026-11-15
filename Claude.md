@@ -97,8 +97,18 @@ sections below where they disagree.
 - `tests/test_golden.py` checks the Tool path against snapshots of the legacy
   code (`tests/golden/`, fake dataset in `tests/fakedata.py`). Any change to
   staging must keep it green or re-capture the goldens deliberately.
-- Still to port: `lc run` (backends by `manager`, `analysis-session` wrapper),
-  `lc qc`, GLM.
+- `lc run -w <analysis_dir> [-R] [-ssl list] [-y]` for Tools is `lc_run.py`:
+  one line per session, `analysis-session --analysis-dir … --tool … --sub --ses
+  -- <tool.command()>`; backend from `host_options.<host>.manager`
+  (local/sge/slurm). Each call writes `logs/run_<stamp>[_dryrun]/`
+  (commands.txt, jobs.tsv, job script, scheduler .out/.err, exit_codes.tsv);
+  per-session records come from the wrapper (`logs/<dir>_sub-XX_ses-YY_<ts>/`,
+  `sessions.tsv`). Sessions whose last *prepare* status is not `prepared` are
+  skipped. Optional LC-only tool hook `before_run(tc, pairs, submit)` (DWI: check
+  `<name>.json` has `inputs`, back up `RTP_log.txt`). Optional host keys:
+  `n_workers`, `mem_per_job` (local), `sge_extra` / `slurm_extra` (directive lines).
+  Tests: `tests/test_run.py`.
+- Still to port: `lc qc`, GLM.
 
 ## Code structure (pre-restructure)
 

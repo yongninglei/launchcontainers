@@ -98,6 +98,8 @@ _LEGACY_PREPARE = {"l1_surface"}
 def _uses_tool_prepare(lc_config: str) -> bool:
     from launchcontainers import utils as do
 
+    if not op.isfile(lc_config):
+        return True  # the Tool path reports the missing file
     general = (do.read_yaml(lc_config) or {}).get("general") or {}
     return general.get("tool", general.get("container")) not in _LEGACY_PREPARE
 
@@ -147,10 +149,19 @@ def _prepare_with_tool(lc_config, sub_ses_list, container_config, log_fpath, err
 
 @app.command()
 def run(
-    workdir: str = typer.Option(..., "--workdir", "-w", help="Working directory"),
-    run_lc: bool = typer.Option(
-        False, "--run-lc", "-R", help="Whether to run launchcontainers"
+    workdir: str = typer.Option(
+        ..., "--workdir", "-w", help="Prepared analysis directory"
     ),
+    run_lc: bool = typer.Option(
+        False, "--run-lc", "-R", help="Submit / run the jobs (default: dry run)"
+    ),
+    sub_ses_list: str | None = typer.Option(
+        None,
+        "--sub-ses-list",
+        "-ssl",
+        help="Run only these sessions (default: <workdir>/subseslist.txt)",
+    ),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Do not ask before submitting"),
     quiet: bool = typer.Option(False, "--quiet", "-q", help="Quiet mode"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Verbose mode"),
     debug: bool = typer.Option(False, "--debug", "-d", help="Debug mode"),
@@ -158,15 +169,88 @@ def run(
     setup_verbosity(quiet=quiet, verbose=verbose, debug=debug)
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     run_log_dir = op.join(workdir, "run_log")
-    os.makedirs(run_log_dir, exist_ok=True)
-    set_log_files(
-        op.join(run_log_dir, f"lc_run_{timestamp}.log"),
-        op.join(run_log_dir, f"lc_run_{timestamp}.err"),
-    )
-    from launchcontainers import do_launch
+    log_fpath = op.join(run_log_dir, f"lc_run_{timestamp}.log")
+    err_fpath = op.join(run_log_dir, f"lc_run_{timestamp}.err")
+    if not _uses_tool_prepare(op.join(workdir, "lc_config.yaml")):
+        # legacy path: GLM (l1_surface) until it is ported to a Tool
+        os.makedirs(run_log_dir, exist_ok=True)
+        set_log_files(log_fpath, err_fpath)
+        from launchcontainers import do_launch
 
-    console.print("....running run mode", style="bold cyan")
-    do_launch.main(workdir, run_lc)
+        console.print("....running run mode", style="bold cyan")
+        do_launch.main(workdir, run_lc)
+        return
+    _run_with_tool(workdir, run_lc, sub_ses_list, yes)
+
+
+def _run_with_tool(workdir, submit, sub_ses_list, yes):
+    """`lc run` through the Tool interface: every job wrapped by analysis-session."""
+    from analysis_core import AnalysisCoreError
+
+    from launchcontainers import lc_run
+    from launchcontainers.check import general_checks
+
+    console.rule(f"[bold]lc run — {workdir}[/bold]")
+    try:
+        p = lc_run.plan(workdir, sub_ses_list)
+    except AnalysisCoreError as exc:
+        console.print(f"[red]ERROR[/red] {exc}")
+        raise typer.Exit(2) from None
+    for n in p.notes:
+        console.print(f"[yellow]{n}[/yellow]")
+    for s in p.skipped:
+        console.print(f"[yellow]SKIP[/yellow] {s}")
+    console.print(
+        f"{p.tool}: {len(p.jobs)} session(s), host {p.host} ({p.manager})", style="cyan"
+    )
+    sub, ses = p.jobs[0].sub, p.jobs[0].ses
+    if (p.workdir / f"sub-{sub}").is_dir():
+        console.print("\n### example session folder", style="bold")
+        general_checks.cli_show_folder_struc(str(p.workdir), sub, ses)
+    console.print("\n### first command", style="bold")
+    console.print(p.jobs[0].line, markup=False, soft_wrap=True)
+
+    if submit and not yes:
+        try:
+            ans = input(
+                f"Launch {len(p.jobs)} job(s) on {p.host} ({p.manager})? [y/N]: "
+            )
+        except EOFError:
+            ans = ""
+        if ans.strip().lower() not in ("y", "yes"):
+            console.print("Aborted.", style="cyan")
+            raise typer.Exit(0)
+
+    try:
+        res = lc_run.run(p, submit, console=console)
+    except AnalysisCoreError as exc:
+        console.print(f"[red]ERROR[/red] {exc}")
+        raise typer.Exit(2) from None
+    for n in p.notes:
+        console.print(f"[yellow]{n}[/yellow]")
+    if res.job_script is not None:
+        console.print(f"\n### job script: {res.job_script}", style="bold")
+        console.print(res.job_script.read_text(), markup=False)
+    if not submit:
+        console.print(
+            f"[yellow]dry run[/yellow]: nothing launched; commands in {res.run_dir}. "
+            "Add -R to launch."
+        )
+        return
+    if res.submit_output:
+        console.print(f"[green]submitted[/green] {res.submit_output}")
+    if res.exit_codes:
+        n_bad = res.n_failed
+        console.print(
+            f"{len(res.exit_codes) - n_bad}/{len(res.exit_codes)} sessions exited 0",
+            style="green" if not n_bad else "red",
+        )
+    console.print(
+        f"run folder: {res.run_dir}; per-session records: {p.workdir / 'logs'}",
+        style="cyan",
+    )
+    if res.n_failed:
+        raise typer.Exit(1)
 
 
 @app.command()
