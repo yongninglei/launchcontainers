@@ -57,7 +57,16 @@
       "Bash(mount)",
       "Bash(/home/tlei/micromamba/envs/lc/bin/python /home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/prepare_glm/create_tedana_symlinks.py -fp /bcbl/home/public/Gari/IRAKEINU/derivatives/fmriprep-25.1.4_IRpilot -tedana /bcbl/home/public/Gari/IRAKEINU/derivatives/tedana-26.0.3/analysis-default_ica -s pilot02,01 -t BfLocVideo --descs echo1,echo2,echo3 --execute --overwrite)",
       "Bash(/home/tlei/micromamba/envs/lc/bin/python plot_tmap_comparison.py --base /bcbl/home/public/Gari/IRAKEINU -s pilot02,01 --analysis-name T1w_MESE_compare_basic_MC --task BfLocVideo --contrast CH_RWvsCH_SC --threshold 3.1)",
-      "Bash(/home/tlei/micromamba/envs/lc/bin/python -c ' *)"
+      "Bash(/home/tlei/micromamba/envs/lc/bin/python -c ' *)",
+      "Bash(python -c \"from generic_checker import BIDSQMRISpec, SPEC_REGISTRY; s = SPEC_REGISTRY['qmri']; print\\(s.name, '-', s.description\\)\")",
+      "Bash(python3 -c \"from generic_checker import BIDSQMRISpec, SPEC_REGISTRY; s = SPEC_REGISTRY['qmri']; print\\(s.name, '-', s.description\\)\")",
+      "Bash(conda run *)",
+      "Read(//bcbl/home/home_n-z/tlei/miniconda3/**)",
+      "Bash(/bin/python3.11 -c \"from generic_checker import BIDSQMRISpec, SPEC_REGISTRY; s = SPEC_REGISTRY['qmri']; print\\(s.name, '-', s.description\\)\")",
+      "Bash(find /bcbl/home/home_n-z/tlei -name \"python3*\" -type f 2>/dev/null | head -10; find /usr/local -name \"python3*\" -type f 2>/dev/null | head -5)",
+      "Read(//bcbl/home/home_n-z/tlei/**)",
+      "Read(//usr/local/**)",
+      "Bash(poetry lock *)"
     ],
     "additionalDirectories": [
       "/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests"

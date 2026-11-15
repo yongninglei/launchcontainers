@@ -1240,10 +1240,16 @@ def prepare_glm_input(
 
     # ── Step 5: build design matrix ───────────────────────────────────────────
     _t = time.time()
+    if not data_allrun:
+        raise RuntimeError(
+            f"sub-{subject} ses-{session}: every run was skipped, so there is no data "
+            "to fit. Check the per-run WARNING lines above (e.g. a metadata error "
+            "from first_level_from_bids means the nilearn in this env is too old)."
+        )
     conc_data_std = np.concatenate(data_allrun, axis=1)
     concat_frame_times = np.concatenate(frame_time_allrun, axis=0)
     concat_events = pd.concat(events_allrun, axis=0)
-    concat_events = concat_events.applymap(replace_prefix_and_suffix)
+    concat_events = concat_events.map(replace_prefix_and_suffix)
     concat_confounds = pd.concat(confounds_allrun, axis=0)
 
     console.print(f"\n  Confound columns:\n  {list(concat_confounds.columns)}")

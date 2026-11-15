@@ -27,6 +27,12 @@ STRATEGY="basic_MC"   # single strategy name to run, or leave empty "" to run al
 RERUN_MAP="/bcbl/home/public/Gari/VOTCLOC/main_exp/BIDS/sourcedata/qc/rerun_check.tsv"   # leave empty "" to skip
 INPUT_DIR="BIDS"           # input BIDS dir name under BASE; use BIDS_WC for WC runs
 
+# Python environment — uv project at the repo root (../CLAUDE.md: uv is the
+# default runner). `uv run` syncs .venv from pyproject.toml/uv.lock on demand.
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+UV_BIN="${UV_BIN:-uv}"
+PY_RUN="${UV_BIN} run --project ${REPO_ROOT} python"
+
 
 # ---------------------------------------------------------------------------
 # Parse arguments
@@ -136,7 +142,7 @@ for pair in "${PAIRS[@]}"; do
     LOG_OUT="${LOG_DIR}/$(date +"%H-%M")_sub-${SUB}_ses-${SES}.o"
     LOG_ERR="${LOG_DIR}/$(date +"%H-%M")_sub-${SUB}_ses-${SES}.e"
 
-    PY_CMD="python ${PYTHON_SCRIPT} \
+    PY_CMD="${PY_RUN} ${PYTHON_SCRIPT} \
         --base ${BASE} \
         -s ${SUB},${SES} \
         --fp-ana-name ${FP_ANA_NAME} \

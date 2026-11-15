@@ -34,14 +34,13 @@ INPUT_DIR="BIDS"
 STRATEGY_YAML="/scratch/tlei/lc/launchcontainers/tests/glm_strategy/strategy.yaml"
 STRATEGY_NAME="basic_MC"
 
-# Python / conda environment
-# Set CONDA_INIT to the path that makes `conda` available in your shell.
-# Do NOT use $(conda info --base) here — it runs at parse time before conda is ready.
-# Examples:
-#   tlei   : "/home/tlei/soft/miniconda3/etc/profile.d/conda.sh"
-#   glerma : "/home/tlei/soft/miniconda3/bin/activate"
-CONDA_INIT="/home/tlei/soft/miniconda3/bin/activate"
-CONDA_ENV="lc"
+# Python environment — uv project at the launchcontainers repo root on this
+# cluster (../CLAUDE.md: uv is the default runner). The .venv is synced ONCE
+# here on the login node; jobs call its python directly so parallel jobs never
+# race on the same .venv. Override with REPO_ROOT=/path/to/launchcontainers.
+REPO_ROOT="${REPO_ROOT:-/scratch/tlei/lc}"
+UV_BIN="${UV_BIN:-uv}"
+VENV_PY="${REPO_ROOT}/.venv/bin/python"
 
 # ---------------------------------------------------------------------------
 # Parse arguments
@@ -136,6 +135,17 @@ echo "============================================================"
 echo ""
 
 # ---------------------------------------------------------------------------
+# Sync the uv environment once (jobs only read .venv)
+# ---------------------------------------------------------------------------
+[[ -f "${REPO_ROOT}/pyproject.toml" ]] || {
+    echo "Error: no pyproject.toml in REPO_ROOT=${REPO_ROOT}" >&2; exit 1; }
+command -v "${UV_BIN}" >/dev/null 2>&1 || {
+    echo "Error: '${UV_BIN}' not on PATH. Set UV_BIN=/path/to/uv." >&2; exit 127; }
+UV_LINK_MODE=copy "${UV_BIN}" sync --project "${REPO_ROOT}" || {
+    echo "Error: uv sync failed in ${REPO_ROOT}" >&2; exit 1; }
+[[ -x "${VENV_PY}" ]] || { echo "Error: ${VENV_PY} not found after sync" >&2; exit 1; }
+
+# ---------------------------------------------------------------------------
 # Submit one job per sub/ses
 # ---------------------------------------------------------------------------
 job_num=1
@@ -144,7 +154,7 @@ for pair in "${PAIRS[@]}"; do
     SES=$(echo "$pair" | cut -d',' -f2 | tr -d ' ')
 
     # Build the python command
-    PY_CMD="python ${PYTHON_SCRIPT} --base ${BASE} -s ${SUB},${SES} --fp-ana-name ${FP_ANA_NAME} --task ${TASK} --space ${SPACE} --start-scans ${START_SCANS} --contrast ${CONTRAST} --analysis-name ${analysis_name} --input-dir ${INPUT_DIR} --strategy-yaml ${STRATEGY_YAML} --strategy ${STRATEGY_NAME}"
+    PY_CMD="${VENV_PY} ${PYTHON_SCRIPT} --base ${BASE} -s ${SUB},${SES} --fp-ana-name ${FP_ANA_NAME} --task ${TASK} --space ${SPACE} --start-scans ${START_SCANS} --contrast ${CONTRAST} --analysis-name ${analysis_name} --input-dir ${INPUT_DIR} --strategy-yaml ${STRATEGY_YAML} --strategy ${STRATEGY_NAME}"
     if [[ -n "${RERUN_MAP}" ]]; then
         PY_CMD="${PY_CMD} --rerun-map ${RERUN_MAP}"
     fi
@@ -165,8 +175,6 @@ for pair in "${PAIRS[@]}"; do
         --error="${ERR_FILE}" \
         --wrap="
 set -euo pipefail
-source \"${CONDA_INIT}\"
-conda activate ${CONDA_ENV}
 
 echo '============================================================'
 echo '  Job ID      : '\${SLURM_JOB_ID}

@@ -17,22 +17,24 @@ LOGBASE="/bcbl/home/public/Gari/VOTCLOC/main_exp/logs/glm"
 # run_glm.py arguments
 BASE="/bcbl/home/public/Gari/VOTCLOC/main_exp"
 FP_ANA_NAME="25.1.4_t2w_fmapsbref_newest"
-TASK="fLoc"
+TASK="WCnonestop"
 SPACE="fsnative"
-START_SCANS="6"
-CONTRAST="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/contrast_${PROJECT}_short.yaml"
+START_SCANS="5"
+CONTRAST="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/contrast_WCnonestop.yaml"
 STRATEGY_YAML="/export/home/tlei/tlei/soft/launchcontainers/launchcontainers/tests/glm_strategy/strategy.yaml"
 STRATEGY="basic_MC"   # single strategy name to run, or leave empty "" to run all strategies in the YAML
 RERUN_MAP="/bcbl/home/public/Gari/VOTCLOC/main_exp/BIDS/sourcedata/qc/rerun_check.tsv"   # leave empty "" to skip
-INPUT_DIR="BIDS"           # input BIDS dir name under BASE; use BIDS_WC for WC runs
+INPUT_DIR="BIDS_WC"           # input BIDS dir name under BASE; use BIDS_WC for WC runs
 ACQ=""                # acquisition label: "ME" | "SE" | leave empty "" for no filter
 BOLD_DESC=""          # desc label for bold query: "denoised" | "optcom" | leave empty ""
 N_VOLS=0              # truncate to first N volumes (0 = no truncation)
 
-# Python / micromamba environment
-# Set MAMBA_EXE to the full path of the micromamba binary.
-MAMBA_EXE="/export/home/tlei/tlei/soft/micromamba/micromamba"
-MAMBA_ENV="lc"
+# Python environment — each job runs `uv run --project <repo>`, which uses the
+# repo's pyproject.toml + uv.lock (../CLAUDE.md: uv is the default runner).
+# UV_BIN is resolved to an absolute path here so compute nodes find it.
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+UV_BIN="$(command -v "${UV_BIN:-uv}" || true)"
+PY_RUN="env UV_LINK_MODE=copy ${UV_BIN} run --project ${REPO_ROOT} python"
 
 # SGE / qsub settings
 QUEUE="short.q"
@@ -144,7 +146,7 @@ echo "  Acq filter    : ${ACQ:-"(none)"}"
 echo "  Bold desc     : ${BOLD_DESC:-"(none)"}"
 echo "  N vols        : ${N_VOLS}"
 echo "  Log dir       : ${LOG_DIR}"
-echo "  Mamba env     : ${MAMBA_ENV}  (exe: ${MAMBA_EXE})"
+echo "  Python        : ${PY_RUN}"
 echo "  Queue         : ${QUEUE}"
 echo "  Memory        : ${MEM}"
 echo "  CPUs          : ${CPUS}"
@@ -152,6 +154,11 @@ echo "  Time limit    : ${TIME}"
 echo "  Dry run       : ${dry_run}"
 echo "============================================================"
 echo ""
+
+if [[ -z "${UV_BIN}" ]]; then
+    echo "Error: uv not on PATH. Set UV_BIN=/path/to/uv." >&2
+    exit 127
+fi
 
 # ---------------------------------------------------------------------------
 # Submit one qsub job per session
@@ -165,7 +172,7 @@ for pair in "${PAIRS[@]}"; do
     LOG_ERR="${LOG_DIR}/$(date +"%H-%M")_sub-${SUB}_ses-${SES}.e"
     JOB_NAME="glm_${job_num}_sub${SUB}_ses${SES}"
 
-    PY_CMD="python ${PYTHON_SCRIPT} \
+    PY_CMD="${PY_RUN} ${PYTHON_SCRIPT} \
         --base ${BASE} \
         -s ${SUB},${SES} \
         --fp-ana-name ${FP_ANA_NAME} \
@@ -198,15 +205,11 @@ for pair in "${PAIRS[@]}"; do
 
     if [[ "$dry_run" -eq 1 ]]; then
         echo "    [dry-run] ${QSUB_CMD} << SCRIPT"
-        echo "      source ~/.bashrc"
         echo "      ${PY_CMD}"
         echo "    SCRIPT"
     else
         eval "${QSUB_CMD}" << SCRIPT
 #!/bin/bash
-source ~/.bashrc
-eval "\$(${MAMBA_EXE} shell hook --shell bash)"
-micromamba activate ${MAMBA_ENV}
 echo "============================================================"
 echo "  sub         : ${SUB}"
 echo "  ses         : ${SES}"

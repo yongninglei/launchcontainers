@@ -354,7 +354,7 @@ def prepare_allses_fir_input(
     del data_all
     concat_frame_times = np.concatenate(frame_times_all, axis=0)
     concat_events = pd.concat(events_all, axis=0)
-    concat_events = concat_events.applymap(replace_prefix_and_suffix)
+    concat_events = concat_events.map(replace_prefix_and_suffix)
     concat_confounds = pd.concat(confounds_all, axis=0)
 
     nonan_confounds = concat_confounds.dropna(axis=1, how="any")

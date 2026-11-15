@@ -125,7 +125,7 @@ def compute_curve_metrics(
     time_to_peak = fine_t[peak_idx]
 
     # ── AUC (step 7) ──────────────────────────────────────────────────────────
-    auc = np.trapz(curve_fine, fine_t, axis=1)
+    auc = np.trapezoid(curve_fine, fine_t, axis=1)
 
     # ── FWHM width (step 7) ───────────────────────────────────────────────────
     baseline = work_curve[:, 0]
