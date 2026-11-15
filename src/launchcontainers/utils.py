@@ -60,7 +60,7 @@ def hms_to_sec(ts: str) -> float:
 
 
 def times_match(t1: str, t2: str, max_diff_sec: int = 30) -> bool:
-    """Return True if \|t1 - t2\| <= max_diff_sec."""
+    """Return True if |t1 - t2| <= max_diff_sec."""
     if t1 is None or t2 is None:
         return False
     try:

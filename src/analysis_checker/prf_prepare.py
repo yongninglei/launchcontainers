@@ -262,7 +262,9 @@ class PRFPrepareSpec(AnalysisSpec):
         if not session_dir.is_dir():
             return groups
 
-        bold_tasks, event_tasks, mix_errors = self._discover_tasks(session_dir, prefix, sub, ses)
+        bold_tasks, event_tasks, mix_errors = self._discover_tasks(
+            session_dir, prefix, sub, ses
+        )
 
         # 2. Bold groups
         for task in sorted(bold_tasks):

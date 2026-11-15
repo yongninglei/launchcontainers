@@ -82,7 +82,25 @@ only from it, never from the original `basedir/code/` files.
 
 ---
 
-## Code structure
+## Restructure onto analysis-core (branch `fix/lc-bugs`, 2026-11)
+
+The design contract is `../analysis-core/ARCHITECTURE.md`; it supersedes the
+sections below where they disagree.
+
+- Package code is in `src/launchcontainers/` (src layout). The study scripts in
+  `launchcontainers/tests/` stayed at the old path (their launchers hard-code
+  it) and are to move to VOTCLOC.
+- DWI containers are Tools: `src/launchcontainers/tools/dwi.py`, registered
+  under the `analysis_core.tools` entry points. `lc prepare` for them runs
+  `lc_prepare.py` (config guard, run log, sessions.tsv from analysis-core);
+  `l1_surface` still takes the legacy `do_prepare` path.
+- `tests/test_golden.py` checks the Tool path against snapshots of the legacy
+  code (`tests/golden/`, fake dataset in `tests/fakedata.py`). Any change to
+  staging must keep it green or re-capture the goldens deliberately.
+- Still to port: `lc run` (backends by `manager`, `analysis-session` wrapper),
+  `lc qc`, GLM.
+
+## Code structure (pre-restructure)
 
 ```
 launchcontainers/

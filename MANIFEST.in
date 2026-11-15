@@ -1,2 +1,2 @@
 include versioneer.py
-include launchcontainers/_version.py
+include src/launchcontainers/_version.py

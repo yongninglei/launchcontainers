@@ -54,6 +54,7 @@ dependencies = [
     "rich>=13.0",
     "tqdm",
     "tedana==26.0.3",
+    "analysis-core>=0.1.2",
 ]
 
 [project.urls]
@@ -63,6 +64,14 @@ Repository = "https://github.com/garikoitz/launchcontainers"
 # the main function
 lc = "launchcontainers.cli:main"
 checker = "analysis_checker.check_analysis_integrity:main"
+
+[project.entry-points."analysis_core.tools"]
+anatrois = "launchcontainers.tools.dwi:ANATROIS"
+freesurferator = "launchcontainers.tools.dwi:FREESURFERATOR"
+rtppreproc = "launchcontainers.tools.dwi:RTPPREPROC"
+rtp2-preproc = "launchcontainers.tools.dwi:RTP2_PREPROC"
+rtp-pipeline = "launchcontainers.tools.dwi:RTP_PIPELINE"
+rtp2-pipeline = "launchcontainers.tools.dwi:RTP2_PIPELINE"
 
 [dependency-groups]
 dev = [
@@ -88,6 +97,10 @@ docs = [
     "myst-parser",
 ]
 
+[tool.uv.sources]
+# local sibling checkout until analysis-core is published
+analysis-core = { path = "../analysis-core", editable = true }
+
 [tool.uv]
 default-groups = ["dev"]
 # The .venv is shared by brodmann (Rocky 8, glibc 2.28) and the ips SGE nodes
@@ -109,4 +122,4 @@ constraint-dependencies = [
 ]
 
 [tool.hatch.build.targets.wheel]
-packages = ["launchcontainers", "analysis_checker"]
+packages = ["src/launchcontainers", "src/analysis_checker"]

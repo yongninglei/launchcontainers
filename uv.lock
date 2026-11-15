@@ -56,6 +56,28 @@ wheels = [
 ]
 
 [[package]]
+name = "analysis-core"
+version = "0.1.2"
+source = { editable = "../analysis-core" }
+dependencies = [
+    { name = "pyyaml" },
+    { name = "rich" },
+    { name = "typer" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
+    { name = "pyyaml", specifier = ">=6.0" },
+    { name = "rich", specifier = ">=13.0" },
+    { name = "typer", specifier = ">=0.12" },
+]
+provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=8.0" }]
+
+[[package]]
 name = "annotated-doc"
 version = "0.0.5"
 source = { registry = "https://pypi.org/simple" }
@@ -1591,6 +1613,7 @@ name = "launchcontainers"
 version = "0.4.8"
 source = { editable = "." }
 dependencies = [
+    { name = "analysis-core" },
     { name = "bids" },
     { name = "bokeh", version = "3.9.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "bokeh", version = "3.10.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
@@ -1643,6 +1666,7 @@ docs = [
 
 [package.metadata]
 requires-dist = [
+    { name = "analysis-core", editable = "../analysis-core" },
     { name = "bids" },
     { name = "bokeh", specifier = ">=2.4.2" },
     { name = "h5py", specifier = ">=3.0" },
