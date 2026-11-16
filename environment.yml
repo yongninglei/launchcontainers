@@ -27,4 +27,7 @@ dependencies:
       - "rich>=13.0"
       - "tqdm"
       - "tedana==26.0.3"
+      # shared MRI-hub core (not on PyPI; until published: -e ../analysis-core)
+      - "analysis-core @ git+https://github.com/MRI-hub/analysis-core"
+      # GLM: add  -e ../pyGLM  (optional extra "glm")
       - -e .

@@ -22,3 +22,6 @@ h5py>=3.0
 rich>=13.0
 tqdm
 tedana==26.0.3
+# shared MRI-hub core (not on PyPI; until published: pip install -e ../analysis-core)
+analysis-core @ git+https://github.com/MRI-hub/analysis-core
+# GLM (optional extra "glm"): pip install -e ../pyGLM   (Python 3.11-3.12)
