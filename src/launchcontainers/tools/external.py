@@ -210,4 +210,11 @@ AUTOROI_CLUSTERING = ExternalTool("autoROI-clustering", "autoroi-clustering")
 # swi_preproc's raw-QC stage: echo average + rigid MC of every SWI run to run-01.
 # Needs greedy in lc's environment (cajal: module load vtk/9.1 itk/5.4.5 greedy/latest).
 SWI_PREP = ExternalTool("swi-prep", "swi-prep")
-EXTERNAL = {t.name: t for t in (PYGLM, AUTOROI_SCALING, AUTOROI_CLUSTERING, SWI_PREP)}
+# swi_preproc's main stage (Faruk Gulban's procedure): crop, 2x, MC at 2x, composite of
+# the runs chosen at raw QC, N4, registration to the T1w. Needs c3d, greedy and ANTs on
+# lc's PATH (cajal: module load vtk/9.1 itk/5.4.5 c3d/latest greedy/latest ants/2.5.1).
+SWI_PREPROC = ExternalTool("swi-preproc", "swi-preproc")
+EXTERNAL = {
+    t.name: t
+    for t in (PYGLM, AUTOROI_SCALING, AUTOROI_CLUSTERING, SWI_PREP, SWI_PREPROC)
+}
