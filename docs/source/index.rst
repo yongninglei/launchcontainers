@@ -85,15 +85,15 @@ For **users** — install the latest release from PyPI:
 
    pip install launchcontainers
 
-For **developers** — clone the repo and install with Poetry:
+For **developers** — clone the repo and install with uv:
 
 .. code-block:: console
 
-   pip install pipx && pipx install poetry
+   curl -LsSf https://astral.sh/uv/install.sh | sh
    git clone https://github.com/garikoitz/launchcontainers.git
    cd launchcontainers
-   poetry env use python3 && poetry install
-   poetry shell
+   uv sync
+   uv run lc --help
 
 See the :doc:`installation` page for full requirements, verification steps,
 and instructions for building the documentation locally.

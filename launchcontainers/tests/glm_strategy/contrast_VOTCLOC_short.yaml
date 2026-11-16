@@ -1,3 +1,28 @@
+# For the percentage signal change of Null
+PERvsNull:
+  positive: ["SC"]
+  negative: []
+
+FFvsNull:
+  positive: ["FF"]
+  negative: []
+
+CSvsNull:
+  positive: ["CS"]
+  negative: []
+
+RWvsNull:
+  positive: ["RW"]
+  negative: []
+
+FacesvsNull:
+  positive: ["face"]
+  negative: []
+
+LimbsvsNull:
+  positive: ["bodylimb"]
+  negative: []
+
 # For RW
 RWvsLEX:
   positive: ["RW"]
@@ -41,6 +66,17 @@ CSvsPER:
   positive: ["CS"]
   negative: ["SC"]
 
+CSvsAllnoCS:
+  positive: ["CS"]
+  negative: ["FF", "SC", "bodylimb", "face","RW"]
+
+CSvsAllnoCSnoWord:
+  positive: ["CS"]
+  negative: ["FF", "SC", "bodylimb", "face"]
+
+CSvsAllnoCSnoWordnoFF:
+  positive: ["CS"]
+  negative: ["SC", "bodylimb", "face"]
 
 # Faces
 
@@ -48,8 +84,24 @@ FacesvsAllnoFace:
   positive: ["face"]
   negative: ["SC", "CS", "FF", "bodylimb","RW"]
 
+FacesvsAllnoFacenoRW:
+  positive: ["face"]
+  negative: ["SC", "CS", "FF", "bodylimb"]
+
+FacesvsAllnoFacenoCS:
+  positive: ["face"]
+  negative: ["SC", "FF", "bodylimb","RW"]
+
 # Bodylimbs
 
 LimbsvsAllnoLimbs:
   positive: ["bodylimb"]
   negative: ["SC", "CS", "FF", "face","RW"]
+
+LimbsvsAllnoLimbsnoRW:
+  positive: ["bodylimb"]
+  negative: ["SC", "CS", "FF", "face"]
+
+LimbsvsAllnoLimbsnoCS:
+  positive: ["bodylimb"]
+  negative: ["SC", "FF", "face","RW"]

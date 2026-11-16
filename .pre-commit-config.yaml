@@ -10,6 +10,9 @@ repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.4
     hooks:
+      # versioneer's generated file and scratch notebooks are not linted
       - id: ruff
         args: [--fix]
+        exclude: '(_version\.py|\.ipynb)$'
       - id: ruff-format
+        exclude: '(_version\.py|\.ipynb)$'

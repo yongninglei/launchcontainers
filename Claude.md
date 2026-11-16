@@ -4,6 +4,11 @@ This file is read automatically by Claude Code. It provides full context
 about the project so you can contribute effectively without needing to
 re-explain the architecture each session.
 
+Shared neuroimaging script conventions (typer/rich CLI, one-sub-per-call,
+parallel option, timing, bash launcher skeleton) are in `../CLAUDE.md`.
+
+**Open / handed-off work is tracked in `HANDOFF.md`. Read it first.**
+
 ---
 
 ## Project overview
@@ -14,7 +19,7 @@ BIDS-compliant way. Developed at BCBL (Basque Center on Cognition, Brain
 and Language). Right know it is under development.
 
 - **Repo**: https://github.com/garikoitz/launchcontainers
-- **Package manager**: Poetry (`pyproject.toml`)
+- **Package manager**: uv (`pyproject.toml` + `uv.lock`, hatchling backend)
 - **Entry points**: `lc` (pipeline launcher), `checker` (integrity checker)
 - **Python**: 3.10+
 
@@ -23,12 +28,41 @@ and Language). Right know it is under development.
 ## Install (development)
 
 ```bash
-pip install pipx && pipx install poetry
 git clone https://github.com/garikoitz/launchcontainers.git
 cd launchcontainers
-poetry env use python3 && poetry install
-poetry shell
+uv sync                       # .venv from pyproject.toml + uv.lock
+uv run lc --help              # no activation needed
 ```
+
+Launchers (`launchcontainers/tests/glm_strategy/*.sh`):
+- local: `uv run --project <repo> python <script>`
+- SGE / Slurm: `uv sync` once on the submit host, jobs call
+  `<repo>/.venv/bin/python` directly (uv cannot lock files on cajal03,
+  and parallel `uv run`s race on the same `.venv`).
+
+`requirements.txt` and `environment.yml` are derived from `pyproject.toml`;
+update all three together.
+
+---
+
+## Host paths — `/export/home` vs `/home`
+
+The same user home is mounted under different prefixes per machine:
+
+| Machine | Home prefix |
+|---|---|
+| ips, lmc02, cajal03, cajal04 | `/export/home/tlei/...` |
+| brodmann (where Claude runs) | `/home/tlei/...` (`/export` does not exist) |
+
+- Swap the prefix (`/export/home/tlei` ↔ `/home/tlei`) when moving a path
+  between these machines; `/bcbl/...` paths are the same everywhere.
+- On brodmann, `/home/tlei/tlei` resolves to `/bcbl/home/home_n-z/tlei`.
+- Lab DICOMs: symlinks in `VOTCLOC/main_exp/dicom` written on the cluster
+  point to `/export/home/tlei/lab/MRI/VOTCLOC_22324/...`; on brodmann the same
+  data is at `/bcbl/data/MRI/VOTCLOC_22324/...` (use this form for new links —
+  it works on every machine).
+- The heudiconv `src_heudiconv_step*.sh` scripts bind `/export` only when it
+  exists, so they run on both kinds of host.
 
 ---
 
@@ -48,7 +82,54 @@ only from it, never from the original `basedir/code/` files.
 
 ---
 
-## Code structure
+## Restructure onto analysis-core (branch `fix/lc-bugs`, 2026-11)
+
+The design contract is `../analysis-core/ARCHITECTURE.md`; it supersedes the
+sections below where they disagree.
+
+- Package code is in `src/launchcontainers/` (src layout). The study scripts in
+  `launchcontainers/tests/` stayed at the old path (their launchers hard-code
+  it) and are to move to VOTCLOC.
+- DWI containers are Tools: `src/launchcontainers/tools/dwi.py`, registered
+  under the `analysis_core.tools` entry points. `lc prepare` for them runs
+  `lc_prepare.py` (config guard, run log, sessions.tsv from analysis-core);
+  `l1_surface` still takes the legacy `do_prepare` path.
+- `tests/test_golden.py` checks the Tool path against snapshots of the legacy
+  code (`tests/golden/`, fake dataset in `tests/fakedata.py`). Any change to
+  staging must keep it green or re-capture the goldens deliberately.
+- `lc run -w <analysis_dir> [-R] [-ssl list] [-y]` for Tools is `lc_run.py`:
+  one line per session, `analysis-session --analysis-dir … --tool … --sub --ses
+  -- <tool.command()>`; backend from `host_options.<host>.manager`
+  (local/sge/slurm). Each call writes `logs/run_<stamp>[_dryrun]/`
+  (commands.txt, jobs.tsv, job script, scheduler .out/.err, exit_codes.tsv);
+  per-session records come from the wrapper (`logs/<dir>_sub-XX_ses-YY_<ts>/`,
+  `sessions.tsv`). Sessions whose last *prepare* status is not `prepared` are
+  skipped. Optional LC-only tool hook `before_run(tc, pairs, submit)` (DWI: check
+  `<name>.json` has `inputs`, back up `RTP_log.txt`). Optional host keys:
+  `n_workers`, `mem_per_job` (local), `sge_extra` / `slurm_extra` (directive lines).
+  Tests: `tests/test_run.py`.
+- `lc qc -w <analysis_dir> [-ssl] [--overwrite] [--serve --port --host]` is
+  `lc_qc.py`: per session `tool.qc()` + a `last run` check from sessions.tsv →
+  `qc/index.html`, `qc/sub-XX_ses-YY.html`, `qc/qc.tsv`,
+  `qc/failed_subseslist.txt` (feed to `lc run -ssl`). Following QC-registration,
+  `tool.qc()` pre-renders PNGs with `analysis_core.slices` (fingerprinted, so
+  unchanged items are skipped); `--serve` opens core's rating page
+  (`qc/qc_rater-<name>.tsv`). DWI items: `segmentation` (anatrois /
+  freesurferator: aparc+aseg / brainmask on T1), `dwi_on_t1` (preproc: mean b0
+  on t1); rtp(2)-pipeline: `RTP_log` exit-line check, no figure yet.
+  Tests: `tests/test_qc.py`.
+- GLM: **pyGLM is the reference** (MRI-hub/pyGLM, tool `pyGLM`, `uv sync
+  --extra glm`). `lc prepare` with `container: l1_surface` still runs the GLM
+  *input* preparation (`prepare/glm_prepare.py` via `do_prepare`: events.tsv
+  from vistadisp logs, BIDS/fMRIPrep BOLD symlinks), which pyGLM does not
+  have; `lc run` / `lc qc` on l1_surface exit 2 pointing to pyGLM. The old
+  launch path (`do_launch`, `do_qc`, `clusters/`, `gen_py_cmd`,
+  `gen_matlab_cmd`) and the checker's `glm` spec are no longer used.
+  Study scripts that still load `tests/glm_strategy/glm_surface_check_model_strategy.py`
+  by path: FIR (`run_allses_glm_FIR.py`, `fir_curve_metrics.py`) and
+  `power_analysis_ohbm/` — pyGLM has not ported these yet, so that file stays.
+
+## Code structure (pre-restructure)
 
 ```
 launchcontainers/

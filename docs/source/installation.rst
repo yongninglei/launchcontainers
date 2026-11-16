@@ -39,18 +39,14 @@ For developers — install from source with Poetry
 -------------------------------------------------
 
 If you want to contribute or run the latest development version, use
-`Poetry <https://python-poetry.org>`_ to manage the virtual environment.
+`uv <https://docs.astral.sh/uv/>`_ to manage the virtual environment.
 
-**Step 1 — Install pipx and Poetry** (once per machine):
-
-``pipx`` installs Poetry into its own isolated environment so it never
-conflicts with project dependencies.
+**Step 1 — Install uv** (once per machine):
 
 .. code-block:: console
 
-   pip install pipx
-   pipx install poetry
-   poetry --version   # verify
+   curl -LsSf https://astral.sh/uv/install.sh | sh
+   uv --version   # verify
 
 **Step 2 — Clone the repository:**
 
@@ -63,21 +59,26 @@ conflicts with project dependencies.
 
 .. code-block:: console
 
-   poetry env use python3
-   poetry install
+   uv sync   # creates .venv from pyproject.toml + uv.lock
 
-**Step 4 — Activate the environment:**
+**Step 4 — Run the entry points:**
 
-.. code-block:: console
-
-   poetry shell
-
-All subsequent ``lc`` and ``checker`` commands can be run directly inside
-the Poetry shell, or prefixed with ``poetry run`` without activating it:
+Prefix commands with ``uv run``; no activation is needed:
 
 .. code-block:: console
 
-   poetry run lc --help
+   uv run lc --help
+   uv run checker --help
+
+From outside the repo, point uv at it with ``--project``:
+
+.. code-block:: console
+
+   uv run --project /path/to/launchcontainers lc --help
+
+On HPC compute nodes, run ``uv sync`` once on the login node and call
+``/path/to/launchcontainers/.venv/bin/lc`` directly in the jobs. Many jobs
+running ``uv run`` in parallel would race on the same ``.venv``.
 
 ----
 

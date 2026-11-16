@@ -1,0 +1,18 @@
+# Contrasts for the run-count power analysis — NEW names (helper-app naming).
+# Old names in brackets for reference.
+
+RWvsAllNotext:            # [RWvsAllnoWordnoLEX]  RW vs non-text (tiger_ROI_auto contrast)
+  positive: ["RW"]
+  negative: ["SC", "bodylimb", "face"]
+
+RWvsAllnoletterstring:    # [RWvsAllnoRWnoCS]
+  positive: ["RW"]
+  negative: ["SC", "bodylimb", "face", "FF"]
+
+RWvsSC:                   # [RWvsPER]
+  positive: ["RW"]
+  negative: ["SC"]
+
+RWvsFF:
+  positive: ["RW"]
+  negative: ["FF"]

@@ -53,9 +53,13 @@ declare -A SESSION_OVERRIDES
 # Add per-subject session overrides here if needed, e.g.:
 # SESSION_OVERRIDES["05"]="day1VA,day1VB,day2VA,day2VB,day3PF"
 
-# Python / conda environment
-CONDA_INIT="/home/tlei/soft/miniconda3/bin/activate"
-CONDA_ENV="lc"
+# Python environment — uv project at the launchcontainers repo root on this
+# cluster (../CLAUDE.md: uv is the default runner). The .venv is synced ONCE
+# here on the login node; jobs call its python directly so parallel jobs never
+# race on the same .venv. Override with REPO_ROOT=/path/to/launchcontainers.
+REPO_ROOT="${REPO_ROOT:-/scratch/tlei/lc}"
+UV_BIN="${UV_BIN:-uv}"
+VENV_PY="${REPO_ROOT}/.venv/bin/python"
 
 # ---------------------------------------------------------------------------
 # Parse arguments
@@ -156,13 +160,24 @@ echo "============================================================"
 echo ""
 
 # ---------------------------------------------------------------------------
+# Sync the uv environment once (jobs only read .venv)
+# ---------------------------------------------------------------------------
+[[ -f "${REPO_ROOT}/pyproject.toml" ]] || {
+    echo "Error: no pyproject.toml in REPO_ROOT=${REPO_ROOT}" >&2; exit 1; }
+command -v "${UV_BIN}" >/dev/null 2>&1 || {
+    echo "Error: '${UV_BIN}' not on PATH. Set UV_BIN=/path/to/uv." >&2; exit 127; }
+UV_LINK_MODE=copy "${UV_BIN}" sync --project "${REPO_ROOT}" || {
+    echo "Error: uv sync failed in ${REPO_ROOT}" >&2; exit 1; }
+[[ -x "${VENV_PY}" ]] || { echo "Error: ${VENV_PY} not found after sync" >&2; exit 1; }
+
+# ---------------------------------------------------------------------------
 # Submit one job per subject
 # ---------------------------------------------------------------------------
 job_num=1
 for SUB in "${SUBS[@]}"; do
 
     # Build python command
-    PY_CMD="python ${PYTHON_SCRIPT} --base ${BASE} --sub ${SUB} --fp-ana-name ${FP_ANA_NAME} --task ${TASK} --space ${SPACE} --start-scans ${START_SCANS} --contrast ${CONTRAST} --output-name ${output_name} --input-dir ${INPUT_DIR}"
+    PY_CMD="${VENV_PY} ${PYTHON_SCRIPT} --base ${BASE} --sub ${SUB} --fp-ana-name ${FP_ANA_NAME} --task ${TASK} --space ${SPACE} --start-scans ${START_SCANS} --contrast ${CONTRAST} --output-name ${output_name} --input-dir ${INPUT_DIR}"
 
     # Session source priority:
     #   1. SESSION_OVERRIDES[sub]  →  pass --sessions explicitly
@@ -193,8 +208,6 @@ for SUB in "${SUBS[@]}"; do
         --error="${ERR_FILE}" \
         --wrap="
 set -euo pipefail
-source \"${CONDA_INIT}\"
-conda activate ${CONDA_ENV}
 
 echo '============================================================'
 echo '  Job ID      : '\${SLURM_JOB_ID}

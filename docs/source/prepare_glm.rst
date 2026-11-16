@@ -3,6 +3,14 @@
 Prepare — fMRI GLM
 ==================
 
+.. note::
+
+   This page is the GLM **input** preparation (``lc prepare`` with
+   ``container: l1_surface``). The GLM itself is
+   `pyGLM <https://github.com/MRI-hub/pyGLM>`_, run by ``lc`` as the ``pyGLM``
+   tool (``general.tool: pyGLM``; install with ``uv sync --extra glm``).
+   ``lc run`` / ``lc qc`` on an ``l1_surface`` config stop with this pointer.
+
 What are we preparing?
 -----------------------
 

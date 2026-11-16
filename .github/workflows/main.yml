@@ -85,25 +85,39 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
 
       - name: Install Pandoc
         run: sudo apt-get install -y pandoc
 
+      # analysis-core is a path dependency (../analysis-core, and ../pyGLM
+      # for the optional glm extra) and a private
+      # MRI-hub repo: needs the secret ANALYSIS_CORE_TOKEN (fine-grained PAT,
+      # read-only "Contents" on MRI-hub/analysis-core and MRI-hub/pyGLM).
+      - uses: actions/checkout@v4
+        with:
+          repository: MRI-hub/analysis-core
+          token: ${{ secrets.ANALYSIS_CORE_TOKEN }}
+          path: _analysis-core
+      - run: mv _analysis-core ../analysis-core
+      - uses: actions/checkout@v4
+        with:
+          repository: MRI-hub/pyGLM
+          token: ${{ secrets.ANALYSIS_CORE_TOKEN }}
+          path: _pyGLM
+      - run: mv _pyGLM ../pyGLM
       - name: Install launchcontainers + docs dependencies
         run: |
-          pip install -e .
-          pip install -r docs/requirements.txt
+          uv sync --group docs
+          uv pip install -r docs/requirements.txt
 
       - name: Build Documentation
         env:
-          PYTHONPATH: ${{ github.workspace }}
+          PYTHONPATH: ${{ github.workspace }}/src
         run: |
           cd docs
-          make html
+          uv run make html
 
       - name: Create .nojekyll file
         # Prevents GitHub Pages from ignoring folders that start with underscore
