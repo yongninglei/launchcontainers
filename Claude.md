@@ -1,11 +1,10 @@
 # CLAUDE.md — launchcontainers project context
 
-This file is read automatically by Claude Code. It provides full context
-about the project so you can contribute effectively without needing to
-re-explain the architecture each session.
-
-Shared neuroimaging script conventions (typer/rich CLI, one-sub-per-call,
-parallel option, timing, bash launcher skeleton) are in `../CLAUDE.md`.
+Read automatically by Claude Code. Shared conventions (uv, src layout,
+typer + rich, one sub/ses per call, `subseslist.txt`, launchers, release /
+CITATION rules) are in `~/soft/CLAUDE.md`. The design contract for MRI-hub —
+the Tool interface, provenance, run logs, QC — is
+`../analysis-core/ARCHITECTURE.md`; it wins where this file disagrees.
 
 **Open / handed-off work is tracked in `HANDOFF.md`. Read it first.**
 
@@ -13,317 +12,199 @@ parallel option, timing, bash launcher skeleton) are in `../CLAUDE.md`.
 
 ## Project overview
 
-**launchcontainers** is an open-source Python framework for launching
-neuroimaging analysis pipelines on HPC clusters in a reproducible,
-BIDS-compliant way. Developed at BCBL (Basque Center on Cognition, Brain
-and Language). Right know it is under development.
+**launchcontainers** (`lc`) is the launcher of MRI-hub: it prepares, runs and
+QCs neuroimaging analyses on local machines and HPC clusters, one
+subject × session at a time, BIDS-compliant. Developed at BCBL.
 
-- **Repo**: https://github.com/garikoitz/launchcontainers
-- **Package manager**: uv (`pyproject.toml` + `uv.lock`, hatchling backend)
-- **Entry points**: `lc` (pipeline launcher), `checker` (integrity checker)
-- **Python**: 3.10+
+- **Repos**: working fork `github.com/yongninglei/launchcontainers` (`origin`,
+  branch `main`); shared repo `github.com/MRI-hub/launchcontainers`
+  (`master`, protected: 1 approving review); `upstream` =
+  `garikoitz/launchcontainers`.
+- **Built on** `analysis-core` (`github.com/MRI-hub/analysis-core`, private):
+  work list, config loader + guard, provenance, run logs, Tool interface, QC
+  report, slice renderer, rating page.
+- **Entry points**: `lc` (`launchcontainers.cli:main`), `checker`
+  (`analysis_checker.check_analysis_integrity:main`).
+- **Python** 3.10+ (uv-managed 3.11 in `.python-version`).
 
 ---
 
 ## Install (development)
 
-```bash
-git clone https://github.com/garikoitz/launchcontainers.git
-cd launchcontainers
-uv sync                       # .venv from pyproject.toml + uv.lock
-uv run lc --help              # no activation needed
+Clone the sibling repos next to this one — `pyproject.toml` takes them from
+`../` via `[tool.uv.sources]`:
+
+```
+MRI-hub/
+├── launchcontainers/     this repo
+├── analysis-core/        required
+└── pyGLM/                for the GLM (optional extra "glm")
 ```
 
-Launchers (`launchcontainers/tests/glm_strategy/*.sh`):
-- local: `uv run --project <repo> python <script>`
-- SGE / Slurm: `uv sync` once on the submit host, jobs call
-  `<repo>/.venv/bin/python` directly (uv cannot lock files on cajal03,
-  and parallel `uv run`s race on the same `.venv`).
+```bash
+uv sync                  # .venv from pyproject.toml + uv.lock (needs ../analysis-core)
+uv sync --extra glm      # + pyGLM from ../pyGLM (Python 3.11–3.12)
+uv run lc --help
+```
 
-`requirements.txt` and `environment.yml` are derived from `pyproject.toml`;
-update all three together.
+- On SGE / Slurm: `uv sync` once on the submit host; jobs call
+  `<repo>/.venv/bin/...` directly (uv cannot take file locks on cajal03, and
+  parallel `uv run`s race on one `.venv`). `lc run` does this already: every
+  job line uses the `analysis-session` next to the interpreter running `lc`.
+- `requirements.txt` / `environment.yml` are derived from `pyproject.toml`
+  (analysis-core as `git+https://github.com/MRI-hub/analysis-core`); update
+  all three together.
+- CI (`.github/workflows/main.yml`, docs job) checks out analysis-core and
+  pyGLM next to the repo with the secret `ANALYSIS_CORE_TOKEN` (read-only PAT).
 
 ---
 
 ## Host paths — `/export/home` vs `/home`
 
-The same user home is mounted under different prefixes per machine:
-
 | Machine | Home prefix |
 |---|---|
 | ips, lmc02, cajal03, cajal04 | `/export/home/tlei/...` |
-| brodmann (where Claude runs) | `/home/tlei/...` (`/export` does not exist) |
+| brodmann | `/home/tlei/...` (`/export` does not exist) |
 
-- Swap the prefix (`/export/home/tlei` ↔ `/home/tlei`) when moving a path
-  between these machines; `/bcbl/...` paths are the same everywhere.
-- On brodmann, `/home/tlei/tlei` resolves to `/bcbl/home/home_n-z/tlei`.
-- Lab DICOMs: symlinks in `VOTCLOC/main_exp/dicom` written on the cluster
-  point to `/export/home/tlei/lab/MRI/VOTCLOC_22324/...`; on brodmann the same
-  data is at `/bcbl/data/MRI/VOTCLOC_22324/...` (use this form for new links —
-  it works on every machine).
+- Swap the prefix when moving a path between these machines; `/bcbl/...`
+  paths are the same everywhere. On brodmann `/home/tlei/tlei` resolves to
+  `/bcbl/home/home_n-z/tlei`.
+- Lab DICOMs: links in `VOTCLOC/main_exp/dicom` written on the cluster point to
+  `/export/home/tlei/lab/MRI/VOTCLOC_22324/...`; on brodmann the data is at
+  `/bcbl/data/MRI/VOTCLOC_22324/...` (use this form for new links).
 - The heudiconv `src_heudiconv_step*.sh` scripts bind `/export` only when it
   exists, so they run on both kinds of host.
 
 ---
 
-## Core architecture — three-phase workflow
+## Workflow: prepare → run → qc
 
 ```
-lc prepare  →  lc run  →  lc qc (not implemented yet, maybe move the checker funciton to here)
+lc prepare -lcc lc_config.yaml -ssl subseslist.txt [-cc container.json]
+lc run     -w <analysis_dir> [-R] [-ssl list] [-y]
+lc qc      -w <analysis_dir> [-ssl list] [--overwrite] [--serve --port --host]
 ```
 
-- **prepare**: validates inputs, creates analysis directory under
-  `BIDS/derivatives/`, freezes configs, generates per-subject HPC scripts
-- **run**: submits scripts to SLURM / SGE / local
-- **qc**: checks outputs, writes `failed_subseslist.tsv` for re-runs
+The **analysis directory** is the source of truth: `run` and `qc` read only
+its `lc_config.yaml` / `subseslist.txt`, never `basedir/code/`.
 
-The **analysis directory** is the source of truth — `run` and `qc` read
-only from it, never from the original `basedir/code/` files.
+Every command resolves `general.tool` (alias `general.container`) to a
+**Tool** — built-in (`tools/dwi.py`) or any package registered under the
+`analysis_core.tools` entry point (pyGLM, autoROI, QC-registration) — and
+loops over the work list; the tool does one sub/ses per call.
 
----
-
-## Restructure onto analysis-core (branch `fix/lc-bugs`, 2026-11)
-
-The design contract is `../analysis-core/ARCHITECTURE.md`; it supersedes the
-sections below where they disagree.
-
-- Package code is in `src/launchcontainers/` (src layout). The study scripts in
-  `launchcontainers/tests/` stayed at the old path (their launchers hard-code
-  it) and are to move to VOTCLOC.
-- DWI containers are Tools: `src/launchcontainers/tools/dwi.py`, registered
-  under the `analysis_core.tools` entry points. `lc prepare` for them runs
-  `lc_prepare.py` (config guard, run log, sessions.tsv from analysis-core);
-  `l1_surface` still takes the legacy `do_prepare` path.
-- `tests/test_golden.py` checks the Tool path against snapshots of the legacy
-  code (`tests/golden/`, fake dataset in `tests/fakedata.py`). Any change to
-  staging must keep it green or re-capture the goldens deliberately.
-- `lc run -w <analysis_dir> [-R] [-ssl list] [-y]` for Tools is `lc_run.py`:
-  one line per session, `analysis-session --analysis-dir … --tool … --sub --ses
-  -- <tool.command()>`; backend from `host_options.<host>.manager`
-  (local/sge/slurm). Each call writes `logs/run_<stamp>[_dryrun]/`
-  (commands.txt, jobs.tsv, job script, scheduler .out/.err, exit_codes.tsv);
-  per-session records come from the wrapper (`logs/<dir>_sub-XX_ses-YY_<ts>/`,
-  `sessions.tsv`). Sessions whose last *prepare* status is not `prepared` are
-  skipped. Optional LC-only tool hook `before_run(tc, pairs, submit)` (DWI: check
-  `<name>.json` has `inputs`, back up `RTP_log.txt`). Optional host keys:
-  `n_workers`, `mem_per_job` (local), `sge_extra` / `slurm_extra` (directive lines).
-  Tests: `tests/test_run.py`.
-- `lc qc -w <analysis_dir> [-ssl] [--overwrite] [--serve --port --host]` is
-  `lc_qc.py`: per session `tool.qc()` + a `last run` check from sessions.tsv →
-  `qc/index.html`, `qc/sub-XX_ses-YY.html`, `qc/qc.tsv`,
-  `qc/failed_subseslist.txt` (feed to `lc run -ssl`). Following QC-registration,
-  `tool.qc()` pre-renders PNGs with `analysis_core.slices` (fingerprinted, so
-  unchanged items are skipped); `--serve` opens core's rating page
-  (`qc/qc_rater-<name>.tsv`). DWI items: `segmentation` (anatrois /
-  freesurferator: aparc+aseg / brainmask on T1), `dwi_on_t1` (preproc: mean b0
-  on t1); rtp(2)-pipeline: `RTP_log` exit-line check, no figure yet.
-  Tests: `tests/test_qc.py`.
-- GLM: **pyGLM is the reference** (MRI-hub/pyGLM, tool `pyGLM`, `uv sync
-  --extra glm`). `lc prepare` with `container: l1_surface` still runs the GLM
-  *input* preparation (`prepare/glm_prepare.py` via `do_prepare`: events.tsv
-  from vistadisp logs, BIDS/fMRIPrep BOLD symlinks), which pyGLM does not
-  have; `lc run` / `lc qc` on l1_surface exit 2 pointing to pyGLM. The old
-  launch path (`do_launch`, `do_qc`, `clusters/`, `gen_py_cmd`,
-  `gen_matlab_cmd`) and the checker's `glm` spec are no longer used.
-  Study scripts that still load `tests/glm_strategy/glm_surface_check_model_strategy.py`
-  by path: FIR (`run_allses_glm_FIR.py`, `fir_curve_metrics.py`) and
-  `power_analysis_ohbm/` — pyGLM has not ported these yet, so that file stays.
-
-## Code structure (pre-restructure)
-
-```
-launchcontainers/
-├── cli.py                        ← argparse entry point; dispatches all subcommands
-├── do_prepare.py                 ← DWI container prepare (legacy path, do not modify)
-├── do_launch.py                  ← job submission
-├── do_qc.py                      ← quality control
-├── utils.py                      ← shared utilities (read_yaml, read_df, …)
-├── config_logger.py              ← This one maybe not useful, check and maybe remove it, since we are moving
-                                    to Rich console and typer
-│
-├── prepare/
-│   ├── __init__.py               ← PREPARER_REGISTRY dict
-│   ├── base_preparer.py          ← BasePreparer ABC, PrepIssue, PrepResult dataclasses
-│   ├── glm_preparer.py           ← GLMPreparer (IN PROGRESS — see below)
-│   ├── prepare_dwi.py            ← legacy DWI preparation
-│   └── dwi_prepare_input.py
-│
-├── clusters/
-│   ├── slurm.py
-│   ├── sge.py
-│   └── dask_scheduler.py
-│
-├── check/
-│   ├── general_checks.py
-│   └── check_dwi_pipelines.py
-│
-└── helper_function/
-    ├── gen_subses.py
-    ├── create_bids.py
-    ├── copy_configs.py
-    └── zip_example_config.py
-```
-
----
-
-## CLI subcommands (`lc`)
-
-| Subcommand | Key flags | Purpose |
+| Step | Module | What it does |
 |---|---|---|
-| `prepare` | `-lcc`, `-ssl`, `-cc` | Validate + create analysis dir + generate scripts |
-| `run` | `-w`, `-R/--run_lc` | Submit scripts (dry-run without `--run_lc`) |
-| `qc` | `-w` | Check outputs, write `failed_subseslist.tsv` |
-| `copy_configs` | `-o` | Copy example configs to working dir |
-| `gen_subses` | `-b`, `-n`, `-o` | Generate subseslist.tsv from directory |
-| `create_bids` | `-cbc`, `-ssl` | Create fake BIDS structure for testing |
-| `zip_configs` | — | Archive example configs (developer utility) |
+| prepare | `lc_prepare.py` | config guard (a changed config is refused unless `general.force`; runtime-only keys exempt), `dataset_description.json`, `tool.prepare_analysis()` once, `tool.prepare()` per session; run record in `logs/<analysis>_prepare_<stamp>/`, rows in `logs/runs.tsv` + `logs/sessions.tsv` (status `prepared` / `failed`) |
+| run | `lc_run.py` | one line per session: `analysis-session --analysis-dir … --tool … --sub --ses -- <tool.command()>`, so each session records its own start/end/exit code/log (`logs/<dir>_sub-XX_ses-YY_<ts>/`, `sessions.tsv`). Backend from `host_options.<host>.manager` (`local` / `sge` / `slurm`), never the host's name. Writes `logs/run_<stamp>[_dryrun]/`: `commands.txt`, `jobs.tsv`, job script, scheduler .out/.err, `exit_codes.tsv`. Skips sessions whose last *prepare* status is not `prepared`. Without `-R`: dry run. |
+| qc | `lc_qc.py` | per session `tool.qc()` (checks + pre-rendered PNGs via `analysis_core.slices`, fingerprinted so unchanged items are skipped) plus a `last run` check from `sessions.tsv` → `qc/index.html`, `qc/sub-XX_ses-YY.html`, `qc/qc.tsv`, `qc/failed_subseslist.txt` (feed back to `lc run -ssl`). `--serve` opens core's rating page; verdicts go to `qc/qc_rater-<name>.tsv` and a False makes the session `fail`. |
 
----
+### Tools
 
-## Dispatch logic in `cli.py`
-
-```python
-if container in PREPARER_REGISTRY:
-    # New-style: BasePreparer subclass (glm, prf, ...)
-    cls = PREPARER_REGISTRY[container]
-    preparer = cls(config=lc_config, subseslist=subsesrows, output_root=output_root)
-    preparer.run(dry_run=False)
-else:
-    # Legacy DWI path — do NOT modify
-    do_prepare.main(parse_namespace, analysis_dir)
-```
-
----
-
-## Supported pipelines
-
-### Container-based (DWI/structural) — legacy path
-`anatrois`, `freesurferator`, `rtppreproc`, `rtp-pipeline`, `rtp2-preproc`, `rtp2-pipeline`
-
-### Analysis-based (fMRI) — PREPARER_REGISTRY
-`glm`, `prf`
-
----
-
-## Supported hosts
-
-| Host key | Scheduler | Notes |
+| `general.tool` | Where | Notes |
 |---|---|---|
-| `DIPC` | SLURM | `sbatch`, `/scratch` filesystem |
-| `BCBL` | SGE | `qsub`, `long.q` queue |
-| `local` | bash | serial or Dask parallel |
+| `anatrois`, `freesurferator`, `rtppreproc`, `rtp2-preproc`, `rtp-pipeline`, `rtp2-pipeline` | `tools/dwi.py` (`DWIContainer`) | wraps the staging code in `prepare/dwi_prepare.py`, `prepare/RTP2_prepare_input.py`, `gen_jobscript/gen_container_cmd.py`; `container_specific.<name>.version` required. LC-only hook `before_run()` (container JSON has `inputs`; back up `RTP_log.txt`). QC items: `segmentation` (anatrois/freesurferator), `dwi_on_t1` (preproc); pipelines: `RTP_log` exit-line check |
+| `pyGLM` | MRI-hub/pyGLM | the GLM (`uv sync --extra glm`) |
+| `autoROI-*` | MRI-hub/autoROI | |
+| `qc-registration` | MRI-hub/QC-registration | registration QC; rendering is its `lc run` |
+| `l1_surface` | `do_prepare.py` → `prepare/glm_prepare.py` | **prepare only**: GLM *input* preparation (events.tsv from vistadisp logs, BIDS / fMRIPrep BOLD symlinks), which pyGLM does not have. `lc run` / `lc qc` on it exit 2 and point to pyGLM |
+
+To add an analysis: write a Tool in its own repo (ARCHITECTURE.md §2) and
+register it under `analysis_core.tools`; launchcontainers needs no change.
 
 ---
 
-## BasePreparer class hierarchy
+## Code structure
 
 ```
-BasePreparer  (ABC — base_preparer.py)
-└── GLMPreparer  (glm_preparer.py)
-```
-
-### Key dataclasses
-
-```python
-@dataclass
-class PrepIssue:
-    sub: str; ses: str; category: str
-    severity: str   # "blocking" | "warn" | "auto_fix"
-    message: str;   fix_fn: Callable | None = None
-
-@dataclass
-class PrepResult:
-    sub: str; ses: str
-    status: str     # "ready" | "fixed" | "warn" | "blocked"
-    issues: list[PrepIssue]
-```
-
-### Abstract methods every subclass must implement
-
-```python
-def check_requirements(self, sub: str, ses: str) -> list[PrepIssue]: ...
-def generate_run_script(self, sub: str, ses: str, analysis_dir: Path) -> Path: ...
-```
-
-### Adding a new analysis type (3 steps)
-1. Create `launchcontainers/prepare/<type>_preparer.py` subclassing `BasePreparer`
-2. Register it in `prepare/__init__.py`: `PREPARER_REGISTRY["type"] = TypePreparer`
-3. Add a `<type>_specific` block to `lc_config.yaml`
-
----
-
-## GLMPreparer — work in progress
-
-**File**: `launchcontainers/prepare/glm_preparer.py`
-**Status**: class skeleton exists; all methods raise `NotImplementedError`
-
-### Still to implement
-- `_check_fmriprep_bold(sub, ses)`
-- `_check_fmriprep_confounds(sub, ses)`
-- `_check_fmriprep_mask(sub, ses)`
-- `_check_events_file(sub, ses)`
-- `_check_bold_json(sub, ses)`
-- `_slurm_script(sub, ses, analysis_dir)`
-- `_sge_script(sub, ses, analysis_dir)`
-- `_local_script(sub, ses, analysis_dir)`
-
-### Config section (`glm_specific`)
-```yaml
-glm_specific:
-  version: "1.0.0"
-  fmriprep_dir: fmriprep-23.2.0
-  fmriprep_analysis_name: main
-  space: T1w
-  tasks: [floc]
-  n_runs: 1
-  tr: 1.5
-  hrf_model: spm
-  smoothing_fwhm: 6
-  confounds: [trans_x, trans_y, trans_z, rot_x, rot_y, rot_z, framewise_displacement]
-  python_path: python
-  glm_script_path: /path/to/run_glm.py
+src/launchcontainers/
+├── cli.py               lc prepare / run / qc (typer); routes l1_surface prepare to do_prepare
+├── lc_prepare.py        prepare loop on analysis-core (resolve_tool, load, prepare)
+├── lc_run.py            run plan, wrapper lines, local / sge / slurm backends
+├── lc_qc.py             qc loop, report, failed_subseslist
+├── tools/dwi.py         the six DWI containers as Tools
+├── do_prepare.py        legacy prepare, now only for l1_surface (and golden capture)
+├── prepare/             dwi_prepare.py, RTP2_prepare_input.py (DWI staging, used by tools/dwi.py);
+│                        glm_prepare.py + base_prepare.py (l1_surface input prep);
+│                        prf_prepare.py, gen_bids_derivatives.py, zip_freesurfer.py
+├── gen_jobscript/       gen_container_cmd.py (apptainer command per session)
+├── check/               general_checks.py (folder tree print), check_dwi_pipelines.py
+├── helper_function/     copy_configs, create_bids, gen_subses, zip_example_config, mrhelp
+├── quality_control/     standalone RTP2 / stats-map QC scripts (not wired into lc)
+├── log_setup.py, utils.py
+src/analysis_checker/    `checker`: output-integrity specs (bids, fmriprep, prf, qmri, rtp);
+                         the glm spec was removed (pyGLM's qc covers it)
+tests/                   test_golden.py, test_run.py, test_qc.py, test_cli_routing.py;
+                         fakedata.py (fake BIDS + derivatives), golden/ (snapshots)
+launchcontainers/tests/  study scripts (VOTCLOC GLM strategy, FIR, power analysis, prepare_glm, …);
+                         to move to VOTCLOC — not part of the package
+MR_pipelines/            per-stage pipeline scripts (dicom→nifti, freesurfer, fmriprep, GLM inputs, pRF)
 ```
 
 ---
 
-## Configuration (`lc_config.yaml`) structure
+## Tests
+
+```bash
+uv run pytest -q tests
+```
+
+- `tests/test_golden.py`: the Tool-based prepare must stage exactly what the
+  legacy code staged for 13 scenarios (`tests/golden/scenarios.py`; snapshots
+  of commit a7448d9 in `tests/golden/data/`). Any change to DWI staging must
+  keep it green or re-capture deliberately — `tests/golden/capture_legacy.py`
+  drives the legacy code, so run it from a checkout of a7448d9.
+- Tests use the fake dataset in `tests/fakedata.py` only, never real data.
+
+---
+
+## Configuration (`lc_config.yaml`)
 
 ```yaml
-general:          # project-level: basedir, container, host, analysis_name, ...
+general:
+  basedir: /bcbl/home/public/Gari/VOTCLOC/main_exp
+  bidsdir_name: BIDS
+  tool: rtp2-pipeline          # key under container_specific (alias: container)
+  analysis_name: main
+  host: BCBL                   # key under host_options
+  deriv_layout: legacy         # legacy: <tool>_<ver>/analysis-<name>; new: <tool>-<ver>_<name>
+  force: false
 container_specific:
-  <pipeline>:     # DWI containers — version, precontainer_anat, rpe, ...
-glm_specific:     # fMRI GLM — see above
+  rtp2-pipeline: {version: 0.2.1_3.0.4, precontainer_anat: …, anat_analysis_name: …, …}
 host_options:
-  DIPC:           # SLURM: cores, memory, partition, qos, walltime
-  BCBL:           # SGE: cores, memory, queue, walltime
-  local:          # njobs, memory_limit
+  BCBL:  {manager: sge,   queue: long.q, walltime: "24:00:00", job_name: lc, sge_extra: ["-pe <pe_name> 6"], …}   # BCBL's PE name: check `qconf -spl`
+  DIPC:  {manager: slurm, partition: general, qos: regular, cores: 6, memory: 32G, walltime: …}
+  local: {manager: local, n_workers: 2, mem_per_job: 32g}
 ```
+
+- `manager` picks the backend. Optional: `sge_extra` / `slurm_extra` (extra
+  directive lines), `n_workers` / `mem_per_job` (local; the old
+  `launch_mode: parallel` + `max_workers` still works).
+- `host`, `force` and `host_options` are runtime-only: changing them never
+  trips the config guard.
 
 ---
 
 ## Sphinx documentation
 
-- **Location**: `docs/source/`
-- **Theme**: `pydata_sphinx_theme`
-- **Build**: `cd docs && make html`
-- **Pages**: `index.rst` (hidden toctrees), `Installation.rst`, `Concepts.rst`,
-  `Tutorial.rst`, `CLI reference.rst`, `Configuration.rst`, `Extending.rst`,
-  `Code structure.rst`, `Changelog.rst`, `api.rst`
-
-### Known conf.py settings
-- `pandas` removed from `intersphinx_mapping` (server returns 522 errors)
-- All toctrees in `index.rst` use `:hidden:` to avoid rendering on the homepage
-- `suppress_warnings = ["intersphinx.fetch_inventory"]` is set
-- File names are **Title Case** (e.g. `Installation.rst`) — toctree refs must match exactly
+- `docs/source/` (lower-case file names: `installation.rst`, `concepts.rst`,
+  `configuration.rst`, `prepare_*.rst`, `api.rst`, …); theme
+  `pydata_sphinx_theme`; build `cd docs && make html`.
+- `pandas` is out of `intersphinx_mapping` (server returns 522);
+  `suppress_warnings = ["intersphinx.fetch_inventory"]`; all toctrees in
+  `index.rst` are `:hidden:`.
+- `code_structure.rst`, `extending.rst` and parts of `configuration.rst`
+  still describe the pre-restructure code; this file is current.
 
 ---
 
 ## Key conventions
 
-- DWI legacy code (`do_prepare.py`, `prepare_dwi.py`) is **never modified**
-- All new analysis types go through `PREPARER_REGISTRY`
-- `BasePreparer` owns all orchestration; subclasses implement only domain logic
-- Dry-run support is required for all file operations
-- Prefer functional over class-based code where possible
-- Rich console output with color/progress bars via the `rich` library
-- Three output file pattern for checker: brief CSV, detailed log, pivot matrix
+- New analyses are Tools (in their own repo, registered by entry point), not
+  new branches in `cli.py`. The loop over sessions lives in `lc` only.
+- Shared code goes to analysis-core, never copied here; pyGLM is the
+  reference for the GLM — no GLM fitting code in this repo.
+- Nothing in an analysis dir is deleted: superseded configs go to
+  `logs/history/`.
+- typer + rich `console` for all output; colours `[green]saved`,
+  `[yellow]SKIP`, `[red]ERROR` (exit 2 for config / input errors).
