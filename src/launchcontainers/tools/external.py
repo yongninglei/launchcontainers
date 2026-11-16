@@ -1,4 +1,4 @@
-"""Analyses that run as their own programs: pyGLM, autoROI, … (docs/plan_protocol.md).
+"""Analyses that run as their own programs: pyGLM, autoROI, swi-prep, … (docs/plan_protocol.md).
 
 launchcontainers never imports them and they never import launchcontainers.
 The rules for running each one live here: which program, which flags, which
@@ -207,4 +207,7 @@ def _autoroi_sources(tc: ToolConfig, sub: str, ses: str) -> Sequence[str]:
 PYGLM = ExternalTool("pyGLM", "pyglm")
 AUTOROI_SCALING = ExternalTool("autoROI-scaling", "autoroi-scaling", _autoroi_sources)
 AUTOROI_CLUSTERING = ExternalTool("autoROI-clustering", "autoroi-clustering")
-EXTERNAL = {t.name: t for t in (PYGLM, AUTOROI_SCALING, AUTOROI_CLUSTERING)}
+# swi_preproc's raw-QC stage: echo average + rigid MC of every SWI run to run-01.
+# Needs greedy in lc's environment (cajal: module load vtk/9.1 itk/5.4.5 greedy/latest).
+SWI_PREP = ExternalTool("swi-prep", "swi-prep")
+EXTERNAL = {t.name: t for t in (PYGLM, AUTOROI_SCALING, AUTOROI_CLUSTERING, SWI_PREP)}
