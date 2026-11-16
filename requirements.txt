@@ -3,12 +3,12 @@
 # python >=3.10
 #
 # Core only (lc, launchcontainers.core, lc-session). Heavy dependencies are
-# extras; with pip install them as e.g.  pip install -e ".[dwi,render]"
-#   dwi       DWI container tools          render    QC slice images
-#   fmri      l1_surface input prep        checker   the `checker` CLI
-#   heudiconv create_bids helper           scripts   study scripts (tedana, nilearn, …)
-#   glm       pyGLM (pip install -e ../pyGLM, Python 3.11-3.12)
-#   all       everything except glm
+# extras; with pip install them as e.g.  pip install -e ".[dwi]"
+#   dwi       DWI container tools          fmri      l1_surface input prep
+#   checker   the `checker` CLI            heudiconv create_bids helper
+#   scripts   study scripts (tedana, nilearn, …)                    all  everything
+# pyGLM, autoROI, … are not dependencies: they live in their own environments
+# and lc runs their programs (host_options.<host>.exe.<tool>).
 pyyaml>=6.0
 rich>=13.0
 typer>=0.15.3

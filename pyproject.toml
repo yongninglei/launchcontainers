@@ -30,8 +30,8 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
 ]
 # The core (lc, launchcontainers.core, lc-session) needs only these three.
-# Everything heavy is an extra, so a tool that depends on launchcontainers
-# (pyGLM, autoROI, QC-registration) does not pull in tedana, heudiconv, …
+# Everything heavy is an extra. The analyses lc runs (pyGLM, autoROI, …) live
+# in their own environments; lc calls their programs and never imports them.
 dependencies = [
     "pyyaml>=6.0",
     "rich>=13.0",
@@ -44,16 +44,12 @@ Repository = "https://github.com/garikoitz/launchcontainers"
 [project.optional-dependencies]
 # DWI container tools (anatrois, freesurferator, rtp*-preproc, rtp*-pipeline): staging
 dwi = ["pybids>=0.16.1,<0.17", "nibabel", "numpy>=2.0", "pandas>=2.1"]
-# Pre-rendered QC slices (launchcontainers.core.slices; lc qc figures, QC-registration)
-render = ["numpy>=2.0", "nibabel", "scipy", "matplotlib", "pillow"]
 # l1_surface GLM *input* preparation (prepare/glm_prepare.py, prf_prepare.py)
 fmri = ["pybids>=0.16.1,<0.17", "nibabel", "numpy>=2.0", "pandas>=2.1", "scipy"]
 # `checker` (analysis_checker)
 checker = ["h5py>=3.0", "pandas>=2.1", "scipy", "nibabel", "numpy>=2.0"]
 # heudiconv-based helpers (helper_function/create_bids.py)
 heudiconv = ["heudiconv>=1.3.2"]
-# The GLM is pyGLM (MRI-hub/pyGLM), run by `lc` as the `pyGLM` tool
-glm = ["pyglm; python_version >= '3.11' and python_version < '3.13'"]
 # Study scripts in launchcontainers/tests/ and MR_pipelines/ (not part of the package)
 scripts = [
     # first_level_from_bids(sub_labels=...) needs nilearn>=0.10.1
@@ -75,8 +71,8 @@ scripts = [
     "tqdm",
     "tedana==26.0.3",
 ]
-# Everything except the GLM
-all = ["launchcontainers[dwi,render,fmri,checker,heudiconv,scripts]"]
+# Everything
+all = ["launchcontainers[dwi,fmri,checker,heudiconv,scripts]"]
 
 [project.scripts]
 # the main function
@@ -85,8 +81,8 @@ lc = "launchcontainers.cli:main"
 lc-session = "launchcontainers.core.session:app"
 checker = "analysis_checker.check_analysis_integrity:main"
 
-# Tools lc can launch. Other packages register theirs in the same group
-# (pyGLM, autoROI-*, qc-registration).
+# Tools lc can launch. lc's own (DWI containers, pyGLM, autoROI-*) are built
+# in (tools/__init__.py); other packages may add theirs to the same group.
 [project.entry-points."launchcontainers.tools"]
 anatrois = "launchcontainers.tools.dwi:ANATROIS"
 freesurferator = "launchcontainers.tools.dwi:FREESURFERATOR"
@@ -118,9 +114,6 @@ docs = [
     "nbsphinx",
     "myst-parser",
 ]
-
-[tool.uv.sources]
-pyglm = { path = "../pyGLM", editable = true }
 
 [tool.uv]
 default-groups = ["dev"]

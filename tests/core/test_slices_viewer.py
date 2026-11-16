@@ -1,6 +1,14 @@
+# ruff: noqa: E402  (to be deleted: moved to QC-registration)
 """Pre-rendered QC items (slices) and the rating server (viewer)."""
 
 from __future__ import annotations
+
+import pytest
+
+pytest.skip(
+    "moved to QC-registration (image QC is not launchcontainers' job); delete this file",
+    allow_module_level=True,
+)
 
 import json
 import threading

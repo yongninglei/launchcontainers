@@ -91,15 +91,6 @@ jobs:
       - name: Install Pandoc
         run: sudo apt-get install -y pandoc
 
-      # The optional glm extra is a path dependency on ../pyGLM, a private
-      # MRI-hub repo; uv needs it present to read the lock. Needs the secret
-      # ANALYSIS_CORE_TOKEN (fine-grained PAT, read-only Contents on MRI-hub/pyGLM).
-      - uses: actions/checkout@v4
-        with:
-          repository: MRI-hub/pyGLM
-          token: ${{ secrets.ANALYSIS_CORE_TOKEN }}
-          path: _pyGLM
-      - run: mv _pyGLM ../pyGLM
       - name: Install launchcontainers + docs dependencies
         run: |
           uv sync --group docs

@@ -1,4 +1,12 @@
+# ruff: noqa: E402  (to be deleted: moved to QC-registration)
 from __future__ import annotations
+
+import pytest
+
+pytest.skip(
+    "moved to QC-registration (image QC is not launchcontainers' job); delete this file",
+    allow_module_level=True,
+)
 
 import pytest
 

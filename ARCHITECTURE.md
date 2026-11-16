@@ -1,34 +1,40 @@
 # MRI-hub architecture
 
-MRI-hub is a set of repos that work as one system. **launchcontainers** is the
-only launcher, and it also holds the rules that every analysis shares — the
-work list, the config, provenance, run logs and the QC report — in its
-`launchcontainers.core` subpackage, so they exist exactly once. Every analysis
-software (containers, pyGLM, autoROI, QC-registration, any future tool) plugs
-into it through one interface, and can still be run on its own.
+MRI-hub is a set of repos that work as one system, with one division of work:
+
+- **launchcontainers** prepares inputs, records provenance, launches, and
+  checks that each launch worked. It holds the rules every analysis shares —
+  work list, config, provenance, run logs, launch report — in
+  `launchcontainers.core`, and the rules for running each analysis in
+  `launchcontainers.tools`.
+- **Analyses** (DWI containers, pyGLM, autoROI, any future tool) only compute
+  one subject × session and assume their inputs are ready. pyGLM and autoROI
+  are standalone programs: they do not import launchcontainers, and
+  launchcontainers does not import them. Each can also be run by hand.
+- **Image QC** (render slices once, rate them in a browser page) is its own
+  module, **QC-registration**, also standalone.
 
 ```
    ┌──────────────────────────────────────────────────────────────┐
    │ launchcontainers  (`lc`, `lc-session`)                       │
-   │                                                              │
-   │  launchcontainers.core   (needs only pyyaml, rich, typer)    │
-   │   subseslist · config · runlog · provenance · Tool interface │
-   │   session wrapper · QC report · slices · rating page         │
-   │                                                              │
+   │  core: subseslist · config · runlog · provenance · Tool      │
+   │        interface · session wrapper · launch-status report    │
+   │        (needs only pyyaml, rich, typer)                      │
    │  lc prepare / lc run / lc qc · backends local · sge · slurm  │
-   │  built-in tools: anatrois, freesurferator, rtp(2)-preproc,   │
-   │  rtp(2)-pipeline        heavy deps = extras: [dwi] [render]… │
-   └──────────────────────────────▲───────────────────────────────┘
-                     depends on   │   (core only; no heavy extras)
-   ┌──────────────────────────────┴───────────────────────────────┐
-   │ tools: pyGLM, autoROI, QC-registration, …                    │
-   │  each exposes Tool objects via the entry-point group         │
-   │  "launchcontainers.tools" and keeps its own standalone CLI   │
-   │  (pyglm, autoroi-scaling, qc-registration-render, …)         │
-   └──────────────────────────────────────────────────────────────┘
-        lc finds tools at run time through entry points — it never
-        imports pyGLM/autoROI directly.
+   │  tools/dwi.py       DWI containers (apptainer images)        │
+   │  tools/external.py  pyGLM, autoROI-*: their programs         │
+   └───────────────┬──────────────────────────────────────────────┘
+                   │ runs  <exe> --config C --sub S --ses E   (and --plan)
+   ┌───────────────┴──────────────┐     ┌─────────────────────────────┐
+   │ pyGLM, autoROI, …            │     │ QC-registration             │
+   │  standalone programs, own    │     │  image QC: slices, rating   │
+   │  environments, no lc imports │     │  page, ratings TSV; DWI QC  │
+   └──────────────────────────────┘     └─────────────────────────────┘
 ```
+
+The contract between lc and an analysis program is its command line and the
+`--plan` JSON (`docs/plan_protocol.md`): analysis dirs, session outputs, input
+files, problems — computed from the config without running anything.
 
 Until 2026-11-16 the core was a separate package, `analysis-core`
 (MRI-hub/analysis-core, last version 0.1.4); it moved into launchcontainers
@@ -37,10 +43,8 @@ Until 2026-11-16 the core was a separate package, `analysis-core`
 group `analysis_core.tools` → `launchcontainers.tools`. The run-log protocol
 (`ANALYSIS_RUN_ID` / `ANALYSIS_RUN_DIR`) and all file formats are unchanged.
 
-Tools depend on launchcontainers (core install: pyyaml, rich, typer); the
-heavy dependencies of lc's own tools are extras (`dwi`, `render`, `fmri`,
-`checker`, `heudiconv`, `scripts`, `glm`), so a tool never pulls them in.
-The one loop is optional: lc's `glm` extra installs pyGLM, which depends on lc.
+The heavy dependencies of lc's own code are extras (`dwi`, `fmri`, `checker`,
+`heudiconv`, `scripts`); pyGLM / autoROI are not dependencies of lc at all.
 
 ---
 
@@ -50,7 +54,7 @@ The one loop is optional: lc's `glm` extra installs pyGLM, which depends on lc.
 |---|---|---|---|
 | prepare | `lc prepare -c lc_config.yaml -f subseslist.txt` | load + validate config, create/guard the analysis dir(s), per session: `tool.prepare()` (stage inputs, check requirements — never compute) | analysis dir skeleton, `lc_config.yaml`, `dataset_description.json`, `logs/prepare_<stamp>/`, `sessions.tsv` rows with status `prepared` / `blocked` |
 | run | `lc run -w <analysis_dir> [-R]` | per session: `tool.command()` wrapped by `lc-session`, then submit with the backend from `host_options.<host>.manager` | `logs/run_<stamp>/` (job script, commands, scheduler .out/.err), per-session run record + `sessions.tsv` row with the real exit code |
-| qc | `lc qc -w <analysis_dir>` | per session: `tool.qc()`; render the HTML report | `qc/index.html` (sub × ses table), `qc/sub-XX_ses-YY.html`, `qc/qc.tsv` |
+| qc | `lc qc -w <analysis_dir>` | launch checks per session: exit status, run log, `tool.qc()` (outputs exist, not empty) | `qc/index.html` (sub × ses table), `qc/sub-XX_ses-YY.html`, `qc/qc.tsv`, `qc/failed_subseslist.txt` |
 
 Each step works on **one sub/ses per call** in the tool; the loop over the
 work list lives in launchcontainers only. Without `-R`, `lc run` is a dry run
@@ -166,48 +170,30 @@ list (`--write-list`).
 - Raw BIDS is read-only: anything generated (mock bval/bvec, merged shells)
   goes inside the analysis dir.
 
-## 6. QC — HTML everywhere, two layers
+## 6. QC — two jobs, two places
 
-The model is the one QC-registration already uses (github.com/MRI-hub/QC-registration):
-render images once per session, then a browser page where a person rates them.
-
-1. **Automatic checks.** `tool.qc()` returns checks (name, status
-   ok/warn/fail, message): expected outputs present, logs without errors,
-   numbers in range. Core writes them to `qc/qc.tsv` and a static
-   `qc/index.html` (sub × ses status matrix, per-session pages).
-2. **Visual rating.** `tool.qc()` also returns figures: PNGs rendered once
-   per sub/ses/item (item = run, map, tract…), stored under
-   `qc/<item>/sub-XX/ses-YY/` with a `session.json` fingerprint of the
-   inputs, so nothing is re-rendered without a reason. One shared viewer —
-   QC-registration's stdlib HTTP server + static page (web-MRI look), moved
-   into core — serves any analysis's `qc/` folder. Raters answer True/False +
-   comment per item; answers go to `qc/qc_rater-<name>.tsv`
-   (`item sub ses run ok comment rater time`, one file per rater, written
-   atomically).
-
-Implemented (0.1.3): `launchcontainers.core.slices.render_item(analysis_dir, item,
-sub, ses, base=…, layers=[Layer(key, label, kind, source)…])` — kinds `map`,
-`labels`, `outline`, `surface`; one PNG per view × slice × layer plus
-`preview.png`; `session.json` with the fingerprint. `launchcontainers.core.viewer`
-(`lc qc --serve -w D`) serves every rendered item of `D/qc/`; layers and
-the question come from each item's `session.json`. Rendering happens in
-`tool.qc()`; a viewer given a `render` hook and the work list (`expected`)
-renders a missing / stale item when it is first opened. QC-registration 0.3.0
-is a tool on this renderer and viewer (`qc-registration`, `lc_tool.py`).
-
-`lc qc -w <analysis_dir>` runs layer 1 and pre-renders layer 2;
-`lc qc -w <analysis_dir> --serve` opens the viewer. QC-registration itself
-becomes a tool (its `render_session` is its `qc()`), so registration QC runs
-through the same commands.
+1. **Launch QC — launchcontainers (`lc qc`).** Did each session's launch
+   work? Per session: the last run's exit status (`sessions.tsv`), the
+   lc-session log scanned for tracebacks / error lines, and `tool.qc()` —
+   the expected outputs exist and are not empty (DWI pipelines also: the
+   `RTP_log` exit line). Written to `qc/index.html` (sub × ses matrix),
+   `qc/sub-XX_ses-YY.html`, `qc/qc.tsv`, and `qc/failed_subseslist.txt` for
+   `lc run -ssl`. lc never looks at the images.
+2. **Image QC — QC-registration.** Renders PNG slices once per sub/ses/item
+   (fingerprinted, `qc/<item>/sub-XX/ses-YY[/<run>]/` with `session.json`),
+   serves a browser page where raters answer True/False + comment, and
+   writes `qc/qc_rater-<name>.tsv`. Registration QC (`qc-registration-render`),
+   DWI QC (`qc-registration-dwi`: segmentation on T1, mean b0 on T1), SWI
+   montages; `qc-registration-viewer` serves the page.
 
 ## 7. Repos and what moves where
 
 | Repo | Keeps | Gets | Gives away |
 |---|---|---|---|
-| launchcontainers.core (was analysis-core) | — | runlog (master, from pyGLM), subseslist + labels, config loader + guard, provenance helpers, atomic write / sha256, session logging, Tool interface + discovery, session wrapper, QC HTML renderer | — |
-| launchcontainers | CLI, backends, built-in container tools | Tool classes for each container (one file each, replacing the if/elif chains) | its subseslist parser, logging setup, study-specific scripts (→ VOTCLOC) |
-| pyGLM | GLM | `lc_tool.py` | `runlog.py`, subseslist code (→ core) |
-| autoROI | scaling, clustering | `lc_tool.py` | `runlog.py`, subseslist + generic provenance code (→ core) |
+| launchcontainers | CLI, backends, `core` (was analysis-core: runlog, subseslist, config + guard, provenance, Tool interface, session wrapper, launch report), DWI container tools, the rules for running pyGLM / autoROI (`tools/external.py`) | — | image QC (→ QC-registration), its GLM copies (→ pyGLM) |
+| pyGLM | the GLM: single-session CLI + `--plan` | — | batch runner, run logs, provenance, `lc_tool.py` (→ launchcontainers) |
+| autoROI | scaling, clustering: single-session CLIs + `--plan` | — | batch runners, run logs, analysis-dir provenance, `lc_tool.py` (→ launchcontainers) |
+| QC-registration | registration QC | slice renderer, rating page, ratings, DWI QC | — |
 
 ## 8. Migration order
 

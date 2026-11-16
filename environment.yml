@@ -1,6 +1,6 @@
 # Derived from pyproject.toml — keep in sync. uv is the default runner;
 # this file is for conda/micromamba users. Core only; add extras on the
-# `-e .` line, e.g.  -e ".[dwi,render]"  (see requirements.txt for the list).
+# `-e .` line, e.g.  -e ".[dwi]"  (see requirements.txt for the list).
 name: launchcontainers
 channels:
   - conda-forge

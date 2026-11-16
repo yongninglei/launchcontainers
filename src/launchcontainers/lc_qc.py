@@ -1,26 +1,26 @@
-"""`lc qc` on launchcontainers.core: per-session ``tool.qc()`` → static HTML report.
+"""`lc qc`: did each session's launch work? (No image QC.)
 
 For every session in the work list (``<workdir>/subseslist.txt`` or ``-ssl``):
 
-- ``tool.qc(tc, sub, ses)`` (a crash becomes a ``fail`` check, never an abort);
-  tools also pre-render their PNGs here (``launchcontainers.core.slices``:
-  ``qc/<item>/sub-XX/ses-YY/``, fingerprinted, so unchanged items are skipped);
-- plus one launcher check, ``last run``: the latest non-prepare row for the
-  session in ``logs/sessions.tsv`` (written by lc-session).
+- ``last run``: the latest non-prepare row for the session in
+  ``logs/sessions.tsv`` (written by ``lc-session``): ok / failed / never run;
+- ``run log``: that run's session log (``logs/<run_id>/sub-XX_ses-YY.log``)
+  scanned for tracebacks and error lines;
+- ``tool.qc(tc, sub, ses)``: the tool's own launch checks — its expected
+  outputs exist and are not empty (a crash becomes a ``fail`` check).
 
 Writes, via ``launchcontainers.core.qc.render_report``, ``<workdir>/qc/index.html``,
 ``qc/sub-XX_ses-YY.html`` and ``qc/qc.tsv``; and ``qc/failed_subseslist.txt``
 (``sub,ses,RUN`` with every session that has a ``fail``), ready for
 ``lc run -w <workdir> -ssl qc/failed_subseslist.txt``.
 
-``lc qc --serve`` then opens the rating page (``launchcontainers.core.viewer``) on the
-pre-rendered items; verdicts go to ``qc/qc_rater-<name>.tsv`` and show up in
-``qc/index.html`` on the next ``lc qc``.
+Looking at the images is the image-QC module's job (QC-registration).
 """
 
 from __future__ import annotations
 
 import csv
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -73,17 +73,28 @@ def _run_check(row: dict[str, str] | None) -> QCCheck:
     )
 
 
-def qc(
-    workdir: Path,
-    subseslist: Path | None = None,
-    overwrite: bool = False,
-    console=None,
-) -> QCReport:
-    """Checks + pre-rendered figures per session, then the static report.
+_ERROR_LINE = re.compile(
+    r"(?im)^.*(traceback \(most recent call last\)|\berror\b|\bkilled\b|segmentation fault).*$"
+)
 
-    Figures are rendered once (``launchcontainers.core.slices``: fingerprinted), so a
-    second call only re-renders what changed; ``overwrite`` forces it.
-    """
+
+def _log_check(
+    workdir: Path, row: dict[str, str] | None, sub: str, ses: str
+) -> QCCheck | None:
+    """Scan the last run's session log (lc-session) for error lines."""
+    if row is None:
+        return None
+    log = workdir / "logs" / row.get("run_id", "") / f"sub-{sub}_ses-{ses}.log"
+    if not log.is_file():
+        return QCCheck("run log", "warn", f"no log at {log}")
+    bad = _ERROR_LINE.search(log.read_text(errors="replace"))
+    if bad:
+        return QCCheck("run log", "warn", bad.group(0).strip()[:200])
+    return QCCheck("run log", "ok", log.name)
+
+
+def qc(workdir: Path, subseslist: Path | None = None, console=None) -> QCReport:
+    """Launch checks per session, then the static report and the failed list."""
     workdir = Path(workdir).expanduser().resolve()
     lc_config = workdir / CONFIG_NAME
     if not lc_config.is_file():
@@ -94,7 +105,6 @@ def qc(
     if not ssl.is_file():
         raise LCError(f"work list not found: {ssl}")
     tool, tc, rows = lc_prepare.load(lc_config, ssl, None)
-    tc.extra["qc_overwrite"] = overwrite
     rep = QCReport(tool.name, workdir)
     runs = _last_run(workdir)
 
@@ -105,7 +115,9 @@ def qc(
             res = QCResult(
                 r.sub, r.ses, [QCCheck("qc", "fail", f"{type(exc).__name__}: {exc}")]
             )
-        res.checks.insert(0, _run_check(runs.get((r.sub, r.ses))))
+        last = runs.get((r.sub, r.ses))
+        log_check = _log_check(workdir, last, r.sub, r.ses)
+        res.checks[:0] = [_run_check(last)] + ([log_check] if log_check else [])
         rep.results.append(res)
         if console is not None:
             w = rep.worst(res)

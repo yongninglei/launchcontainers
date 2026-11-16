@@ -115,8 +115,9 @@ _MOVED = {
     "l1_surface": (
         "the GLM itself is pyGLM (MRI-hub/pyGLM): `lc prepare` with l1_surface "
         "only prepares its inputs; to fit, use an lc_config with general.tool: pyGLM "
-        "and container_specific.pyGLM (see pyGLM's README and examples/), with pyGLM "
-        "installed in the same environment as lc (uv sync --extra glm)"
+        "and container_specific.pyGLM (see pyGLM's README), and point "
+        "host_options.<host>.exe.pyGLM at pyGLM's `pyglm` program "
+        "(pyGLM runs in its own environment; lc does not install it)"
     ),
 }
 
@@ -284,55 +285,33 @@ def qc(
         "-ssl",
         help="Only these sessions (default: <workdir>/subseslist.txt)",
     ),
-    overwrite: bool = typer.Option(
-        False, "--overwrite", help="Re-render figures even when up to date"
-    ),
-    serve: bool = typer.Option(
-        False, "--serve", help="Then open the rating page on the rendered figures"
-    ),
-    port: int = typer.Option(8000, "--port", help="Port for --serve"),
-    host: str = typer.Option(
-        "127.0.0.1", "--host", help="Bind address for --serve (use an ssh tunnel)"
-    ),
     debug: bool = typer.Option(False, "--debug", "-d", help="Debug mode"),
 ):
-    """Checks + pre-rendered PNGs per session → qc/index.html; --serve to rate them."""
+    """Did each launch work? Exit code, log, outputs → qc/index.html + failed list."""
     import time
 
-    from launchcontainers.core import LCError
-
     from launchcontainers import lc_qc
+    from launchcontainers.core import LCError
 
     setup_verbosity(debug=debug)
     console.rule(f"[bold]lc qc — {workdir}[/bold]")
-    t0 = time.time()
     _refuse_moved(op.join(workdir, "lc_config.yaml"))
+    t0 = time.time()
     try:
-        rep = lc_qc.qc(workdir, sub_ses_list, overwrite=overwrite, console=console)
+        rep = lc_qc.qc(workdir, sub_ses_list, console=console)
     except LCError as exc:
         console.print(f"[red]ERROR[/red] {exc}")
         raise typer.Exit(2) from None
     n = {k: sum(rep.worst(r) == k for r in rep.results) for k in ("ok", "warn", "fail")}
-    n_fig = sum(len(r.figures) for r in rep.results)
     console.print(
         f"{rep.tool}: {len(rep.results)} sessions — ok {n['ok']}, warn {n['warn']}, "
-        f"fail {n['fail']}; {n_fig} figure(s)  [dim]({time.time() - t0:.1f} s)[/dim]"
+        f"fail {n['fail']}  [dim]({time.time() - t0:.1f} s)[/dim]"
     )
     console.print(f"[green]saved[/green] {rep.index}")
     if rep.failed:
         console.print(
             f"[yellow]{len(rep.failed)} failed[/yellow] → {rep.failed_list} "
             f"(re-run: lc run -w {workdir} -ssl {rep.failed_list})"
-        )
-    if serve:
-        from launchcontainers.core.viewer import serve as serve_viewer
-
-        serve_viewer(
-            rep.workdir,
-            port=port,
-            host=host,
-            title=f"{rep.tool} — {rep.workdir.name}",
-            out=console,
         )
 
 

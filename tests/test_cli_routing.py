@@ -45,8 +45,13 @@ def test_l1_surface_prepare_still_prepares_glm_inputs(tmp_path, monkeypatch):
     assert calls == [str(wd / "lc_config.yaml")]
 
 
-def test_pyglm_is_an_lc_tool():
-    pytest.importorskip("pyglm")
-    from launchcontainers.lc_prepare import resolve_tool
+def test_pyglm_is_a_builtin_external_tool():
+    """lc knows how to run pyGLM without importing it (tools/external.py)."""
+    import importlib.util
 
-    assert resolve_tool("pyGLM").name == "pyGLM"
+    from launchcontainers.lc_prepare import resolve_tool
+    from launchcontainers.tools import ExternalTool
+
+    tool = resolve_tool("pyGLM")
+    assert isinstance(tool, ExternalTool) and tool.default_exe == "pyglm"
+    assert importlib.util.find_spec("pyglm") is None  # not installed with lc

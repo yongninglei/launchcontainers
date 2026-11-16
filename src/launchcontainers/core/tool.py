@@ -69,24 +69,10 @@ class QCCheck:
 
 
 @dataclass
-class Figure:
-    """One rendered QC image (PNG/SVG) or HTML fragment, for the rater/viewer.
-
-    ``item``: what is shown (a map, tract, registration…); ``run``: which run
-    (``""`` when not run-specific). Rater verdicts are keyed by (item, sub, ses, run).
-    """
-
-    item: str
-    run: str
-    path: Path
-
-
-@dataclass
 class QCResult:
     sub: str
     ses: str
     checks: list[QCCheck] = field(default_factory=list)
-    figures: list[Figure] = field(default_factory=list)
     html: str = ""  # optional extra HTML fragment for the session page
 
     @property
@@ -119,7 +105,10 @@ class Tool(Protocol):
         ...
 
     def qc(self, tc: ToolConfig, sub: str, ses: str) -> QCResult:
-        """Checks + figures for one session's outputs."""
+        """Launch checks for one session: did it run and leave its outputs?
+
+        Exit code / log / expected outputs only — never image QC (that is the
+        image-QC module's job, QC-registration)."""
         ...
 
     # Optional (not part of the runtime check):
