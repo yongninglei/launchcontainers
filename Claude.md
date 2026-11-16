@@ -123,6 +123,7 @@ work list; the tool does one sub/ses per call.
 | `anatrois`, `freesurferator`, `rtppreproc`, `rtp2-preproc`, `rtp-pipeline`, `rtp2-pipeline` | `tools/dwi.py` (`DWIContainer`) | wraps the staging code in `prepare/dwi_prepare.py`, `prepare/RTP2_prepare_input.py`, `gen_jobscript/gen_container_cmd.py`; `container_specific.<name>.version` required. LC-only hook `before_run()` (container JSON has `inputs`; back up `RTP_log.txt`). QC: outputs present, `.err` log, pipelines' `RTP_log` exit line |
 | `pyGLM` | `tools/external.py` → program `pyglm` (MRI-hub/pyGLM, own env) | the GLM; one analysis dir per strategy, from its `--plan` |
 | `autoROI-scaling`, `autoROI-clustering` | `tools/external.py` → `autoroi-scaling` / `autoroi-clustering` (MRI-hub/autoROI, own env) | a work-list `sources` column becomes `--sources a,b` (pseudo-sessions) |
+| `swi-prep` | `tools/external.py` → `swi-prep` (MRI-hub/swi_preproc, own env) | SWI raw QC: echo average + rigid MC of every run to run-01; greedy must be on PATH (cajal: `module load vtk/9.1 itk/5.4.5 greedy/latest`) |
 | `l1_surface` | `do_prepare.py` → `prepare/glm_prepare.py` | **prepare only**: GLM *input* preparation (events.tsv from vistadisp logs, BIDS / fMRIPrep BOLD symlinks), which pyGLM does not have. `lc run` / `lc qc` on it exit 2 and point to pyGLM |
 
 External analyses follow one contract, `docs/plan_protocol.md`: a
