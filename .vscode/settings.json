@@ -1,7 +1,7 @@
 {
     "python.analysis.typeCheckingMode": "basic",
-    "workbench.colorTheme": "Default Light+",
-    "workbench.preferredDarkColorTheme": "Default Light+",
+    "workbench.colorTheme": "Light+",
+    "workbench.preferredDarkColorTheme": "Light+",
     "workbench.preferredHighContrastColorTheme": "Abyss",
     "workbench.iconTheme": "vs-seti",
     "workbench.colorCustomizations": {
@@ -10,7 +10,7 @@
     "window.autoDetectColorScheme": true,
     "workbench.activityBar.iconClickBehavior": "toggle",
     "workbench.activityBar.location": "default",
-    "workbench.preferredHighContrastLightColorTheme": "Default Light Modern",
+    "workbench.preferredHighContrastLightColorTheme": "Light Modern",
     "workbench.preferredLightColorTheme": "Visual Studio Light",
     "python.REPL.enableREPLSmartSend": false
 }

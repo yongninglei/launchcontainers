@@ -11,7 +11,7 @@ codedir=/bcbl/home/public/Gari/VOTCLOC/main_exp/code
 
 outputdir=$basedir/raw_nifti_fix_fmap
 dcm_dir=/base/dicom
-script_dir=/export/home/tlei/tlei/soft/launchcontainers/MR_pipelines/00_dicom_to_nifti
+script_dir=/bcbl/home/home_n-z/tlei/soft/launchcontainers/MR_pipelines/00_dicom_to_nifti
 heuristicfile=$script_dir/heuristic/heuristic_sbref_${project}.py
 sing_path=/bcbl/home/public/Gari/containers/heudiconv_1.3.4.sif
 
@@ -24,6 +24,8 @@ usage() {
     echo "  $0 -t <step> -f <subseslist_path>    # batch from full path to subseslist"
     echo ""
     echo "  -t  heudiconv step: step1 or step2"
+    echo "  -H  heuristic file name under heuristic/ (optional, overrides default)"
+    echo "  -o  output dir name under basedir (optional, overrides default)"
     exit 1
 }
 
@@ -31,14 +33,21 @@ step=""
 subses_arg=""
 file_arg=""
 
-while getopts ":t:s:f:" opt; do
+while getopts ":t:s:f:H:o:" opt; do
     case $opt in
         t) step="$OPTARG" ;;
         s) subses_arg="$OPTARG" ;;
         f) file_arg="$OPTARG" ;;
+        H) heuristicfile="$script_dir/heuristic/$OPTARG" ;;
+        o) outputdir="$basedir/$OPTARG" ;;
         *) usage ;;
     esac
 done
+
+if [[ ! -f "$heuristicfile" ]]; then
+    echo "Error: heuristic not found: $heuristicfile"
+    exit 1
+fi
 
 if [[ -z "$step" ]]; then
     echo "Error: -t <step> is required (step1 or step2)."

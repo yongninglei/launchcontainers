@@ -35,21 +35,13 @@ N_GLM_JOBS="$(( $(nproc) - 2 ))"
 DEFAULT_SESSIONS="01,02,03,04,05,06,07,08,09"
 RERUN_MAP="/bcbl/home/public/Gari/${PROJECT}/main_exp/BIDS/sourcedata/qc/rerun_check.tsv"
 
-# Python ("lc" conda/micromamba env) — use the active env's python if available,
-# otherwise search common env locations under $HOME.
-PYTHON_BIN="$(command -v python || true)"
-if [[ -z "${PYTHON_BIN}" ]]; then
-    for base in "${HOME}/micromamba/envs" "${HOME}/miniconda3/envs" "${HOME}/anaconda3/envs"; do
-        if [[ -x "${base}/lc/bin/python" ]]; then
-            PYTHON_BIN="${base}/lc/bin/python"
-            break
-        fi
-    done
-fi
-if [[ -z "${PYTHON_BIN}" ]]; then
-    echo "Error: could not find python. Activate the 'lc' env first (conda/micromamba activate lc)."
-    exit 1
-fi
+# Python environment — uv project at the repo root (../CLAUDE.md: uv is the
+# default runner). `uv run` syncs .venv from pyproject.toml/uv.lock on demand.
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+UV_BIN="${UV_BIN:-uv}"
+PYTHON_BIN="${UV_BIN} run --project ${REPO_ROOT} python"
+command -v "${UV_BIN}" >/dev/null 2>&1 || {
+    echo "Error: '${UV_BIN}' not on PATH. Set UV_BIN=/path/to/uv." >&2; exit 127; }
 
 # ---------------------------------------------------------------------------
 # Parse arguments

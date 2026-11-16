@@ -1,0 +1,184 @@
+# For sanity check
+AllvsNull:
+  positive: ["face", "bodylimb", "RW", "FF", "CS", "SC"]
+  negative: []
+
+LEXvsNull:
+  positive: ["CS", "FF"]
+  negative: []
+
+PERvsNull:
+  positive: ["SC"]
+  negative: []
+
+FFvsNull:
+  positive: ["FF"]
+  negative: []
+
+CSvsNull:
+  positive: ["CS"]
+  negative: []
+
+RWvsNull:
+  positive: ["RW"]
+  negative: []
+
+FacesvsNull:
+  positive: ["face"]
+  negative: []
+
+LimbsvsNull:
+  positive: ["bodylimb"]
+  negative: []
+
+# For main contrasts
+LEXvsPER:
+  positive: ["CS", "FF"]
+  negative: ["SC"]
+
+# For RW
+RWvsLEX:
+  positive: ["RW"]
+  negative: ["CS", "FF"]
+
+RWvsCS:
+  positive: ["RW"]
+  negative: ["CS"]
+
+RWvsFF:
+  positive: ["RW"]
+  negative: ["FF"]
+
+RWvsPER:
+  positive: ["RW"]
+  negative: ["SC"]
+
+RWvsLEXPER:
+  positive: ["RW"]
+  negative: ["CS", "FF", "SC"]
+
+# the FFPER will be compared to LEXPER
+RWvsFFPER:
+  positive: ["RW"]
+  negative: ["FF", "SC"]
+
+RWvsLimbs:
+  positive: ["RW"]
+  negative: ["bodylimb"]
+
+RWvsFaces:
+  positive: ["RW"]
+  negative: ["face"]
+
+RWvsFacesLimbs:
+  positive: ["RW"]
+  negative: ["face", "bodylimb"]
+
+## logic for the xx vs all others
+RWvsAllnoWord:
+  positive: ["RW"]
+  negative: ["CS", "FF", "SC", "bodylimb", "face"]
+
+RWvsAllnoWordnoLEX:
+  positive: ["RW"]
+  negative: ["SC", "bodylimb", "face"]
+
+RWvsAllnoRWnoCS:
+  positive: ["RW"]
+  negative: ["SC", "bodylimb", "face", "FF"]
+
+# For CS
+CSvsFF:
+  positive: ["CS"]
+  negative: ["FF"]
+
+CSvsRW:
+  positive: ["CS"]
+  negative: ["RW"]
+
+CSvsPER:
+  positive: ["CS"]
+  negative: ["SC"]
+
+CSvsFFPER:
+  positive: ["CS"]
+  negative: ["FF", "SC"]
+
+CSvsLimbs:
+  positive: ["CS"]
+  negative: ["bodylimb"]
+
+CSvsFaces:
+  positive: ["CS"]
+  negative: ["face"]
+
+CSvsFacesLimbs:
+  positive: ["CS"]
+  negative: ["bodylimb", "face"]
+
+## logic for the xx vs all others
+CSvsAllnoCS:
+  positive: ["CS"]
+  negative: ["FF", "SC", "bodylimb", "face","RW"]
+
+CSvsAllnoCSnoWord:
+  positive: ["CS"]
+  negative: ["FF", "SC", "bodylimb", "face"]
+
+CSvsAllnoCSnoWordnoFF:
+  positive: ["CS"]
+  negative: ["SC", "bodylimb", "face"]
+
+# Faces
+FacesvsCS:
+  positive: ["face"]
+  negative: ["CS"]
+
+FacesvsRW:
+  positive: ["face"]
+  negative: ["RW"]
+
+FacesvsPER:
+  positive: ["face"]
+  negative: ["SC"]
+
+FacesvsAllnoFace:
+  positive: ["face"]
+  negative: ["SC", "CS", "FF", "bodylimb","RW"]
+
+FacesvsAllnoFacenoRW:
+  positive: ["face"]
+  negative: ["SC", "CS", "FF", "bodylimb"]
+
+FacesvsAllnoFacenoCS:
+  positive: ["face"]
+  negative: ["SC", "FF", "bodylimb","RW"]
+
+# Bodylimbs
+LimbsvsCS:
+  positive: ["bodylimb"]
+  negative: ["CS"]
+
+LimbsvsRW:
+  positive: ["bodylimb"]
+  negative: ["RW"]
+
+LimbsvsPER:
+  positive: ["bodylimb"]
+  negative: ["SC"]
+
+LimbsvsAllnoLimbs:
+  positive: ["bodylimb"]
+  negative: ["SC", "CS", "FF", "face","RW"]
+
+LimbsvsAllnoLimbsnoRW:
+  positive: ["bodylimb"]
+  negative: ["SC", "CS", "FF", "face"]
+
+LimbsvsAllnoLimbsnoCS:
+  positive: ["bodylimb"]
+  negative: ["SC", "FF", "face","RW"]
+
+FacesvsLimbs:
+  positive: ["face"]
+  negative: ["bodylimb"]

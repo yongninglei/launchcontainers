@@ -1,0 +1,21 @@
+# roi_config_tiger_ROI_auto.yaml
+# ------------------------------
+# tiger_ROI_auto labels, relative to
+#   <label_root>/sub-<sub>/label/tiger_ROI_auto/
+# label_root default: app_manual_delineation_helper/example_dataset/freesurfer-with_t2
+# (these labels do not exist under BIDS/derivatives/freesurfer-with_t2).
+# Left hemisphere only. Anterior -> posterior.
+
+rois:
+  mFus-words:
+    L: lh.mFus-words.label
+  mOTS-words:
+    L: lh.mOTS-words.label
+  pOTS-words:
+    L: lh.pOTS-words.label
+  PON-words:
+    L: lh.PON-words.label
+  IOG-words:
+    L: lh.IOG-words.label
+  LOC-words:
+    L: lh.LOC-words.label

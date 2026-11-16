@@ -32,20 +32,24 @@ and generates per-subject HPC launch scripts.
 
 ## Install
 
+The repo is managed with [uv](https://docs.astral.sh/uv/).
+
 ```bash
-# 1. Install pipx and poetry (once per machine)
-pip install pipx
-pipx install poetry
+# 1. Install uv (once per machine)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# 2. Clone and set up the virtual environment
-git clone https://github.com/your-org/launchcontainers.git
+# 2. Clone and create .venv from pyproject.toml + uv.lock
+git clone https://github.com/garikoitz/launchcontainers.git
 cd launchcontainers
-poetry env use python3
-poetry install
+uv sync
 
-# 3. Activate the environment
-poetry shell
+# 3. Run the entry points without activating anything
+uv run lc --help
+uv run checker --help
 ```
+
+`requirements.txt` (pip) and `environment.yml` (conda/micromamba) are kept in
+sync with `pyproject.toml` for machines without uv.
 
 ## Quick start
 
@@ -65,8 +69,8 @@ and the developer extension guide — lives in [`docs/`](docs/).
 Build locally:
 
 ```bash
-pip install sphinx sphinx-rtd-theme
-cd docs && make html
+uv sync --group docs
+cd docs && uv run make html
 open build/html/index.html
 ```
 
