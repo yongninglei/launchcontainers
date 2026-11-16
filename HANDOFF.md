@@ -5,6 +5,25 @@ delete an entry once it is done. Repo conventions are in `Claude.md`.
 
 ---
 
+## Redesign the launchcontainers pages — 2026-11-16 (later, not started)
+
+**Goal:** the maintainer finds the current pages ugly; redesign them later.
+Two kinds of page, both plain today:
+
+- the documentation site (Sphinx, `docs/source/`, `pydata_sphinx_theme`,
+  built and published to GitHub Pages by the docs job in
+  `.github/workflows/main.yml`, which is disabled for now). Several pages
+  (`code_structure.rst`, `extending.rst`, parts of `configuration.rst`) still
+  describe the pre-0.5.0 code and need rewriting anyway;
+- the `lc qc` launch-status report: `qc/index.html` and
+  `qc/sub-XX_ses-YY.html`, written by `src/launchcontainers/core/qc.py`
+  (inline CSS in `_CSS`).
+
+Ask the maintainer which page(s) and what look before starting (web-MRI /
+QC-registration's page style is the house look in MRI-hub).
+
+---
+
 ## sub-02 ses-07…10 DWI heudiconv conversion (VOTCLOC) — 2026-11-04
 
 **Goal:** convert only the DWI DICOMs of sub-02 ses-07, 08, 09, 10 to BIDS NIfTI
