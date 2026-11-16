@@ -1,4 +1,4 @@
-"""The Flywheel-style DWI containers as analysis-core Tools.
+"""The Flywheel-style DWI containers as launchcontainers.core Tools.
 
 anatrois, freesurferator, rtppreproc, rtp2-preproc, rtp-pipeline, rtp2-pipeline.
 
@@ -17,11 +17,30 @@ from argparse import Namespace
 from pathlib import Path
 from typing import Any
 
-from analysis_core import AnalysisCoreError
-from analysis_core.config import LCConfig
-from analysis_core.tool import Figure, QCCheck, QCResult, SessionResult, ToolConfig
+from launchcontainers.core import LCError
+from launchcontainers.core.config import LCConfig
+from launchcontainers.core.tool import (
+    Figure,
+    QCCheck,
+    QCResult,
+    SessionResult,
+    ToolConfig,
+)
 
 from launchcontainers import __version__ as LC_VERSION
+
+
+def require_extra(extra: str, modules, what: str) -> None:
+    """LCError naming the launchcontainers extra to install when ``modules`` are missing."""
+    import importlib.util
+
+    missing = [m for m in modules if importlib.util.find_spec(m) is None]
+    if missing:
+        raise LCError(
+            f"{what} needs the '{extra}' extra (missing: {', '.join(missing)}): "
+            f"uv sync --extra {extra}   or   pip install 'launchcontainers[{extra}]'"
+        )
+
 
 DWI_CONTAINERS = (
     "anatrois",
@@ -57,21 +76,22 @@ class DWIContainer:
 
     # -- load -------------------------------------------------------------
     def load(self, cfg: LCConfig) -> ToolConfig:
+        require_extra(
+            "dwi", ("bids", "nibabel", "numpy", "pandas"), f"the {self.name} tool"
+        )
         block = cfg.tool_block(self.name)
         if not block.get("version"):
-            raise AnalysisCoreError(
+            raise LCError(
                 f"{cfg.source_path}: container_specific.{self.name}.version is required"
             )
         general = cfg.raw.get("general") or {}
         if general.get("container", general.get("tool")) != self.name:
-            raise AnalysisCoreError(
-                f"{cfg.source_path}: general.container must be {self.name!r}"
-            )
+            raise LCError(f"{cfg.source_path}: general.container must be {self.name!r}")
         if self.name in ("rtppreproc", "rtp2-preproc", "rtp-pipeline", "rtp2-pipeline"):
             # the staging code reads these keys directly
             for key in ("precontainer_anat", "anat_analysis_name"):
                 if key not in block:
-                    raise AnalysisCoreError(
+                    raise LCError(
                         f"{cfg.source_path}: container_specific.{self.name}.{key} is required"
                     )
         return ToolConfig(
@@ -102,7 +122,7 @@ class DWIContainer:
             return None
         return _norm_ses(tc.params.get("use_src_session"))
 
-    # -- analysis-level staging (analysis_core.tool.prepare_analysis) ------
+    # -- analysis-level staging (launchcontainers.core.tool.prepare_analysis) ------
     def prepare_analysis(self, tc: ToolConfig, pairs: list[tuple[str, str]]):
         from launchcontainers import utils as do
         from launchcontainers.prepare import dwi_prepare
@@ -113,14 +133,14 @@ class DWIContainer:
         if cc is not None:
             do.copy_file(str(cc), str(ana / f"{self.name}.json"), force)
         elif not (ana / f"{self.name}.json").exists():
-            raise AnalysisCoreError(
+            raise LCError(
                 f"no {self.name}.json in {ana}: pass the container config with -cc"
             )
         config_json = dwi_prepare.copy_and_edit_config_json(
             self._namespace(tc), str(ana)
         )
         if not config_json:
-            raise AnalysisCoreError(f"could not write {ana / (self.name + '.json')}")
+            raise LCError(f"could not write {ana / (self.name + '.json')}")
         tc.extra["config_json"] = config_json
         if self.name in _NEEDS_LAYOUT:
             from bids import BIDSLayout
@@ -171,9 +191,9 @@ class DWIContainer:
         ana = self.analysis_dirs(tc)[0]
         cc = ana / f"{self.name}.json"
         if not cc.is_file():
-            raise AnalysisCoreError(f"{cc} missing: run `lc prepare` first")
+            raise LCError(f"{cc} missing: run `lc prepare` first")
         if "inputs" not in json.loads(cc.read_text()):
-            raise AnalysisCoreError(f"{cc} has no 'inputs': run `lc prepare` first")
+            raise LCError(f"{cc} has no 'inputs': run `lc prepare` first")
         notes = []
         if submit and self.name in ("rtp-pipeline", "rtp2-pipeline"):
             stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -241,7 +261,7 @@ class DWIContainer:
             checks.append(QCCheck("figures", "warn", f"{type(exc).__name__}: {exc}"))
         return res
 
-    # -- pre-rendered QC images (analysis_core.slices) ---------------------------
+    # -- pre-rendered QC images (launchcontainers.core.slices) ---------------------------
     def _figures(self, tc: ToolConfig, sub: str, ses: str, out: Path) -> list[Figure]:
         """One rated item per session, rendered once (fingerprinted) under qc/<item>/:
 
@@ -251,7 +271,7 @@ class DWIContainer:
           i.e. the DWI→T1 registration
         - rtp(2)-pipeline: no figure yet (checks only)
         """
-        from analysis_core.slices import Layer, render_item
+        from launchcontainers.core.slices import Layer, render_item
 
         ana = self.analysis_dirs(tc)[0]
         overwrite = bool(tc.extra.get("qc_overwrite"))

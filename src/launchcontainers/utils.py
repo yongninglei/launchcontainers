@@ -416,9 +416,9 @@ def copy_configs(output_path, force=True):
         If ``True``, overwrite existing files in ``output_path``.
     """
     # first, know where the tar file is stored
-    import pkg_resources
+    from importlib import resources
 
-    config_path = pkg_resources.resource_filename("launchcontainers", "example_configs")
+    config_path = str(resources.files("launchcontainers") / "example_configs")
 
     # second, copy all the files from the source folder to the output_path
     all_cofig_files = os.listdir(config_path)

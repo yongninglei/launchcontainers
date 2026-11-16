@@ -71,6 +71,18 @@ def prepare(
         sub_ses_list=sub_ses_list,
         container_specific_config=container_specific_config,
     )
+    from launchcontainers.core import LCError
+    from launchcontainers.tools.dwi import require_extra
+
+    try:
+        require_extra(
+            "fmri",
+            ("bids", "nibabel", "numpy", "pandas", "scipy"),
+            "l1_surface prepare",
+        )
+    except LCError as exc:
+        console.print(f"[red]ERROR[/red] {exc}")
+        raise typer.Exit(2) from None
     from launchcontainers import do_prepare
 
     success, analysis_dir = False, None
@@ -127,8 +139,8 @@ def _refuse_moved(lc_config: str) -> None:
 
 
 def _prepare_with_tool(lc_config, sub_ses_list, container_config, log_fpath, err_fpath):
-    """`lc prepare` through the Tool interface + analysis-core provenance."""
-    from analysis_core import AnalysisCoreError
+    """`lc prepare` through the Tool interface + launchcontainers.core provenance."""
+    from launchcontainers.core import LCError
 
     from launchcontainers import lc_prepare
 
@@ -137,7 +149,7 @@ def _prepare_with_tool(lc_config, sub_ses_list, container_config, log_fpath, err
         res = lc_prepare.prepare(
             lc_config, sub_ses_list, container_config, console=console
         )
-    except AnalysisCoreError as exc:
+    except LCError as exc:
         console.print(f"[red]ERROR[/red] {exc}")
         raise typer.Exit(2) from None
     except Exception:
@@ -194,8 +206,8 @@ def run(
 
 
 def _run_with_tool(workdir, submit, sub_ses_list, yes):
-    """`lc run` through the Tool interface: every job wrapped by analysis-session."""
-    from analysis_core import AnalysisCoreError
+    """`lc run` through the Tool interface: every job wrapped by lc-session."""
+    from launchcontainers.core import LCError
 
     from launchcontainers import lc_run
     from launchcontainers.check import general_checks
@@ -203,7 +215,7 @@ def _run_with_tool(workdir, submit, sub_ses_list, yes):
     console.rule(f"[bold]lc run — {workdir}[/bold]")
     try:
         p = lc_run.plan(workdir, sub_ses_list)
-    except AnalysisCoreError as exc:
+    except LCError as exc:
         console.print(f"[red]ERROR[/red] {exc}")
         raise typer.Exit(2) from None
     for n in p.notes:
@@ -233,7 +245,7 @@ def _run_with_tool(workdir, submit, sub_ses_list, yes):
 
     try:
         res = lc_run.run(p, submit, console=console)
-    except AnalysisCoreError as exc:
+    except LCError as exc:
         console.print(f"[red]ERROR[/red] {exc}")
         raise typer.Exit(2) from None
     for n in p.notes:
@@ -287,7 +299,7 @@ def qc(
     """Checks + pre-rendered PNGs per session → qc/index.html; --serve to rate them."""
     import time
 
-    from analysis_core import AnalysisCoreError
+    from launchcontainers.core import LCError
 
     from launchcontainers import lc_qc
 
@@ -297,7 +309,7 @@ def qc(
     _refuse_moved(op.join(workdir, "lc_config.yaml"))
     try:
         rep = lc_qc.qc(workdir, sub_ses_list, overwrite=overwrite, console=console)
-    except AnalysisCoreError as exc:
+    except LCError as exc:
         console.print(f"[red]ERROR[/red] {exc}")
         raise typer.Exit(2) from None
     n = {k: sum(rep.worst(r) == k for r in rep.results) for k in ("ok", "warn", "fail")}
@@ -313,7 +325,7 @@ def qc(
             f"(re-run: lc run -w {workdir} -ssl {rep.failed_list})"
         )
     if serve:
-        from analysis_core.viewer import serve as serve_viewer
+        from launchcontainers.core.viewer import serve as serve_viewer
 
         serve_viewer(
             rep.workdir,

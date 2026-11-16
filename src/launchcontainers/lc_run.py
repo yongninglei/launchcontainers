@@ -1,8 +1,8 @@
-"""`lc run` on analysis-core: prepared analysis dir → one wrapped command per session → backend.
+"""`lc run` on launchcontainers.core: prepared analysis dir → one wrapped command per session → backend.
 
 Every job line is
 
-    analysis-session --analysis-dir <workdir> --tool <tool> --sub S --ses E -- <tool.command()>
+    lc-session --analysis-dir <workdir> --tool <tool> --sub S --ses E -- <tool.command()>
 
 so each session records its own start, end, exit code and log in
 ``<workdir>/logs/<run_id>/`` and a ``sessions.tsv`` row, whatever the backend.
@@ -27,8 +27,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from analysis_core import AnalysisCoreError
-from analysis_core.runlog import CONFIG_NAME, SESSIONS_TSV, SUBSES_NAME
+from launchcontainers.core import LCError
+from launchcontainers.core.runlog import CONFIG_NAME, SESSIONS_TSV, SUBSES_NAME
 
 from launchcontainers import lc_prepare
 
@@ -85,13 +85,9 @@ def _prepare_status(workdir: Path) -> dict[tuple[str, str], str]:
 
 
 def _wrapper_exe() -> str:
-    """analysis-session from the interpreter running lc (jobs must use the same venv)."""
-    exe = Path(sys.executable).parent / "analysis-session"
-    return (
-        str(exe)
-        if exe.exists()
-        else (shutil.which("analysis-session") or "analysis-session")
-    )
+    """lc-session from the interpreter running lc (jobs must use the same venv)."""
+    exe = Path(sys.executable).parent / "lc-session"
+    return str(exe) if exe.exists() else (shutil.which("lc-session") or "lc-session")
 
 
 def plan(workdir: Path, subseslist: Path | None = None) -> RunPlan:
@@ -99,12 +95,12 @@ def plan(workdir: Path, subseslist: Path | None = None) -> RunPlan:
     workdir = Path(workdir).expanduser().resolve()
     lc_config = workdir / CONFIG_NAME
     if not lc_config.is_file():
-        raise AnalysisCoreError(f"{workdir}: no {CONFIG_NAME}; run `lc prepare` first")
+        raise LCError(f"{workdir}: no {CONFIG_NAME}; run `lc prepare` first")
     ssl = (
         Path(subseslist).expanduser().resolve() if subseslist else workdir / SUBSES_NAME
     )
     if not ssl.is_file():
-        raise AnalysisCoreError(f"work list not found: {ssl}")
+        raise LCError(f"work list not found: {ssl}")
     tool, tc, rows = lc_prepare.load(lc_config, ssl, None)
     cfg = tc.general
 
@@ -120,7 +116,7 @@ def plan(workdir: Path, subseslist: Path | None = None) -> RunPlan:
     opts = dict(cfg.host_options(host))
     manager = str(opts.get("manager") or "").lower()
     if manager not in MANAGERS:
-        raise AnalysisCoreError(
+        raise LCError(
             f"{lc_config}: host_options.{host}.manager must be one of {MANAGERS}, "
             f"got {opts.get('manager')!r}"
         )
@@ -149,9 +145,7 @@ def plan(workdir: Path, subseslist: Path | None = None) -> RunPlan:
         ]
         jobs.append(Job(r.sub, r.ses, shlex.join(argv)))
     if not jobs:
-        raise AnalysisCoreError(
-            f"{workdir}: no session to run ({len(skipped)} skipped)"
-        )
+        raise LCError(f"{workdir}: no session to run ({len(skipped)} skipped)")
     return RunPlan(
         tool.name, workdir, host, manager, opts, jobs, skipped, notes, tool, tc
     )
@@ -285,15 +279,13 @@ def run(p: RunPlan, submit: bool, console=None) -> RunResult:
                     [exe, str(script)], capture_output=True, text=True, timeout=60
                 )
             except (OSError, subprocess.TimeoutExpired) as exc:
-                raise AnalysisCoreError(f"{exe} failed: {exc}") from None
+                raise LCError(f"{exe} failed: {exc}") from None
             res.submit_output = (cp.stdout + cp.stderr).strip()
             (run_dir / "submit.txt").write_text(
                 f"$ {exe} {script}\nexit {cp.returncode}\n{res.submit_output}\n"
             )
             if cp.returncode != 0:
-                raise AnalysisCoreError(
-                    f"{exe} exited {cp.returncode}: {res.submit_output}"
-                )
+                raise LCError(f"{exe} exited {cp.returncode}: {res.submit_output}")
         return res
 
     # local

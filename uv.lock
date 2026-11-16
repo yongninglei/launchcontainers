@@ -56,33 +56,6 @@ wheels = [
 ]
 
 [[package]]
-name = "analysis-core"
-version = "0.1.4"
-source = { editable = "../analysis-core" }
-dependencies = [
-    { name = "pyyaml" },
-    { name = "rich" },
-    { name = "typer" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "matplotlib", marker = "extra == 'render'" },
-    { name = "nibabel", marker = "extra == 'render'" },
-    { name = "numpy", marker = "extra == 'render'" },
-    { name = "pillow", marker = "extra == 'render'" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
-    { name = "pyyaml", specifier = ">=6.0" },
-    { name = "rich", specifier = ">=13.0" },
-    { name = "scipy", marker = "extra == 'render'" },
-    { name = "typer", specifier = ">=0.12" },
-]
-provides-extras = ["dev", "render"]
-
-[package.metadata.requires-dev]
-dev = [{ name = "pytest", specifier = ">=8.0" }]
-
-[[package]]
 name = "annotated-doc"
 version = "0.0.5"
 source = { registry = "https://pypi.org/simple" }
@@ -1615,10 +1588,16 @@ wheels = [
 
 [[package]]
 name = "launchcontainers"
-version = "0.4.8"
+version = "0.5.0"
 source = { editable = "." }
 dependencies = [
-    { name = "analysis-core" },
+    { name = "pyyaml" },
+    { name = "rich" },
+    { name = "typer" },
+]
+
+[package.optional-dependencies]
+all = [
     { name = "bids" },
     { name = "bokeh", version = "3.9.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
     { name = "bokeh", version = "3.10.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
@@ -1633,20 +1612,66 @@ dependencies = [
     { name = "numpy" },
     { name = "openpyxl" },
     { name = "pandas" },
+    { name = "pillow" },
     { name = "pybids" },
-    { name = "pyyaml" },
     { name = "requests" },
-    { name = "rich" },
     { name = "scipy" },
-    { name = "setuptools" },
     { name = "tedana" },
     { name = "tqdm" },
-    { name = "typer" },
 ]
-
-[package.optional-dependencies]
+checker = [
+    { name = "h5py" },
+    { name = "nibabel" },
+    { name = "numpy" },
+    { name = "pandas" },
+    { name = "scipy" },
+]
+dwi = [
+    { name = "nibabel" },
+    { name = "numpy" },
+    { name = "pandas" },
+    { name = "pybids" },
+]
+fmri = [
+    { name = "nibabel" },
+    { name = "numpy" },
+    { name = "pandas" },
+    { name = "pybids" },
+    { name = "scipy" },
+]
 glm = [
     { name = "pyglm", marker = "python_full_version >= '3.11' and python_full_version < '3.13'" },
+]
+heudiconv = [
+    { name = "heudiconv" },
+]
+render = [
+    { name = "matplotlib", version = "3.10.9", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "matplotlib", version = "3.11.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "nibabel" },
+    { name = "numpy" },
+    { name = "pillow" },
+    { name = "scipy" },
+]
+scripts = [
+    { name = "bids" },
+    { name = "bokeh", version = "3.9.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "bokeh", version = "3.10.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "h5py" },
+    { name = "ipython", version = "8.39.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "ipython", version = "9.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "matplotlib", version = "3.10.9", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
+    { name = "matplotlib", version = "3.11.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "nibabel" },
+    { name = "nilearn" },
+    { name = "numpy" },
+    { name = "openpyxl" },
+    { name = "pandas" },
+    { name = "pybids" },
+    { name = "requests" },
+    { name = "scipy" },
+    { name = "tedana" },
+    { name = "tqdm" },
 ]
 
 [package.dev-dependencies]
@@ -1676,30 +1701,48 @@ docs = [
 
 [package.metadata]
 requires-dist = [
-    { name = "analysis-core", editable = "../analysis-core" },
-    { name = "bids" },
-    { name = "bokeh", specifier = ">=2.4.2" },
-    { name = "h5py", specifier = ">=3.0" },
-    { name = "heudiconv", specifier = ">=1.3.2" },
-    { name = "ipython", specifier = ">=7.29.0" },
-    { name = "matplotlib" },
-    { name = "nibabel" },
-    { name = "nilearn", specifier = ">=0.10.4" },
-    { name = "numpy", specifier = ">=2.0" },
-    { name = "openpyxl", specifier = ">=3.1.5" },
-    { name = "pandas", specifier = ">=2.1" },
-    { name = "pybids", specifier = ">=0.16.1,<0.17" },
+    { name = "bids", marker = "extra == 'scripts'" },
+    { name = "bokeh", marker = "extra == 'scripts'", specifier = ">=2.4.2" },
+    { name = "h5py", marker = "extra == 'checker'", specifier = ">=3.0" },
+    { name = "h5py", marker = "extra == 'scripts'", specifier = ">=3.0" },
+    { name = "heudiconv", marker = "extra == 'heudiconv'", specifier = ">=1.3.2" },
+    { name = "ipython", marker = "extra == 'scripts'", specifier = ">=7.29.0" },
+    { name = "launchcontainers", extras = ["dwi", "render", "fmri", "checker", "heudiconv", "scripts"], marker = "extra == 'all'" },
+    { name = "matplotlib", marker = "extra == 'render'" },
+    { name = "matplotlib", marker = "extra == 'scripts'" },
+    { name = "nibabel", marker = "extra == 'checker'" },
+    { name = "nibabel", marker = "extra == 'dwi'" },
+    { name = "nibabel", marker = "extra == 'fmri'" },
+    { name = "nibabel", marker = "extra == 'render'" },
+    { name = "nibabel", marker = "extra == 'scripts'" },
+    { name = "nilearn", marker = "extra == 'scripts'", specifier = ">=0.10.4" },
+    { name = "numpy", marker = "extra == 'checker'", specifier = ">=2.0" },
+    { name = "numpy", marker = "extra == 'dwi'", specifier = ">=2.0" },
+    { name = "numpy", marker = "extra == 'fmri'", specifier = ">=2.0" },
+    { name = "numpy", marker = "extra == 'render'", specifier = ">=2.0" },
+    { name = "numpy", marker = "extra == 'scripts'", specifier = ">=2.0" },
+    { name = "openpyxl", marker = "extra == 'scripts'", specifier = ">=3.1.5" },
+    { name = "pandas", marker = "extra == 'checker'", specifier = ">=2.1" },
+    { name = "pandas", marker = "extra == 'dwi'", specifier = ">=2.1" },
+    { name = "pandas", marker = "extra == 'fmri'", specifier = ">=2.1" },
+    { name = "pandas", marker = "extra == 'scripts'", specifier = ">=2.1" },
+    { name = "pillow", marker = "extra == 'render'" },
+    { name = "pybids", marker = "extra == 'dwi'", specifier = ">=0.16.1,<0.17" },
+    { name = "pybids", marker = "extra == 'fmri'", specifier = ">=0.16.1,<0.17" },
+    { name = "pybids", marker = "extra == 'scripts'", specifier = ">=0.16.1,<0.17" },
     { name = "pyglm", marker = "python_full_version >= '3.11' and python_full_version < '3.13' and extra == 'glm'", editable = "../pyGLM" },
-    { name = "pyyaml" },
-    { name = "requests", specifier = ">=2.26,<3.0" },
+    { name = "pyyaml", specifier = ">=6.0" },
+    { name = "requests", marker = "extra == 'scripts'", specifier = ">=2.26,<3.0" },
     { name = "rich", specifier = ">=13.0" },
-    { name = "scipy" },
-    { name = "setuptools", specifier = ">=67.0.0,<68" },
-    { name = "tedana", specifier = "==26.0.3" },
-    { name = "tqdm" },
+    { name = "scipy", marker = "extra == 'checker'" },
+    { name = "scipy", marker = "extra == 'fmri'" },
+    { name = "scipy", marker = "extra == 'render'" },
+    { name = "scipy", marker = "extra == 'scripts'" },
+    { name = "tedana", marker = "extra == 'scripts'", specifier = "==26.0.3" },
+    { name = "tqdm", marker = "extra == 'scripts'" },
     { name = "typer", specifier = ">=0.15.3" },
 ]
-provides-extras = ["glm"]
+provides-extras = ["dwi", "render", "fmri", "checker", "heudiconv", "glm", "scripts", "all"]
 
 [package.metadata.requires-dev]
 dev = [
@@ -3100,7 +3143,7 @@ name = "pyglm"
 version = "0.1.0"
 source = { editable = "../pyGLM" }
 dependencies = [
-    { name = "analysis-core" },
+    { name = "launchcontainers" },
     { name = "matplotlib", version = "3.11.2", source = { registry = "https://pypi.org/simple" } },
     { name = "nibabel" },
     { name = "nilearn" },
@@ -3115,7 +3158,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "analysis-core", editable = "../analysis-core" },
+    { name = "launchcontainers", editable = "." },
     { name = "matplotlib", specifier = "==3.11.2" },
     { name = "nibabel", specifier = "==5.4.2" },
     { name = "nilearn", specifier = "==0.14.1" },

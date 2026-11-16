@@ -1,19 +1,19 @@
-"""`lc qc` on analysis-core: per-session ``tool.qc()`` → static HTML report.
+"""`lc qc` on launchcontainers.core: per-session ``tool.qc()`` → static HTML report.
 
 For every session in the work list (``<workdir>/subseslist.txt`` or ``-ssl``):
 
 - ``tool.qc(tc, sub, ses)`` (a crash becomes a ``fail`` check, never an abort);
-  tools also pre-render their PNGs here (``analysis_core.slices``:
+  tools also pre-render their PNGs here (``launchcontainers.core.slices``:
   ``qc/<item>/sub-XX/ses-YY/``, fingerprinted, so unchanged items are skipped);
 - plus one launcher check, ``last run``: the latest non-prepare row for the
-  session in ``logs/sessions.tsv`` (written by analysis-session).
+  session in ``logs/sessions.tsv`` (written by lc-session).
 
-Writes, via ``analysis_core.qc.render_report``, ``<workdir>/qc/index.html``,
+Writes, via ``launchcontainers.core.qc.render_report``, ``<workdir>/qc/index.html``,
 ``qc/sub-XX_ses-YY.html`` and ``qc/qc.tsv``; and ``qc/failed_subseslist.txt``
 (``sub,ses,RUN`` with every session that has a ``fail``), ready for
 ``lc run -w <workdir> -ssl qc/failed_subseslist.txt``.
 
-``lc qc --serve`` then opens the rating page (``analysis_core.viewer``) on the
+``lc qc --serve`` then opens the rating page (``launchcontainers.core.viewer``) on the
 pre-rendered items; verdicts go to ``qc/qc_rater-<name>.tsv`` and show up in
 ``qc/index.html`` on the next ``lc qc``.
 """
@@ -24,10 +24,10 @@ import csv
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from analysis_core import AnalysisCoreError
-from analysis_core.qc import render_report
-from analysis_core.runlog import CONFIG_NAME, SESSIONS_TSV, SUBSES_NAME
-from analysis_core.tool import QCCheck, QCResult
+from launchcontainers.core import LCError
+from launchcontainers.core.qc import render_report
+from launchcontainers.core.runlog import CONFIG_NAME, SESSIONS_TSV, SUBSES_NAME
+from launchcontainers.core.tool import QCCheck, QCResult
 
 from launchcontainers import lc_prepare
 
@@ -81,18 +81,18 @@ def qc(
 ) -> QCReport:
     """Checks + pre-rendered figures per session, then the static report.
 
-    Figures are rendered once (``analysis_core.slices``: fingerprinted), so a
+    Figures are rendered once (``launchcontainers.core.slices``: fingerprinted), so a
     second call only re-renders what changed; ``overwrite`` forces it.
     """
     workdir = Path(workdir).expanduser().resolve()
     lc_config = workdir / CONFIG_NAME
     if not lc_config.is_file():
-        raise AnalysisCoreError(f"{workdir}: no {CONFIG_NAME}; run `lc prepare` first")
+        raise LCError(f"{workdir}: no {CONFIG_NAME}; run `lc prepare` first")
     ssl = (
         Path(subseslist).expanduser().resolve() if subseslist else workdir / SUBSES_NAME
     )
     if not ssl.is_file():
-        raise AnalysisCoreError(f"work list not found: {ssl}")
+        raise LCError(f"work list not found: {ssl}")
     tool, tc, rows = lc_prepare.load(lc_config, ssl, None)
     tc.extra["qc_overwrite"] = overwrite
     rep = QCReport(tool.name, workdir)

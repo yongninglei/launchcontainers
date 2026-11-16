@@ -1,4 +1,4 @@
-"""`lc prepare` on analysis-core: config → guarded analysis dir → per-session prepare.
+"""`lc prepare` on launchcontainers.core: config → guarded analysis dir → per-session prepare.
 
 The loop over the work list lives here (and only here); each tool stages one
 sub/ses per call. Every prepare is recorded as a run in the analysis dir
@@ -11,16 +11,16 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from analysis_core import AnalysisCoreError
-from analysis_core.config import load_lc_config
-from analysis_core.provenance import (
+from launchcontainers.core import LCError
+from launchcontainers.core.config import load_lc_config
+from launchcontainers.core.provenance import (
     guard_analysis_dir,
     software_info,
     write_dataset_description,
 )
-from analysis_core.runlog import finish_run, start_run
-from analysis_core.subseslist import read_subseslist
-from analysis_core.tool import (
+from launchcontainers.core.runlog import finish_run, start_run
+from launchcontainers.core.subseslist import read_subseslist
+from launchcontainers.core.tool import (
     SessionResult,
     Tool,
     ToolConfig,
@@ -29,7 +29,7 @@ from analysis_core.tool import (
 )
 
 CODE_DIR = Path(__file__).resolve().parents[2]
-PACKAGES = ("launchcontainers", "analysis-core")
+PACKAGES = ("launchcontainers",)
 
 
 @dataclass
@@ -46,7 +46,7 @@ class PrepareResult:
 
 
 def resolve_tool(name: str) -> Tool:
-    """A built-in container tool, or any tool installed under analysis_core.tools."""
+    """A built-in container tool, or any tool installed under launchcontainers.tools."""
     from launchcontainers.tools import BUILTIN
 
     if name in BUILTIN:
@@ -61,13 +61,13 @@ def load(lc_config: Path, subseslist: Path, container_config: Path | None = None
     tc: ToolConfig = tool.load(cfg)
     rows = read_subseslist(subseslist)
     if not rows:
-        raise AnalysisCoreError(f"{subseslist}: no RUN=True rows")
+        raise LCError(f"{subseslist}: no RUN=True rows")
     tc.rows = {(r.sub, r.ses): r for r in rows}
     tc.extra["subseslist"] = str(Path(subseslist).resolve())
     if container_config is not None:
         cc = Path(container_config).expanduser().resolve()
         if not cc.is_file():
-            raise AnalysisCoreError(f"container config not found: {cc}")
+            raise LCError(f"container config not found: {cc}")
         tc.extra["container_config"] = str(cc)
     return tool, tc, rows
 

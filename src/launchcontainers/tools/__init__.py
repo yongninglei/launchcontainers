@@ -1,6 +1,6 @@
 """Built-in tools: the containers launchcontainers knows natively.
 
-They are also registered under the ``analysis_core.tools`` entry-point group
+They are also registered under the ``launchcontainers.tools`` entry-point group
 (pyproject.toml), so any MRI-hub launcher finds them the same way it finds
 pyGLM or autoROI.
 """

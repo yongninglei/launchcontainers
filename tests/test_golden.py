@@ -4,7 +4,7 @@ Goldens: tests/golden/data/*.json, captured by tests/golden/capture_legacy.py
 from commit a7448d9 (the bug-fixed legacy code). Compared: every entry under
 sub-*/ (links, dirs, files, small config contents), the top-level files the
 legacy code wrote (except lc_config.yaml / subseslist.txt, now owned by the
-analysis-core guard and run log), and the run command per session.
+launchcontainers.core guard and run log), and the run command per session.
 """
 
 from __future__ import annotations

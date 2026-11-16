@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Analysis QC</title>
+  <link rel="stylesheet" href="style.css">
+  <script>
+    // theme before first paint (same key idea as web-MRI's theme.js)
+    try { document.documentElement.dataset.theme = localStorage.getItem("qcr.theme") === "light" ? "light" : "dark"; } catch {}
+  </script>
+</head>
+<body>
+<header>
+  <button id="sidebar-toggle" title="hide / show the sidebar (\)">☰</button>
+  <strong class="app-title">QC</strong>
+  <span id="analysis" class="dim"></span>
+  <label>Item <select id="item"></select></label>
+  <label>Subject <select id="sub"></select></label>
+  <label>Session <select id="ses"></select></label>
+  <label>Run <select id="run"></select></label>
+  <button id="prev" title="previous (←)">◀</button>
+  <button id="next" title="next (→)">▶</button>
+  <button id="theme" class="theme-toggle" title="light / dark">☀</button>
+</header>
+
+<main>
+  <aside>
+    <section>
+      <h2>Rater</h2>
+      <input id="rater" placeholder="your name, e.g. tiger" autocomplete="off" spellcheck="false">
+      <p class="hint" id="rater-file"></p>
+    </section>
+
+    <section>
+      <h2>QC</h2>
+      <p id="question" class="question"></p>
+      <div class="seg verdict">
+        <button id="ok-true" class="yes" title="looks good">True <kbd>T</kbd></button>
+        <button id="ok-false" class="no" title="has a problem">False <kbd>F</kbd></button>
+      </div>
+      <textarea id="comment" rows="3" placeholder="comment (optional) — saved with T / F, or on leaving the box"></textarea>
+      <label class="row"><input type="checkbox" id="advance" checked> go to the next one after rating</label>
+      <div class="row">
+        <span id="progress" class="dim"></span>
+        <span class="spacer"></span>
+        <button id="next-unrated" title="next without a rating (N)">next unrated <kbd>N</kbd></button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Layers</h2>
+      <div id="layers"></div>
+    </section>
+
+    <section>
+      <h2>Sessions</h2>
+      <div class="seg small" id="filter">
+        <button data-f="all" class="on">all</button>
+        <button data-f="todo">unrated</button>
+        <button data-f="True">True</button>
+        <button data-f="False">False</button>
+      </div>
+      <ul class="list scroll" id="runs"></ul>
+    </section>
+
+    <section>
+      <h2>Keys</h2>
+      <p class="hint">
+        <kbd>T</kbd> True · <kbd>F</kbd> False · <kbd>N</kbd> next unrated<br>
+        <kbd>←</kbd> <kbd>→</kbd> next / previous · <kbd>↑</kbd> <kbd>↓</kbd> subject<br>
+        <kbd>1</kbd>–<kbd>9</kbd> toggle layers · <kbd>C</kbd> comment ·
+        <kbd>Esc</kbd> leave comment · <kbd>\</kbd> sidebar
+      </p>
+    </section>
+  </aside>
+
+  <div id="stage">
+    <h3 id="title"></h3>
+    <div id="tiles"></div>
+  </div>
+</main>
+
+<footer><span id="status"></span><span id="where" class="dim">Loading…</span></footer>
+
+<script src="app.js"></script>
+</body>
+</html>

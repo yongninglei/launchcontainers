@@ -1,5 +1,5 @@
 """`lc run` through the Tool interface: wrapped job lines, backends by manager,
-and the per-session records the analysis-session wrapper writes."""
+and the per-session records the lc-session wrapper writes."""
 
 from __future__ import annotations
 
@@ -41,7 +41,7 @@ def test_plan_wraps_every_session(root):
     p = lc_run.plan(wd)
     assert p.manager == "local" and len(p.jobs) == 3
     argv = shlex.split(p.jobs[0].line)
-    assert argv[0].endswith("analysis-session")
+    assert argv[0].endswith("lc-session")
     assert argv[argv.index("--analysis-dir") + 1] == str(wd)
     assert argv[argv.index("--tool") + 1] == "rtp2-pipeline"
     inner = argv[argv.index("--") + 1 :]
@@ -104,12 +104,12 @@ def test_failed_prepare_is_skipped(root):
 
 
 def test_unknown_manager_is_an_error(root):
-    from analysis_core import AnalysisCoreError
+    from launchcontainers.core import LCError
 
     from launchcontainers import lc_run
 
     wd = _prepared(root, "run_badmgr", "local")
     cfg = (wd / "lc_config.yaml").read_text().replace("manager: local", "manager: pbs")
     (wd / "lc_config.yaml").write_text(cfg)
-    with pytest.raises(AnalysisCoreError, match="manager"):
+    with pytest.raises(LCError, match="manager"):
         lc_run.plan(wd)
