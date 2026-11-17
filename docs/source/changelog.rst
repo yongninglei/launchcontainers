@@ -25,6 +25,10 @@ Unreleased (0.5.1)
   from different days). Its reason and its upstream had no place in lc's
   files, and Markdown notes in analysis dirs are not allowed (ARCHITECTURE.md
   §5: visual QC verdicts go in ``qc/qc_rater-<name>.tsv``).
+- **New external tool** ``pial-vein`` (yongninglei/pial-vein-sampling 0.2.0,
+  2026-11-17): swi_preproc's SWI sampled on twice-subdivided fMRIPrep surfaces,
+  outward from pial (A) and on a subdural envelope (B); reports
+  ``source_datasets`` (swi_preproc analyses, fMRIPrep, FreeSurfer).
 - **New external tools**: ``swi-prep`` (SWI raw QC, motion correction of every
   run to run-01) and ``swi-preproc`` (SWI main stage: crop, 2x, motion
   correction at 2x, composite of the chosen runs, N4, registration to the

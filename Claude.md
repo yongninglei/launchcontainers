@@ -128,6 +128,7 @@ work list; the tool does one sub/ses per call.
 | `autoROI-scaling`, `autoROI-clustering` | `tools/external.py` → `autoroi-scaling` / `autoroi-clustering` (MRI-hub/autoROI, own env) | a work-list `sources` column becomes `--sources a,b` (pseudo-sessions) |
 | `swi-prep` | `tools/external.py` → `swi-prep` (MRI-hub/swi_preproc, own env) | SWI raw QC: echo average + rigid MC of every run to run-01; greedy must be on PATH (cajal: `module load vtk/9.1 itk/5.4.5 greedy/latest`) |
 | `swi-preproc` | `tools/external.py` → `swi-preproc` (MRI-hub/swi_preproc, own env) | SWI main stage (Faruk): crop, 2×, MC at 2×, composite of the chosen runs, N4, T1w registration; needs c3d, greedy, ANTs on PATH (cajal: `module load vtk/9.1 itk/5.4.5 c3d/latest greedy/latest ants/2.5.1`) |
+| `pial-vein` | `tools/external.py` → `pial-vein` (yongninglei/pial-vein-sampling, own env) | swi_preproc's SWI on dense (twice-subdivided) fMRIPrep surfaces: A outward from pial, B subdural envelope. No modules needed |
 | `l1_surface` | `do_prepare.py` → `prepare/glm_prepare.py` | **prepare only**: GLM *input* preparation (events.tsv from vistadisp logs, BIDS / fMRIPrep BOLD symlinks), which pyGLM does not have. `lc run` / `lc qc` on it exit 2 and point to pyGLM |
 
 External analyses follow one contract, `docs/plan_protocol.md`: a
