@@ -117,10 +117,24 @@ class ExternalTool:
         plan = self.plan(tc)
         tc.extra["analysis_dirs"] = [Path(d) for d in plan["analysis_dirs"]]
         tc.extra["container_version"] = str(plan.get("version") or "unknown")
+        src = plan.get("source_datasets") or {}
+        if not isinstance(src, dict) or not all(
+            isinstance(k, str) and isinstance(v, str) and Path(v).is_absolute()
+            for k, v in src.items()
+        ):
+            raise LCError(
+                f"{self.name} --plan: 'source_datasets' must map link names to "
+                f"absolute paths, got {src!r}"
+            )
+        tc.extra["source_datasets"] = {k: Path(v) for k, v in src.items()}
         return tc
 
     def analysis_dirs(self, tc: ToolConfig) -> list[Path]:
         return list(tc.extra["analysis_dirs"])
+
+    def source_datasets(self, tc: ToolConfig) -> dict[str, Path]:
+        """Datasets the analysis reads besides raw BIDS (an upstream analysis, fMRIPrep, …)."""
+        return dict(tc.extra.get("source_datasets") or {})
 
     def prepare(self, tc: ToolConfig, sub: str, ses: str) -> SessionResult:
         """Check the session's inputs (``--plan``) and record them. Raises nothing."""

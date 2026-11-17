@@ -5,6 +5,25 @@ delete an entry once it is done. Repo conventions are in `Claude.md`.
 
 ---
 
+## Merge the SWI tool + provenance branches — 2026-11-17
+
+**State:** two branches of `origin` (yongninglei/launchcontainers) wait for a PR
+and merge into `main`, in this order:
+
+1. `swi-preproc-tool` — registers `swi-preproc` (MRI-hub/swi_preproc) as an
+   ExternalTool. Pushed; PR not opened yet.
+2. `provenance-description` (on top of 1) — `general.description` →
+   Description, `--plan` `source_datasets` → SourceDatasets (changelog
+   "Unreleased"). Used on cajal03 for
+   `VOTCLOC/main_exp/BIDS/derivatives/swi_preproc/analysis-v1reg`.
+
+Tests: everything except `test_golden.py` passes apart from failures that exist
+on `fc7a004` too (no `nibabel` / `bids` in a core-only env; typer CliRunner
+"I/O operation on closed file" in `test_cli_routing.py`). Not caused by these
+branches; worth fixing separately.
+
+---
+
 ## Redesign the launchcontainers pages — 2026-11-16 (later, not started)
 
 **Goal:** the maintainer finds the current pages ugly; redesign them later.

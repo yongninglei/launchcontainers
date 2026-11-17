@@ -143,7 +143,8 @@ list (`--write-list`).
 
 ```
 <analysis dir>/
-├── dataset_description.json   BIDS derivative: GeneratedBy (tool, version, commit,
+├── dataset_description.json   BIDS derivative: Description (general.description: why
+│                              the analysis exists, + tool and version), GeneratedBy (tool, version, commit,
 │                              dirty), SourceDatasets / DatasetLinks (bids: URIs)
 ├── lc_config.yaml             the config it was made with (guarded, §3)
 ├── subseslist.txt             union of every session ever run here
@@ -158,6 +159,15 @@ list (`--write-list`).
 └── sub-XX/ses-YY/…            outputs; sidecars with Sources (bids: URIs + sha256)
 ```
 
+- **Why and from what.** `general.description` (free text, not computational, so
+  rewording it never trips the guard) becomes `Description`; the datasets a tool
+  reads besides raw BIDS (its `--plan` `source_datasets`, e.g. the upstream analysis
+  a registration-only rerun reads) become `SourceDatasets` / `DatasetLinks`. A
+  changed Description or source list archives the old file to `logs/history/`.
+- **No Markdown or summary pages in an analysis dir.** Everything a reader needs is
+  in the files above, the tool's `analysis_parameters.yaml` + sidecars, `qc/`
+  (launch QC) and `qc/qc_rater-<name>.tsv` (visual QC verdicts with a comment: what
+  failed and why, QC-registration's format).
 - `runlog.start_run / finish_run` (moved from pyGLM, now the only copy).
 - **Session wrapper** `lc-session --analysis-dir D --tool T --sub S --ses E -- <cmd…>`:
   every job line `lc run` submits goes through it, so each array task records

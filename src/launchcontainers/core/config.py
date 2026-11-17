@@ -9,6 +9,8 @@
       analysis_name: main
       host: BCBL             # key into host_options          (runtime only)
       force: false           #                                 (runtime only)
+      description: why this analysis exists  # optional; dataset_description.json
+                                             # Description (not computational)
       deriv_layout: …        # optional
     container_specific:
       pyGLM: { … }           # validated by the tool's load() → build_params()
@@ -39,8 +41,10 @@ from launchcontainers.core import LCError
 from launchcontainers.core.io import PathLike
 
 # general keys that do not change what gets computed. The whole host_options
-# section is runtime-only too (provenance_view never includes it).
-RUNTIME_ONLY_KEYS = ("force", "host")
+# section is runtime-only too (provenance_view never includes it). ``description``
+# (why the analysis exists) is recorded in dataset_description.json instead, so
+# rewording it never trips the guard.
+RUNTIME_ONLY_KEYS = ("force", "host", "description")
 
 T = TypeVar("T")
 

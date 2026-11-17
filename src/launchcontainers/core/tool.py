@@ -113,6 +113,11 @@ class Tool(Protocol):
 
     # Optional (not part of the runtime check):
     #
+    # def source_datasets(self, tc) -> dict[str, Path]:
+    #     """{link: dataset root} the analysis reads besides raw BIDS (an upstream
+    #     analysis, fMRIPrep, …). lc prepare adds them to dataset_description.json
+    #     SourceDatasets / DatasetLinks next to ``raw``."""
+    #
     # def prepare_analysis(self, tc, pairs) -> list[tuple[str, str]] | None:
     #     """Analysis-level staging, called once by the launcher after the
     #     analysis dir is guarded and before any per-session prepare (e.g. write

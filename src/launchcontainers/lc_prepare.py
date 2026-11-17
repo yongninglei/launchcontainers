@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from launchcontainers.core import LCError
-from launchcontainers.core.config import load_lc_config
+from launchcontainers.core.config import LCConfig, load_lc_config, require_str
 from launchcontainers.core.provenance import (
     guard_analysis_dir,
     software_info,
@@ -90,6 +90,8 @@ def prepare(
     res = PrepareResult(tool.name, dirs)
 
     runtime_only = tuple(getattr(tool, "runtime_only", ()))
+    get_sources = getattr(tool, "source_datasets", None)
+    sources = dict(get_sources(tc)) if callable(get_sources) else {}
     for d in dirs:
         d.mkdir(parents=True, exist_ok=True)
         res.notes += guard_analysis_dir(
@@ -98,7 +100,7 @@ def prepare(
         write_dataset_description(
             d,
             name=f"{tool.name} {cfg.analysis_name}",
-            description=f"{tool.name} {version}, prepared by launchcontainers",
+            description=_description(cfg, tool.name, version),
             generated_by=[
                 {**software_info(tool.name, version), "Container": tool.name},
                 software_info(
@@ -108,7 +110,7 @@ def prepare(
                     CODE_DIR,
                 ),
             ],
-            source_datasets={"raw": cfg.bids_dir},
+            source_datasets={"raw": cfg.bids_dir, **sources},
         )
 
     run = start_run(
@@ -144,6 +146,17 @@ def prepare(
             [{"sub": r.sub, "ses": r.ses, "status": r.status} for r in res.results],
         )
     return res
+
+
+def _description(cfg: LCConfig, tool: str, version: str) -> str:
+    """dataset_description.json Description: ``general.description`` (why the analysis
+    exists, written by its author) + which tool made it."""
+    made = f"{tool} {version}, prepared by launchcontainers"
+    text = (cfg.raw.get("general") or {}).get("description")
+    if text is None:
+        return made
+    text = " ".join(require_str(text, "general.description").split())
+    return f"{text} [{made}]" if text else made
 
 
 def _lc_version() -> str:

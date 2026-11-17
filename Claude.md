@@ -7,6 +7,9 @@ the Tool interface, provenance, run logs, QC — is
 `ARCHITECTURE.md` (repo root); it wins where this file disagrees.
 
 **Open / handed-off work is tracked in `HANDOFF.md`. Read it first.**
+**Every change is written into `docs/source/changelog.rst` ("Unreleased" at the
+top) in the same commit: what changed, why, what it means for configs, analysis
+dirs and tools.** That file is how the next person or agent learns what happened.
 
 ---
 
@@ -112,7 +115,7 @@ work list; the tool does one sub/ses per call.
 
 | Step | Module | What it does |
 |---|---|---|
-| prepare | `lc_prepare.py` | config guard (a changed config is refused unless `general.force`; runtime-only keys exempt), `dataset_description.json`, `tool.prepare_analysis()` once, `tool.prepare()` per session; run record in `logs/<analysis>_prepare_<stamp>/`, rows in `logs/runs.tsv` + `logs/sessions.tsv` (status `prepared` / `failed`) |
+| prepare | `lc_prepare.py` | config guard (a changed config is refused unless `general.force`; runtime-only keys `force`, `host`, `description` exempt), `dataset_description.json` (Description from `general.description`, SourceDatasets = raw + the tool's `source_datasets`; old file archived when either changes), `tool.prepare_analysis()` once, `tool.prepare()` per session; run record in `logs/<analysis>_prepare_<stamp>/`, rows in `logs/runs.tsv` + `logs/sessions.tsv` (status `prepared` / `failed`) |
 | run | `lc_run.py` | one line per session: `lc-session --analysis-dir … --tool … --sub --ses -- <tool.command()>`, so each session records its own start/end/exit code/log (`logs/<dir>_sub-XX_ses-YY_<ts>/`, `sessions.tsv`). Backend from `host_options.<host>.manager` (`local` / `sge` / `slurm`), never the host's name. Writes `logs/run_<stamp>[_dryrun]/`: `commands.txt`, `jobs.tsv`, job script, scheduler .out/.err, `exit_codes.tsv`. Skips sessions whose last *prepare* status is not `prepared`. Without `-R`: dry run. |
 | qc | `lc_qc.py` | launch checks only, per session: `last run` (exit status from `sessions.tsv`), `run log` (the lc-session log scanned for tracebacks / error lines), and `tool.qc()` (expected outputs exist and are not empty; DWI pipelines: `RTP_log` exit line) → `qc/index.html`, `qc/sub-XX_ses-YY.html`, `qc/qc.tsv`, `qc/failed_subseslist.txt` (feed back to `lc run -ssl`). No images: image QC is QC-registration's job. |
 
