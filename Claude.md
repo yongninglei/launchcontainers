@@ -20,6 +20,14 @@ subject × session at a time, BIDS-compliant. Developed at BCBL.
   branch `main`); shared repo `github.com/MRI-hub/launchcontainers`
   (`master`, protected: 1 approving review); `upstream` =
   `garikoitz/launchcontainers`.
+- **How changes land (every agent, every change).** Never commit to `main`
+  directly. (1) Branch from `origin/main` (one topic per branch, e.g.
+  `eyetrack-tool`). (2) Add an entry under `## [Unreleased]` in `CHANGELOG.md`:
+  what changed, the problem it solves, and why this way — usually to match a
+  program lc runs (its CLI, `--plan` JSON, outputs). (3) Commit, merge into the
+  fork's `main` (`--no-ff`) and push `origin main` + the branch. (4) The
+  maintainer reviews the fork and opens the PR to upstream. The changelog is how
+  the next agent learns what was done and why — read it before changing lc.
 - **Division of work.** launchcontainers prepares inputs, records provenance,
   launches, and checks that each launch worked. The analyses it runs (pyGLM,
   autoROI, …) are standalone programs that assume their inputs are ready:
@@ -124,6 +132,7 @@ work list; the tool does one sub/ses per call.
 | `pyGLM` | `tools/external.py` → program `pyglm` (MRI-hub/pyGLM, own env) | the GLM; one analysis dir per strategy, from its `--plan` |
 | `autoROI-scaling`, `autoROI-clustering` | `tools/external.py` → `autoroi-scaling` / `autoroi-clustering` (MRI-hub/autoROI, own env) | a work-list `sources` column becomes `--sources a,b` (pseudo-sessions) |
 | `swi-prep` | `tools/external.py` → `swi-prep` (MRI-hub/swi_preproc, own env) | SWI raw QC: echo average + rigid MC of every run to run-01; greedy must be on PATH (cajal: `module load vtk/9.1 itk/5.4.5 greedy/latest`) |
+| `eyetrack` | `tools/external.py` → `eyetrack` (MRI-hub/eyetracker_analysis, own env) | EyeLink EDF ↔ BOLD pairing by clock, gaze reconstruction, per-run eye QC verdict; then `eyetrack-summary` (not lc) for the analysis-wide run table |
 | `l1_surface` | `do_prepare.py` → `prepare/glm_prepare.py` | **prepare only**: GLM *input* preparation (events.tsv from vistadisp logs, BIDS / fMRIPrep BOLD symlinks), which pyGLM does not have. `lc run` / `lc qc` on it exit 2 and point to pyGLM |
 
 External analyses follow one contract, `docs/plan_protocol.md`: a

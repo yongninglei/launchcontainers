@@ -210,4 +210,9 @@ AUTOROI_CLUSTERING = ExternalTool("autoROI-clustering", "autoroi-clustering")
 # swi_preproc's raw-QC stage: echo average + rigid MC of every SWI run to run-01.
 # Needs greedy in lc's environment (cajal: module load vtk/9.1 itk/5.4.5 greedy/latest).
 SWI_PREP = ExternalTool("swi-prep", "swi-prep")
-EXTERNAL = {t.name: t for t in (PYGLM, AUTOROI_SCALING, AUTOROI_CLUSTERING, SWI_PREP)}
+# eyetracker_analysis: EyeLink EDFs paired with the BOLD runs by clock time, gaze
+# reconstructed, per-run eye QC verdict (pass / fail / unreliable / no_data) for the GLM.
+EYETRACK = ExternalTool("eyetrack", "eyetrack")
+EXTERNAL = {
+    t.name: t for t in (PYGLM, AUTOROI_SCALING, AUTOROI_CLUSTERING, SWI_PREP, EYETRACK)
+}
