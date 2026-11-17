@@ -58,3 +58,14 @@ def test_pyglm_is_a_builtin_external_tool():
     tool = resolve_tool("pyGLM")
     assert isinstance(tool, ExternalTool) and tool.default_exe == "pyglm"
     assert importlib.util.find_spec("pyglm") is None  # not installed with lc
+
+
+@pytest.mark.parametrize("staged", [True, False])
+def test_example_session_folder_never_stops_a_run(tmp_path, staged):
+    """`lc run` shows sub-XX/ses-YY[/input]; external tools have no input/ (eyetrack)."""
+    from launchcontainers.check import general_checks
+
+    ses = tmp_path / "sub-01" / "ses-01"
+    (ses / ("input" if staged else "func")).mkdir(parents=True)
+    general_checks.cli_show_folder_struc(str(tmp_path), "01", "01")
+    general_checks.cli_show_folder_struc(str(tmp_path), "02", "01")  # no session folder
