@@ -42,11 +42,19 @@ def cli_show_folder_struc(analysis_dir, sub, ses):
         Session identifier without the ``ses-`` prefix.
     """
 
-    # Build the path to that subject/session folder
-    path = os.path.join(analysis_dir, f"sub-{sub}", f"ses-{ses}", "input")
-
-    # Call “tree -C <path>” and let it print directly to your terminal
-    sp.run(["tree", "-C", "-L", "3", path], check=True)
+    # DWI containers stage into ses-XX/input; external tools (pyGLM, eyetrack, ...)
+    # have no input/ folder, so show the session folder itself. Display only:
+    # never let it stop a run.
+    ses_dir = os.path.join(analysis_dir, f"sub-{sub}", f"ses-{ses}")
+    path = os.path.join(ses_dir, "input")
+    if not os.path.isdir(path):
+        path = ses_dir
+    if not os.path.isdir(path):
+        return
+    try:
+        sp.run(["tree", "-C", "-L", "3", path], check=False)
+    except FileNotFoundError:  # no `tree` on this host
+        print(path)
 
 
 def print_option_for_review(

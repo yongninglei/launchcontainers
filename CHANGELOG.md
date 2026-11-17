@@ -9,6 +9,23 @@ name that program. Newest first. History before this file: `git log`.
 
 ## [Unreleased]
 
+### Fixed — `lc run` crashed on external tools' session folders (branch `fix-run-example-folder`)
+
+- **What:** `check/general_checks.cli_show_folder_struc` (the "example session
+  folder" `lc run` prints before launching) shows `sub-XX/ses-YY/input` when it
+  exists, else `sub-XX/ses-YY`, runs `tree` with `check=False`, and falls back
+  to printing the path when `tree` is not installed. Test:
+  `test_example_session_folder_never_stops_a_run`.
+- **Problem:** the helper assumed the DWI-container layout (`ses-YY/input`) and
+  ran `tree` with `check=True`. External tools (eyetrack, pyGLM, autoROI) write
+  no `input/` folder, so once the first session folder existed — i.e. on every
+  rerun — `tree` exited 2 and `lc run` died with `CalledProcessError` before
+  launching anything. Found rerunning the VOTCLOC eyetrack analysis
+  (2026-11-17).
+- **Why this way:** the listing is display only; a run must never stop on it,
+  and matching the external tools' layout (session folder, no `input/`) keeps
+  it useful for them.
+
 ### Fixed — test suite: 3 failures + 22 errors (branch `fix-tests`)
 
 - **What:** `setup.cfg` no longer sets `[tool:pytest] log_cli = true`;
