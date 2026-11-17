@@ -28,6 +28,9 @@ def test_l1_surface_run_and_qc_point_to_pyglm(tmp_path, cmd):
 
 
 def test_l1_surface_prepare_still_prepares_glm_inputs(tmp_path, monkeypatch):
+    import fakedata
+
+    fakedata.require_extra(("bids", "nibabel", "numpy", "pandas", "scipy"), "fmri")
     from launchcontainers import do_prepare
 
     calls = []

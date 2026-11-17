@@ -9,6 +9,30 @@ name that program. Newest first. History before this file: `git log`.
 
 ## [Unreleased]
 
+### Fixed — test suite: 3 failures + 22 errors (branch `fix-tests`)
+
+- **What:** `setup.cfg` no longer sets `[tool:pytest] log_cli = true`;
+  `tests/fakedata.py` gains `require_extra()`, called by the fake-dataset
+  fixtures of `test_golden.py`, `test_qc.py`, `test_run.py` (dwi extra) and by
+  `test_l1_surface_prepare_still_prepares_glm_inputs` (fmri extra).
+- **Problem 1 (2 failures,** `test_l1_surface_run_and_qc_point_to_pyglm[run|qc]`**):**
+  `ValueError: I/O operation on closed file` inside typer's `CliRunner`. With
+  `log_cli`, pytest suspends/resumes output capture around every log record and
+  swaps `sys.stdout`; lc's console forwards each print to the
+  `launchcontainers` logger, so the swap drops the last reference to the
+  runner's stdout wrapper, whose `__del__` closes the buffer before the runner
+  reads it. The same commands work outside pytest — a test-config bug, not an
+  lc bug. Live logging only echoed lc's messages a second time.
+- **Problem 2 (22 errors + 1 failure):** the tests that build the fake DWI
+  dataset need nibabel / pybids (the `dwi` extra), and the l1_surface prepare
+  test needs the `fmri` extra; in a core-only install (`uv sync`, supported on
+  purpose — Claude.md) they crashed with `ModuleNotFoundError`. They now skip
+  with the `uv sync --extra …` to run.
+- **Result:** core install 49 passed, 23 skipped; with
+  `uv sync --extra dwi --extra fmri` all 72 pass (so the skipped tests are
+  green, not hidden). Run the full suite with the extras before merging lc
+  changes that touch DWI tools or l1_surface prepare.
+
 ### Added — `eyetrack` external tool (branch `eyetrack-tool`)
 
 - **What:** `tools/external.py` registers `EYETRACK = ExternalTool("eyetrack",
