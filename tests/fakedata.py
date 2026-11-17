@@ -31,6 +31,24 @@ VERSIONS = {
 }
 
 
+DWI_EXTRA = ("bids", "nibabel", "numpy", "pandas")  # tools/dwi.py require_extra("dwi", ...)
+
+
+def require_extra(modules=DWI_EXTRA, extra: str = "dwi") -> None:
+    """Skip the calling test when a launchcontainers extra is not installed.
+
+    The core install (pyyaml, rich, typer) is supported on its own, so tests of the
+    DWI tools / l1_surface prepare skip there instead of erroring.
+    """
+    import importlib.util
+
+    import pytest
+
+    missing = [m for m in modules if importlib.util.find_spec(m) is None]
+    if missing:
+        pytest.skip(f"needs the {extra!r} extra ({', '.join(missing)}): uv sync --extra {extra}")
+
+
 def _touch(p: Path) -> None:
     p.parent.mkdir(parents=True, exist_ok=True)
     p.touch()

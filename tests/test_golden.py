@@ -30,6 +30,7 @@ OWNED_BY_CORE = {
 
 @pytest.fixture(scope="module")
 def root(tmp_path_factory):
+    fakedata.require_extra()
     return fakedata.build_dataset(tmp_path_factory.mktemp("lcfake"))
 
 
