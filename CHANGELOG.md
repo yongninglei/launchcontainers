@@ -9,6 +9,17 @@ name that program. Newest first. History before this file: `git log`.
 
 ## [Unreleased]
 
+### Fixed — `Claude.md` named the wrong changelog (branch `docs-changelog-path`)
+
+- **What:** the header of `Claude.md` now says every change goes into
+  `CHANGELOG.md` under `## [Unreleased]`, and that `docs/source/changelog.rst`
+  is the older Sphinx changelog not to be added to.
+- **Problem:** the header still pointed agents at `docs/source/changelog.rst`,
+  while "How changes land" in the same file and `AGENTS.md` say `CHANGELOG.md`;
+  agents got two contradictory instructions.
+- **Why this way:** `CHANGELOG.md` is the one in use since 2026-11-17; one place
+  for entries.
+
 ### Removed — pre-commit (branch `remove-pre-commit`)
 
 - **What:** deleted `.pre-commit-config.yaml` (trailing-whitespace, end-of-file,
