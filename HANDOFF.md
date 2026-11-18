@@ -5,16 +5,6 @@ delete an entry once it is done. Repo conventions are in `Claude.md`.
 
 ---
 
-## Branch `swi-preproc-tool` not merged — 2026-11-17
-
-`origin/swi-preproc-tool` (commit fc7a004, registers `SWI_PREPROC`) is pushed but
-not merged into the fork's `main`. `eyetrack-tool` (merged) also edits the
-`EXTERNAL` tuple in `tools/external.py`: when merging swi-preproc, keep both
-`SWI_PREPROC` and `EYETRACK`, and add its CHANGELOG entry. Ask the maintainer
-before merging.
-
----
-
 ## Redesign the launchcontainers pages — 2026-11-16 (later, not started)
 
 **Goal:** the maintainer finds the current pages ugly; redesign them later.

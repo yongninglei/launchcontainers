@@ -9,6 +9,16 @@ name that program. Newest first. History before this file: `git log`.
 
 ## [Unreleased]
 
+### Added — external tools `swi-preproc`, `pial-vein`; provenance description (branches `swi-preproc-tool`, `provenance-description`, `pial-vein-tool`)
+
+- **What:** `swi-preproc` (MRI-hub/swi_preproc main stage) and `pial-vein`
+  (yongninglei/pial-vein-sampling) registered as ExternalTools next to
+  `swi-prep` and `eyetrack`; `general.description` and the `--plan`
+  `source_datasets` are written into `dataset_description.json`
+  (`Description`, `SourceDatasets` / `DatasetLinks`).
+- **Problem / why:** detailed in `docs/source/changelog.rst` "Unreleased
+  (0.5.1)", written on these branches before this file existed.
+
 ### Fixed — `lc run` crashed on external tools' session folders (branch `fix-run-example-folder`)
 
 - **What:** `check/general_checks.cli_show_folder_struc` (the "example session

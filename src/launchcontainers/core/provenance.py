@@ -236,7 +236,9 @@ def write_dataset_description(
     """BIDS-derivative dataset_description.json; rewritten only when its content changes.
 
     ``source_datasets``: {link name: dataset root}; becomes SourceDatasets
-    ``bids:<link>:`` and DatasetLinks (relative paths).
+    ``bids:<link>:`` and DatasetLinks (relative paths). When the Description or the
+    sources change, the old file is archived to ``logs/history/`` first, so what an
+    analysis was said to be and built from is never lost.
     """
     path = Path(analysis_dir) / DESCRIPTION_NAME
     gens = [generated_by] if isinstance(generated_by, dict) else list(generated_by)
@@ -249,7 +251,13 @@ def write_dataset_description(
         "SourceDatasets": [{"URI": f"bids:{link}:"} for link in source_datasets],
         "DatasetLinks": dataset_links(analysis_dir, source_datasets),
     }
-    if not path.exists() or json.loads(path.read_text()) != dd:
+    old = json.loads(path.read_text()) if path.exists() else None
+    if old != dd:
+        if old is not None and any(
+            old.get(k) != dd[k]
+            for k in ("Description", "SourceDatasets", "DatasetLinks")
+        ):
+            archive(path, analysis_dir)
         atomic_write_json(path, dd)
     return path
 

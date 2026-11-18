@@ -29,7 +29,8 @@ FAKE = textwrap.dedent(
     inp = root / "inputs" / f"sub-{{a.sub}}_ses-{{a.ses}}_bold.nii.gz"
     if a.plan:
         plan = {{"tool": "pyGLM", "version": "9.9.9", "analysis_dirs": ana, "sub": a.sub, "ses": a.ses,
-                "session_outputs": [], "inputs": [], "problems": [], "notes": []}}
+                "session_outputs": [], "inputs": [], "problems": [], "notes": [],
+                "source_datasets": {{"fmriprep": str(root / "fmriprep")}}}}
         if a.sub:
             plan["session_outputs"] = [f"{{d}}/sub-{{a.sub}}/ses-{{a.ses}}" for d in ana]
             plan["inputs"] = [str(inp)]
@@ -139,3 +140,29 @@ def test_autoroi_sources_become_a_flag(setup):
     assert tool is BUILTIN["autoROI-scaling"]
     assert tool.command(tc, "01", "avg")[-2:] == ["--sources", "01,02"]
     assert "--sources" not in tool.command(tc, "01", "01")
+
+
+def test_description_and_sources_in_dataset_description(setup):
+    """general.description -> Description (rewording never trips the guard, the old
+    description is archived); the program's source_datasets -> SourceDatasets."""
+    from launchcontainers import lc_prepare
+
+    root, lcc, ssl = setup
+    cfg = yaml.safe_load(lcc.read_text())
+    cfg["general"]["description"] = "Redo the  registration\n of analysis-v1"
+    lcc.write_text(yaml.safe_dump(cfg))
+    d = lc_prepare.prepare(lcc, ssl).analysis_dirs[0]
+    dd = json.loads((d / "dataset_description.json").read_text())
+    assert dd["Description"] == (
+        "Redo the registration of analysis-v1 [pyGLM 9.9.9, prepared by launchcontainers]"
+    )
+    assert dd["SourceDatasets"] == [{"URI": "bids:raw:"}, {"URI": "bids:fmriprep:"}]
+    assert dd["DatasetLinks"]["fmriprep"] == "../../fmriprep"
+
+    cfg["general"]["description"] = "reworded"
+    lcc.write_text(yaml.safe_dump(cfg))
+    lc_prepare.prepare(lcc, ssl)  # no force needed: description is not computational
+    dd = json.loads((d / "dataset_description.json").read_text())
+    assert dd["Description"].startswith("reworded [")
+    old = list((d / "logs" / "history").glob("dataset_description_*.json"))
+    assert len(old) == 1 and "Redo the registration" in old[0].read_text()
