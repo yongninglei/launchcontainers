@@ -7,9 +7,10 @@ the Tool interface, provenance, run logs, QC — is
 `ARCHITECTURE.md` (repo root); it wins where this file disagrees.
 
 **Open / handed-off work is tracked in `HANDOFF.md`. Read it first.**
-**Every change is written into `docs/source/changelog.rst` ("Unreleased" at the
-top) in the same commit: what changed, why, what it means for configs, analysis
-dirs and tools.** That file is how the next person or agent learns what happened.
+**Every change is written into `CHANGELOG.md` (under `## [Unreleased]` at the
+top) in the same commit: what changed, the problem it solves, and why this way.**
+That file is how the next person or agent learns what happened
+(`docs/source/changelog.rst` is the older Sphinx changelog; do not add to it).
 
 ---
 
