@@ -5,6 +5,27 @@ delete an entry once it is done. Repo conventions are in `Claude.md`.
 
 ---
 
+## Pipeline QC audit (branch `pipeline-qc-audit`) — 2026-11-17
+
+Review of the VOTCLOC missing-3 fMRI conversion is written:
+`docs/pipeline_qc_audit/2026-11-17_votcloc_missing3_fmri_review.md`. A copy
+written for siwang (with a "what to do differently" part) is in
+`/bcbl/home/public/Gari/VOTCLOC/main_exp/code/claude_fMRI_conversion_workflow/review_workflow_fMRI_2026-11-17.md`.
+
+Left to do, in order:
+1. **Do not run** `tests/dcm_to_bids_workflow/prepare_fmap/02_prepare_fmap_intendedfor.py`
+   with `--execute` until the window-overlap bug is fixed (branch of its own).
+2. User runs dataset-wide (heavy, not for an agent):
+   `qc_fmap_boldref_xfm.py compute -p <fmriprep dir> -o <out>` and `plot`, and the
+   02 dry run over `subseslist_all_bids.txt` grepping `WRONG|ERROR|NOT COVERED`.
+   Then decide the sub-10 (and any other flagged) SDC rerun.
+3. Fix NORDIC func risks (`force`, backups, exit codes, provenance) on a branch.
+4. Review DWI and anat steps the same way.
+5. Module split: `docs/pipeline_qc_audit/module_split_plan.md` (open questions at
+   the end need the maintainer).
+
+---
+
 ## Branch `swi-preproc-tool` not merged — 2026-11-17
 
 `origin/swi-preproc-tool` (commit fc7a004, registers `SWI_PREPROC`) is pushed but

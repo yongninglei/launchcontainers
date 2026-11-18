@@ -9,6 +9,36 @@ name that program. Newest first. History before this file: `git log`.
 
 ## [Unreleased]
 
+### Added — pipeline QC audit: review of the VOTCLOC missing-3 fMRI conversion + two QC scripts (branch `pipeline-qc-audit`)
+
+- **What:** `docs/pipeline_qc_audit/` (review log, module-split notes, index);
+  `MR_pipelines/00_dicom_to_nifti/quality_control/qc_heudiconv_series_map.py`
+  (joins heudiconv's `dicominfo` / `auto.txt` with the converted files, the DICOM
+  input tree and the lab note; one CSV per session + a summary with an `ok`
+  column); `MR_pipelines/03_fmriprep/quanlity_control/qc_fmap_boldref_xfm.py`
+  (`compute`: size of fMRIPrep's fieldmap → boldref rigid transform per run,
+  flags > 5 mm or > 3°; `plot`: reads that CSV). No existing code changed.
+- **Problem:** three VOTCLOC sessions (sub-05 ses-08, sub-08 ses-04, sub-10
+  ses-05) were converted DICOM → BIDS → fMRIPrep in Nov 2026 from a per-user,
+  untracked checkout with scripts that had been removed from `main`; no step had a
+  QC that could show the result was right. The review found the outputs correct up
+  to BIDS, but (1) **fMRIPrep's fieldmap → boldref registration failed for sub-10**
+  (ses-05 16/16 runs, and tlei's April ses-04 15/16: 10–27 mm, up to 20°, between
+  images on the same grid acquired minutes apart), so SDC is wrong there; and
+  (2) the **current** SOP script
+  `tests/dcm_to_bids_workflow/prepare_fmap/02_prepare_fmap_intendedfor.py` has
+  overlapping lookback windows (`_assign_intendedfor`) and dead BLOCKED logic, and
+  would put sub-10 ses-05's ret run-02s in two fieldmaps if run with `--execute`.
+  Plus NORDIC `force` / backup / exit-code risks and missing provenance in every
+  launcher (full list with files: the review's last table).
+- **Why this way:** the review only records and measures; fixes go on their own
+  branches (one per component, as `Claude.md` asks). The QC scripts follow the
+  lab's pattern (compute → CSV, plotting from the CSV) so they can later become the
+  QC of standalone modules (`docs/pipeline_qc_audit/module_split_plan.md`).
+  The fMRIPrep QC reads only text transforms and NIfTI headers, but dataset-wide
+  that is ~1,800 header reads, so it takes `-s` for a few sessions and the full run
+  is left to the user.
+
 ### Fixed — `lc run` crashed on external tools' session folders (branch `fix-run-example-folder`)
 
 - **What:** `check/general_checks.cli_show_folder_struc` (the "example session
