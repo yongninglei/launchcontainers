@@ -93,7 +93,6 @@ rtp2-pipeline = "launchcontainers.tools.dwi:RTP2_PIPELINE"
 
 [dependency-groups]
 dev = [
-    "pre-commit",
     "types-PyYAML",
     # Testing
     "pytest",

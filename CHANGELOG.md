@@ -9,6 +9,22 @@ name that program. Newest first. History before this file: `git log`.
 
 ## [Unreleased]
 
+### Removed — pre-commit (branch `remove-pre-commit`)
+
+- **What:** deleted `.pre-commit-config.yaml` (trailing-whitespace, end-of-file,
+  debug-statements, ruff, ruff-format hooks) and the local `.git/hooks/pre-commit`;
+  dropped `pre-commit` from the `dev` dependency group (`uv.lock` relocked).
+  The ruff settings in `pyproject.toml` stay, so `ruff check` / `ruff format` can
+  still be run by hand or by an agent.
+- **Problem:** the installed hook pointed to a Python under `/export`, which does
+  not exist on brodmann, and `pre-commit` was not on PATH there, so every commit
+  from brodmann failed until the hook was run from `.venv` by hand (hit committing
+  `pipeline-qc-audit`, 2026-11-18).
+- **Why this way:** the maintainer's decision: changes are now written and
+  checked with AI agents, so a commit-time hook adds friction without catching
+  anything those reviews and the test suite do not. Nothing else (CI included)
+  ran pre-commit.
+
 ### Fixed — `lc run` crashed on external tools' session folders (branch `fix-run-example-folder`)
 
 - **What:** `check/general_checks.cli_show_folder_struc` (the "example session

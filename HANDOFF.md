@@ -148,8 +148,6 @@ Until this is done, trust the code over those sections.
   remain. Suggested: apply the rule to new or touched code, not a mass rewrite.
 - **`CITATION.cff` is missing.** The template lists one author; this repo has
   several (see `pyproject.toml`).
-- **Pre-commit hook:** `.git/hooks/pre-commit` points to a Python under `/export`,
-  which does not exist on brodmann, and `pre-commit` is not on PATH there.
 
 ### 4. Housekeeping (low priority)
 - `launchcontainers/tests/` is mostly analysis scripts and session lists, not tests.
