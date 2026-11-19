@@ -139,6 +139,7 @@ work list; the tool does one sub/ses per call.
 | `eyetrack` | `tools/external.py` → `eyetrack` (MRI-hub/eyetracker_analysis, own env) | EyeLink EDF ↔ BOLD pairing by clock, gaze reconstruction, per-run eye QC verdict; then `eyetrack-summary` (not lc) for the analysis-wide run table |
 | `swi-preproc` | `tools/external.py` → `swi-preproc` (MRI-hub/swi-preproc, own env) | SWI main stage (Faruk): crop, 2×, MC at 2×, composite of the chosen runs, N4, T1w registration; needs c3d, greedy, ANTs on PATH (cajal: `module load vtk/9.1 itk/5.4.5 c3d/latest greedy/latest ants/2.5.1`) |
 | `swi-analysis` | `tools/external.py` → `swi-analysis` (yongninglei/swi-analysis, own env) | every analysis of one SWI session into one flat `derivatives/swi_analysis/analysis-<name>/`: surface map A on dense x1, envelope B, display, vessel segmentation (GPU). Replaces `pial-vein` (2026-11-19). No modules needed |
+| `qmri-preproc` | `tools/external.py` → `qmri-preproc` (MRI-hub/qMRI-preproc, own env) | MRF qMRI: input `BIDS_qMRI` (written by qMRI-to-bids, not an lc tool), rigid ANTs to the anat_ref T1w, 7 maps on the T1w grid, T1/T2/PD on fsnative / dense x1 via `mri_vol2surf`; ANTs + FreeSurfer on PATH (cajal: `module load ants/2.5.1`) |
 | `l1_surface` | `do_prepare.py` → `prepare/glm_prepare.py` | **prepare only**: GLM *input* preparation (events.tsv from vistadisp logs, BIDS / fMRIPrep BOLD symlinks), which pyGLM does not have. `lc run` / `lc qc` on it exit 2 and point to pyGLM |
 
 External analyses follow one contract, `docs/plan_protocol.md`: a
