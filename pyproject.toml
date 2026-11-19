@@ -106,13 +106,6 @@ dev = [
     # Formatting
     "black>=23.1a1",
 ]
-docs = [
-    "sphinx>=7.0",
-    "pydata-sphinx-theme>=0.15",
-    "sphinx-copybutton",
-    "nbsphinx",
-    "myst-parser",
-]
 
 [tool.uv]
 default-groups = ["dev"]

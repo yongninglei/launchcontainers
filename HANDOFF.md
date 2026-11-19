@@ -31,11 +31,9 @@ Left to do, in order:
 **Goal:** the maintainer finds the current pages ugly; redesign them later.
 Two kinds of page, both plain today:
 
-- the documentation site (Sphinx, `docs/source/`, `pydata_sphinx_theme`,
-  built and published to GitHub Pages by the docs job in
-  `.github/workflows/main.yml`, which is disabled for now). Several pages
-  (`code_structure.rst`, `extending.rst`, parts of `configuration.rst`) still
-  describe the pre-0.5.0 code and need rewriting anyway;
+- ~~the documentation site~~: Sphinx and its Pages job were removed
+  (maintainer, 2026-11-19); if rendered docs come back, they are built in one
+  place for all repos;
 - the `lc qc` launch-status report: `qc/index.html` and
   `qc/sub-XX_ses-YY.html`, written by `src/launchcontainers/core/qc.py`
   (inline CSS in `_CSS`).
