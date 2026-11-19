@@ -28,7 +28,7 @@ MRI-hub is a set of repos that work as one system, with one division of work:
    ┌───────────────┴──────────────┐     ┌─────────────────────────────┐
    │ pyGLM, autoROI, …            │     │ QC-registration             │
    │  standalone programs, own    │     │  image QC: slices, rating   │
-   │  environments, no lc imports │     │  page, ratings TSV; DWI QC  │
+   │  environments, no lc imports │     │  page; registration only    │
    └──────────────────────────────┘     └─────────────────────────────┘
 ```
 
@@ -192,9 +192,13 @@ list (`--write-list`).
 2. **Image QC — QC-registration.** Renders PNG slices once per sub/ses/item
    (fingerprinted, `qc/<item>/sub-XX/ses-YY[/<run>]/` with `session.json`),
    serves a browser page where raters answer True/False + comment, and
-   writes `qc/qc_rater-<name>.tsv`. Registration QC (`qc-registration-render`),
-   DWI QC (`qc-registration-dwi`: segmentation on T1, mean b0 on T1), SWI
-   montages; `qc-registration-viewer` serves the page.
+   writes `qc/qc_rater-<name>.tsv`. **Registration only** (2026-11-19):
+   config-driven registration QC (`qc-registration-render`), every mri-registration
+   fit (`qc-registration-reg`), DWI→T1 (`qc-registration-dwi`: mean b0 on T1);
+   `qc-registration-viewer` serves the page. Non-registration image QC lives with
+   its pipeline: SWI stage montages in swi-preproc (`swi-stage-qc`), anatrois /
+   freesurferator segmentation in **dwi-qc** (`dwi-qc-segmentation`, on
+   QC-registration's renderer and page).
 
 ## 7. Repos and what moves where
 
@@ -203,7 +207,7 @@ list (`--write-list`).
 | launchcontainers | CLI, backends, `core` (was analysis-core: runlog, subseslist, config + guard, provenance, Tool interface, session wrapper, launch report), DWI container tools, the rules for running pyGLM / autoROI (`tools/external.py`) | — | image QC (→ QC-registration), its GLM copies (→ pyGLM) |
 | pyGLM | the GLM: single-session CLI + `--plan` | — | batch runner, run logs, provenance, `lc_tool.py` (→ launchcontainers) |
 | autoROI | scaling, clustering: single-session CLIs + `--plan` | — | batch runners, run logs, analysis-dir provenance, `lc_tool.py` (→ launchcontainers) |
-| QC-registration | registration QC | slice renderer, rating page, ratings, DWI QC | — |
+| QC-registration | registration QC (incl. DWI→T1) | slice renderer, rating page, ratings | SWI montages (→ swi-preproc), DWI segmentation (→ dwi-qc), 2026-11-19 |
 
 ## 8. Migration order
 

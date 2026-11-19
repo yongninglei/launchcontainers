@@ -273,7 +273,7 @@ Rules for `src/launchcontainers/core/` (from the former analysis-core):
 
 | folder | what | space | read by |
 |---|---|---|---|
-| `<container>_<ver>/analysis-<name>/` (`rtp2-pipeline_light_wbt/`, anatrois, freesurferator, rtppreproc …) | DWI container outputs | T1w / dwi | QC-registration (`qc-registration-dwi`), web-MRI (WM page, label volumes), app_surface_t1w_labeling |
+| `<container>_<ver>/analysis-<name>/` (`rtp2-pipeline_light_wbt/`, anatrois, freesurferator, rtppreproc …) | DWI container outputs | T1w / dwi | QC-registration (`qc-registration-dwi`: rtppreproc / rtp2-preproc DWI→T1), dwi-qc (`dwi-qc-segmentation`: anatrois / freesurferator), web-MRI (WM page, label volumes), app_surface_t1w_labeling |
 | `lc_config.yaml`, `subseslist.txt`, `dataset_description.json`, `logs/`, `qc/` in every analysis dir it launches | provenance + launch QC | — | the analysis dirs of pyGLM, autoROI-*, eyetrack, swi-prep, swi-preproc, swi-analysis, qmri-preproc, bold2surf |
 
 Launches (`tools/external.py`): pyGLM, autoROI-scaling, autoROI-clustering, eyetrack,
