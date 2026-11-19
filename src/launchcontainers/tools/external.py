@@ -239,6 +239,10 @@ SWI_ANALYSIS = ExternalTool("swi-analysis", "swi-analysis")
 # rigid ANTs to the anat_ref T1w, maps on the T1w grid, mri_vol2surf on fsnative / dense x1.
 # Needs ANTs + FreeSurfer on PATH (cajal: module load ants/2.5.1; FreeSurfer 7.3.2).
 QMRI_PREPROC = ExternalTool("qmri-preproc", "qmri-preproc")
+# mri-registration (MRI-hub/mri-registration) `mrireg-bold2surf`: fMRIPrep's T1w-space BOLD
+# sampled onto the dense x1 mesh (dense-surfaces), derivatives/bold_dense/analysis-<name>/.
+# Needs FreeSurfer on PATH (mri_vol2surf). The program's config block is container_specific.bold2surf.
+BOLD2SURF = ExternalTool("bold2surf", "mrireg-bold2surf")
 EXTERNAL = {
     t.name: t
     for t in (
@@ -250,5 +254,6 @@ EXTERNAL = {
         SWI_PREPROC,
         SWI_ANALYSIS,
         QMRI_PREPROC,
+        BOLD2SURF,
     )
 }

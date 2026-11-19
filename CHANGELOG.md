@@ -1,13 +1,27 @@
 # Changelog
 
-Every change to launchcontainers gets an entry here, in its own branch, before
-it is merged into the fork (`yongninglei/launchcontainers` `main`); the
-maintainer reviews it there and opens the PR upstream. Each entry says **what**
+Every change to launchcontainers gets an entry here, in its own branch, merged
+into the fork (`yongninglei/launchcontainers` `main`) through a PR as soon as
+the tests pass (no review wait, 2026-11-19); the PR upstream stays the
+maintainer's. Each entry says **what**
 changed, the **problem** it solves and **why** it was done this way — most lc
 changes exist to match a program lc runs (its CLI, `--plan` JSON, outputs), so
 name that program. Newest first. History before this file: `git log`.
 
 ## [Unreleased]
+
+### Added — `bold2surf` as an external tool; changes land by PR + auto-merge (branch `bold2surf-tool`)
+
+- **What:** `tools/external.py` registers `ExternalTool("bold2surf", "mrireg-bold2surf")`;
+  `Claude.md`: its row in the tool table, an `## Upstream / downstream` section, and the new
+  "How changes land" (PR to the fork's `main`, merged by the agent once the tests pass).
+- **Problem:** mri-registration's `mrireg-bold2surf` (fMRIPrep T1w BOLD → dense x1 mesh,
+  `derivatives/bold_dense/`) already speaks the `--plan` protocol (`general.tool: bold2surf`),
+  but lc did not know it, so dense BOLD could only be made with its own batch runner, without
+  lc's run logs and launch QC. The maintainer asked to register it (and not avg-timeseries).
+  Merges waited for a manual review that the maintainer no longer wants for the fork.
+- **Why this way:** a plain `ExternalTool`, like qmri-preproc; nothing else changes in lc.
+  The merge rule is the one in `~/soft/CLAUDE.md` for every MRI-hub repo.
 
 ### Added — `qmri-preproc` as an external tool (branch `qmri-preproc-tool`)
 
