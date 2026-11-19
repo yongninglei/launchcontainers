@@ -9,6 +9,21 @@ name that program. Newest first. History before this file: `git log`.
 
 ## [Unreleased]
 
+### Added — `qmri-preproc` as an external tool (branch `qmri-preproc-tool`)
+
+- **What:** `tools/external.py` registers `ExternalTool("qmri-preproc", "qmri-preproc")`;
+  `Claude.md`'s tool table has its row.
+- **Problem:** qMRI-preproc 0.2.0 replaced its five `mmr-*` CLIs, batch runners and qsub
+  launchers with one single-session program, `qmri-preproc --config --sub --ses [--plan]`
+  (register, apply, surface sampling of one MRF session into
+  `derivatives/qmri_preproc/analysis-<name>/sub-XX/ses-YY/`). lc did not know it, so the
+  sessions could only run by hand.
+- **Why this way:** it speaks the `--plan` protocol (`docs/plan_protocol.md`) like
+  swi-preproc, so it is a plain `ExternalTool`; nothing else changes in lc. Its input step,
+  qMRI-to-bids (MRF recon outputs -> the raw-style dataset `BIDS_qMRI`), is deliberately NOT
+  registered: it writes a BIDS dataset, not an analysis dir, and lc prepare would put its own
+  `dataset_description.json` and logs there.
+
 ### Changed — `swi-analysis` replaces `pial-vein` (branch `swi-analysis-tool`)
 
 - **What:** `tools/external.py` registers `ExternalTool("swi-analysis", "swi-analysis")` and no

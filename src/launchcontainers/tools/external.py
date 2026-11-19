@@ -235,6 +235,10 @@ SWI_PREPROC = ExternalTool("swi-preproc", "swi-preproc")
 # folder derivatives/swi_analysis/analysis-<name>/ -- surface (A, dense x1 pial), envelope (B),
 # display, vessels (VesSynth / VesselBoost, GPU). Replaces pial-vein (2026-11-19).
 SWI_ANALYSIS = ExternalTool("swi-analysis", "swi-analysis")
+# qMRI-preproc (MRI-hub/qMRI-preproc): one MRF qMRI session (BIDS_qMRI, from qMRI-to-bids) ->
+# rigid ANTs to the anat_ref T1w, maps on the T1w grid, mri_vol2surf on fsnative / dense x1.
+# Needs ANTs + FreeSurfer on PATH (cajal: module load ants/2.5.1; FreeSurfer 7.3.2).
+QMRI_PREPROC = ExternalTool("qmri-preproc", "qmri-preproc")
 EXTERNAL = {
     t.name: t
     for t in (
@@ -245,5 +249,6 @@ EXTERNAL = {
         EYETRACK,
         SWI_PREPROC,
         SWI_ANALYSIS,
+        QMRI_PREPROC,
     )
 }
