@@ -10,7 +10,7 @@ the Tool interface, provenance, run logs, QC — is
 **Every change is written into `CHANGELOG.md` (under `## [Unreleased]` at the
 top) in the same commit: what changed, the problem it solves, and why this way.**
 That file is how the next person or agent learns what happened
-(`docs/source/changelog.rst` is the older Sphinx changelog; do not add to it).
+(the older Sphinx changelog `docs/source/changelog.rst` goes with the Sphinx docs, removed 2026-11-19).
 
 ---
 
@@ -231,16 +231,12 @@ host_options:
 
 ---
 
-## Sphinx documentation
+## Documentation — no Sphinx (2026-11-19)
 
-- `docs/source/` (lower-case file names: `installation.rst`, `concepts.rst`,
-  `configuration.rst`, `prepare_*.rst`, `api.rst`, …); theme
-  `pydata_sphinx_theme`; build `cd docs && make html`.
-- `pandas` is out of `intersphinx_mapping` (server returns 522);
-  `suppress_warnings = ["intersphinx.fetch_inventory"]`; all toctrees in
-  `index.rst` are `:hidden:`.
-- `code_structure.rst`, `extending.rst` and parts of `configuration.rst`
-  still describe the pre-restructure code; this file is current.
+The Sphinx site (`docs/source/`, `pydata_sphinx_theme`, the GitHub Pages docs job) was
+removed by the maintainer's decision: rendered docs, if the lab wants them again, are
+built in one place for all repos. The documentation is `Claude.md` (this file),
+`ARCHITECTURE.md`, `docs/plan_protocol.md` and `README.md`. CI runs the tests only.
 
 ---
 

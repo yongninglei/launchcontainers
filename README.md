@@ -63,16 +63,11 @@ lc qc      --workdir /path/to/analysis-dir
 
 ## Documentation
 
-Full documentation — config reference, CLI reference, step-by-step tutorial,
-and the developer extension guide — lives in [`docs/`](docs/).
+- [`Claude.md`](Claude.md): workflow, tools, configuration, code structure.
+- [`ARCHITECTURE.md`](ARCHITECTURE.md): the MRI-hub design (Tool interface, provenance, QC).
+- [`docs/plan_protocol.md`](docs/plan_protocol.md): the `--plan` contract with analysis programs.
 
-Build locally:
-
-```bash
-uv sync --group docs
-cd docs && uv run make html
-open build/html/index.html
-```
+There is no rendered documentation site (Sphinx removed 2026-11-19).
 
 ## License
 

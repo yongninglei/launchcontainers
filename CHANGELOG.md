@@ -10,6 +10,23 @@ name that program. Newest first. History before this file: `git log`.
 
 ## [Unreleased]
 
+### Removed — Sphinx documentation (branch `remove-sphinx`)
+
+- **What:** the CI `build-docs` job (Sphinx build + GitHub Pages deploy) is replaced by a
+  `test` job (`uv run pytest -q tests`); the `docs` dependency group (sphinx,
+  pydata-sphinx-theme, sphinx-copybutton, nbsphinx, myst-parser) is gone from
+  `pyproject.toml` / `uv.lock`; `Claude.md`, `README.md`, `HANDOFF.md` no longer describe
+  a docs site. The Sphinx source files are left for the maintainer to delete (agents do
+  not delete files): `docs/source/`, `docs/Makefile`, `docs/make.bat`,
+  `docs/requirements.txt`, `docs/README.md`, `docs/_static/`, `docs/_templates/`,
+  `docs/_build/` (untracked build output). `docs/plan_protocol.md` and
+  `docs/pipeline_qc_audit/` stay.
+- **Problem:** the per-repo Sphinx automation cost more than it gave (jobs failing or
+  disabled, pages out of date since 0.5.0).
+- **Why this way:** maintainer decision (2026-11-19): no Sphinx in any repo; if rendered
+  docs come back, they are built in one place for all repos. The docs are `Claude.md`,
+  `ARCHITECTURE.md`, `docs/plan_protocol.md`.
+
 ### Changed — `AGENTS.md` names the PR + auto-merge rule (branch `agents-merge-rule`)
 
 - **What:** `AGENTS.md` item 3 now says what `Claude.md` "How changes land" says since

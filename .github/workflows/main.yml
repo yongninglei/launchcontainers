@@ -1,126 +1,19 @@
 name: launchcontainers CI
 
+# Tests only. The Sphinx docs job was removed (maintainer, 2026-11-19).
+# The workflow is disabled on GitHub (`gh workflow enable main.yml` to turn it on).
+
 on:
   push:
-    branches: ["main", "WC_matching_mat"]
+    branches: ["main"]
   pull_request:
-    branches: ["main", "WC_matching_mat"]
+    branches: ["main"]
 
 jobs:
-  # ---------------------------------------------------------------------------
-  # Job 1: Auto-format code with ruff + isort, commit changes back to branch
-  # ---------------------------------------------------------------------------
-
-  # format:
-  #   runs-on: ubuntu-latest
-  #   permissions:
-  #     contents: write
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #       with:
-  #         fetch-depth: 0  # needed so we can push commits back
-
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v4
-  #       with:
-  #         python-version: "3.11"
-
-      # - name: Install format tools
-      #   run: pip install ruff isort
-
-      # - name: Sort imports with isort
-      #   run: isort --profile black .
-
-      # - name: Format code with Ruff
-      #   run: ruff format --exclude MR_pipelines --exclude analysis_checker ...
-
-      # - name: Commit changes if any
-      #   if: github.event_name == 'push'
-      #   run: |
-      #     git config --local user.email "github-actions[bot]@users.noreply.github.com"
-      #     git config --local user.name "github-actions[bot]"
-      #     git add .
-      #     git commit -m "Format code with isort and ruff" || echo "No changes to commit"
-      #     git push
-
-  # ---------------------------------------------------------------------------
-  # Job 2: Run tests across OS × Python version matrix
-  # ---------------------------------------------------------------------------
-  # tests:
-  #   runs-on: ${{ matrix.os }}
-  #   #needs: format   # wait for formatting to finish first
-  #   env:
-  #     PYTHONFAULTHANDLER: "1"
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       os: [ubuntu-latest, macos-latest]
-  #       python-version: ["3.10", "3.11", "3.12"]
-  #   steps:
-  #     - uses: actions/checkout@v4
-
-  #     - name: Set up Python
-  #       uses: actions/setup-python@v4
-  #       with:
-  #         python-version: ${{ matrix.python-version }}
-
-  #     - name: Install launchcontainers + test dependencies
-  #       run: |
-  #         pip install -e .
-  #         pip install pytest
-
-  #     - name: Run tests
-  #       run: pytest launchcontainers/tests -p no:cacheprovider
-
-  # ---------------------------------------------------------------------------
-  # Job 3: Build Sphinx docs and deploy to GitHub Pages
-  # Only runs on direct push to master (not on PRs)
-  # ---------------------------------------------------------------------------
-  build-docs:
+  test:
     runs-on: ubuntu-latest
-    #needs: format   # wait for formatting to finish first
-    if: github.event_name == 'push'
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v5
-
-      - name: Install Pandoc
-        run: sudo apt-get install -y pandoc
-
-      - name: Install launchcontainers + docs dependencies
-        run: |
-          uv sync --group docs
-          uv pip install -r docs/requirements.txt
-
-      - name: Build Documentation
-        env:
-          PYTHONPATH: ${{ github.workspace }}/src
-        run: |
-          cd docs
-          uv run make html
-
-      - name: Create .nojekyll file
-        # Prevents GitHub Pages from ignoring folders that start with underscore
-        # (important because Sphinx outputs to _build/, _static/, etc.)
-        run: touch docs/_build/html/.nojekyll
-
-      - name: Upload build as artifact
-        # Saves the HTML as a downloadable artifact in the Actions run
-        uses: actions/upload-artifact@v4
-        with:
-          name: html-docs
-          path: docs/_build/html
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: docs/_build/html
-          destination_dir: ${{ github.ref_name }}   # e.g. /main/, /WC_matching_mat/
-
-      - name: Clean build folder
-        run: rm -rf docs/_build/*
+      - uses: astral-sh/setup-uv@v5
+      - name: Test
+        run: uv run pytest -q tests
