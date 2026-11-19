@@ -10,6 +10,11 @@ name that program. Newest first. History before this file: `git log`.
 
 ## [Unreleased]
 
+### Removed
+- The Sphinx source files (`docs/source/`, `Makefile`, `requirements.txt`, `_static/`,
+  `_templates/`, …), deleted by the maintainer after the docs job was removed
+  (2026-11-19: no Sphinx in any repo).
+
 ### Removed — Sphinx documentation (branch `remove-sphinx`)
 
 - **What:** the CI `build-docs` job (Sphinx build + GitHub Pages deploy) is replaced by a
