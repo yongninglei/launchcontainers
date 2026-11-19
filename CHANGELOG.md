@@ -9,6 +9,21 @@ name that program. Newest first. History before this file: `git log`.
 
 ## [Unreleased]
 
+### Changed — `swi-analysis` replaces `pial-vein` (branch `swi-analysis-tool`)
+
+- **What:** `tools/external.py` registers `ExternalTool("swi-analysis", "swi-analysis")` and no
+  longer `pial-vein`; `Claude.md`'s tool table updated (also MRI-hub/swi_preproc →
+  MRI-hub/swi-preproc, the repo's new name).
+- **Problem:** swi-analysis 0.3.0 replaced its three CLIs (`pial-vein`, `pial-vein-display`,
+  `swi-vessels`) with one, `swi-analysis`, that runs every step from one config section
+  (`container_specific.swi-analysis`) into one flat folder `derivatives/swi_analysis/
+  analysis-<name>/sub-XX/ses-YY/`; lc still knew only `pial-vein`, and `swi-vessels` was never
+  registered (it ran by hand).
+- **Why this way:** the maintainer's output rule (one derivatives folder per repo, flat
+  sessions, every parameter in one YAML; `~/soft/CLAUDE.md` §6). `swi-analysis` speaks the same
+  `--config / --sub / --ses / --plan` protocol, so it is a plain `ExternalTool`, nothing else
+  changes in lc. Existing `pial_vein/` analyses were moved into `swi_analysis/analysis-test`.
+
 ### Fixed — `Claude.md` named the wrong changelog (branch `docs-changelog-path`)
 
 - **What:** the header of `Claude.md` now says every change goes into

@@ -221,19 +221,20 @@ def _autoroi_sources(tc: ToolConfig, sub: str, ses: str) -> Sequence[str]:
 PYGLM = ExternalTool("pyGLM", "pyglm")
 AUTOROI_SCALING = ExternalTool("autoROI-scaling", "autoroi-scaling", _autoroi_sources)
 AUTOROI_CLUSTERING = ExternalTool("autoROI-clustering", "autoroi-clustering")
-# swi_preproc's raw-QC stage: echo average + rigid MC of every SWI run to run-01.
+# swi-preproc's raw-QC stage: echo average + rigid MC of every SWI run to run-01.
 # Needs greedy in lc's environment (cajal: module load vtk/9.1 itk/5.4.5 greedy/latest).
 SWI_PREP = ExternalTool("swi-prep", "swi-prep")
 # eyetracker_analysis: EyeLink EDFs paired with the BOLD runs by clock time, gaze
 # reconstructed, per-run eye QC verdict (pass / fail / unreliable / no_data) for the GLM.
 EYETRACK = ExternalTool("eyetrack", "eyetrack")
-# swi_preproc's main stage (Faruk Gulban's procedure): crop, 2x, MC at 2x, composite of
+# swi-preproc's main stage (Faruk Gulban's procedure): crop, 2x, MC at 2x, composite of
 # the runs chosen at raw QC, N4, registration to the T1w. Needs c3d, greedy and ANTs on
 # lc's PATH (cajal: module load vtk/9.1 itk/5.4.5 c3d/latest greedy/latest ants/2.5.1).
 SWI_PREPROC = ExternalTool("swi-preproc", "swi-preproc")
-# pial-vein-sampling: swi_preproc's SWI on dense cortical surfaces -- A (outward from
-# pial, sulcal ownership), B (subdural envelope). Pure Python, no modules needed.
-PIAL_VEIN = ExternalTool("pial-vein", "pial-vein")
+# swi-analysis (yongninglei/swi-analysis): every analysis of one SWI session in one flat
+# folder derivatives/swi_analysis/analysis-<name>/ -- surface (A, dense x1 pial), envelope (B),
+# display, vessels (VesSynth / VesselBoost, GPU). Replaces pial-vein (2026-11-19).
+SWI_ANALYSIS = ExternalTool("swi-analysis", "swi-analysis")
 EXTERNAL = {
     t.name: t
     for t in (
@@ -243,6 +244,6 @@ EXTERNAL = {
         SWI_PREP,
         EYETRACK,
         SWI_PREPROC,
-        PIAL_VEIN,
+        SWI_ANALYSIS,
     )
 }
