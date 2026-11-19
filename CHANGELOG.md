@@ -10,6 +10,13 @@ name that program. Newest first. History before this file: `git log`.
 
 ## [Unreleased]
 
+### Changed — docs: image QC split (branch `qc-split-docs`)
+
+- **What:** `ARCHITECTURE.md` §6–7 and `Claude.md` Upstream / downstream: QC-registration
+  QCs registration only; DWI segmentation QC is the new repo dwi-qc, SWI stage montages
+  are swi-preproc's `swi-stage-qc`.
+- **Problem / why:** maintainer rule (2026-11-19); lc's docs named the old commands.
+
 ### Removed
 - The Sphinx source files (`docs/source/`, `Makefile`, `requirements.txt`, `_static/`,
   `_templates/`, …), deleted by the maintainer after the docs job was removed
