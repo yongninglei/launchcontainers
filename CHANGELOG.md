@@ -10,6 +10,14 @@ name that program. Newest first. History before this file: `git log`.
 
 ## [Unreleased]
 
+### Changed — `AGENTS.md` names the PR + auto-merge rule (branch `agents-merge-rule`)
+
+- **What:** `AGENTS.md` item 3 now says what `Claude.md` "How changes land" says since
+  PR #19: PR to the fork's `main`, merged by the agent once the tests pass.
+- **Problem:** it still said "merged into the fork's `main`; the maintainer reviews", so an
+  agent reading only `AGENTS.md` would follow the old rule.
+- **Why this way:** one rule in every file an agent reads first.
+
 ### Added — `bold2surf` as an external tool; changes land by PR + auto-merge (branch `bold2surf-tool`)
 
 - **What:** `tools/external.py` registers `ExternalTool("bold2surf", "mrireg-bold2surf")`;
