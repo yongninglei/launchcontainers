@@ -24,14 +24,18 @@ subject × session at a time, BIDS-compliant. Developed at BCBL.
   branch `main`); shared repo `github.com/MRI-hub/launchcontainers`
   (`master`, protected: 1 approving review); `upstream` =
   `garikoitz/launchcontainers`.
-- **How changes land (every agent, every change).** Never commit to `main`
-  directly. (1) Branch from `origin/main` (one topic per branch, e.g.
-  `eyetrack-tool`). (2) Add an entry under `## [Unreleased]` in `CHANGELOG.md`:
-  what changed, the problem it solves, and why this way — usually to match a
-  program lc runs (its CLI, `--plan` JSON, outputs). (3) Commit, merge into the
-  fork's `main` (`--no-ff`) and push `origin main` + the branch. (4) The
-  maintainer reviews the fork and opens the PR to upstream. The changelog is how
-  the next agent learns what was done and why — read it before changing lc.
+- **How changes land (every agent, every change; maintainer rule 2026-11-19,
+  `~/soft/CLAUDE.md`).** Never commit to `main` directly. (1) Branch from
+  `origin/main` (one topic per branch, e.g. `eyetrack-tool`). (2) Add an entry
+  under `## [Unreleased]` in `CHANGELOG.md`: what changed, the problem it
+  solves, and why this way — usually to match a program lc runs (its CLI,
+  `--plan` JSON, outputs). (3) Commit only this change's files, push the branch,
+  open a PR to the fork's `main` (`gh pr create -R yongninglei/launchcontainers`).
+  (4) When `uv run pytest -q tests` passes (and the PR's CI, if it runs),
+  merge it yourself (`gh pr merge --merge --delete-branch`) — no "yes" needed.
+  The PR to the protected `MRI-hub/launchcontainers` `master` needs a review
+  and stays the maintainer's. The changelog is how the next agent learns what
+  was done and why — read it before changing lc.
 - **Division of work.** launchcontainers prepares inputs, records provenance,
   launches, and checks that each launch worked. The analyses it runs (pyGLM,
   autoROI, …) are standalone programs that assume their inputs are ready:
@@ -140,6 +144,7 @@ work list; the tool does one sub/ses per call.
 | `swi-preproc` | `tools/external.py` → `swi-preproc` (MRI-hub/swi-preproc, own env) | SWI main stage (Faruk): crop, 2×, MC at 2×, composite of the chosen runs, N4, T1w registration; needs c3d, greedy, ANTs on PATH (cajal: `module load vtk/9.1 itk/5.4.5 c3d/latest greedy/latest ants/2.5.1`) |
 | `swi-analysis` | `tools/external.py` → `swi-analysis` (yongninglei/swi-analysis, own env) | every analysis of one SWI session into one flat `derivatives/swi_analysis/analysis-<name>/`: surface map A on dense x1, envelope B, display, vessel segmentation (GPU). Replaces `pial-vein` (2026-11-19). No modules needed |
 | `qmri-preproc` | `tools/external.py` → `qmri-preproc` (MRI-hub/qMRI-preproc, own env) | MRF qMRI: input `BIDS_qMRI` (written by qMRI-to-bids, not an lc tool), rigid ANTs to the anat_ref T1w, 7 maps on the T1w grid, T1/T2/PD on fsnative / dense x1 via `mri_vol2surf`; ANTs + FreeSurfer on PATH (cajal: `module load ants/2.5.1`) |
+| `bold2surf` | `tools/external.py` → `mrireg-bold2surf` (MRI-hub/mri-registration, own env) | fMRIPrep T1w-space BOLD → dense x1 mesh (`mri_vol2surf`, fMRIPrep's sampling), `derivatives/bold_dense/analysis-<name>/`; needs the x1 surfaces from dense-surfaces and FreeSurfer on PATH. avg-timeseries is deliberately not an lc tool (maintainer, 2026-11-19) |
 | `l1_surface` | `do_prepare.py` → `prepare/glm_prepare.py` | **prepare only**: GLM *input* preparation (events.tsv from vistadisp logs, BIDS / fMRIPrep BOLD symlinks), which pyGLM does not have. `lc run` / `lc qc` on it exit 2 and point to pyGLM |
 
 External analyses follow one contract, `docs/plan_protocol.md`: a
@@ -258,3 +263,26 @@ Rules for `src/launchcontainers/core/` (from the former analysis-core):
   `logs/history/`.
 - typer + rich `console` for all output; colours `[green]saved`,
   `[yellow]SKIP`, `[red]ERROR` (exit 2 for config / input errors).
+
+## Upstream / downstream
+
+**Upstream** (what this repo reads):
+
+| folder (under `<project>/BIDS/derivatives` unless noted) | made by | | space |
+|---|---|---|---|
+| `<basedir>/BIDS` (raw) | heudiconv (`MR_pipelines/00_dicom_to_nifti`) | required | native |
+| `fmriprep-*`, `freesurfer-with_t2` | fMRIPrep / FreeSurfer (`MR_pipelines/`) | DWI containers, `l1_surface` prepare | T1w / fsnative |
+
+**Downstream** (what it writes, and who reads it):
+
+| folder | what | space | read by |
+|---|---|---|---|
+| `<container>_<ver>/analysis-<name>/` (`rtp2-pipeline_light_wbt/`, anatrois, freesurferator, rtppreproc …) | DWI container outputs | T1w / dwi | QC-registration (`qc-registration-dwi`), web-MRI (WM page, label volumes), app_surface_t1w_labeling |
+| `lc_config.yaml`, `subseslist.txt`, `dataset_description.json`, `logs/`, `qc/` in every analysis dir it launches | provenance + launch QC | — | the analysis dirs of pyGLM, autoROI-*, eyetrack, swi-prep, swi-preproc, swi-analysis, qmri-preproc, bold2surf |
+
+Launches (`tools/external.py`): pyGLM, autoROI-scaling, autoROI-clustering, eyetrack,
+swi-prep, swi-preproc, swi-analysis, qmri-preproc, bold2surf (mri-registration). The
+provenance rules here (ARCHITECTURE.md §5, `core/`) are the reference for every MRI-hub
+repo, launched by lc or not.
+
+Lab map with every repo: `~/soft/docs/repo_map.dot` → `docs/images/repo_map.png` (soft-conventions). A change of an output folder or its space updates this section, the sections of the repos named here, and the map, together.
